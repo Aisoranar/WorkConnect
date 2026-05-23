@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, Star, Briefcase, Wallet, Sparkles, ArrowUpRight } from "lucide-react";
+import { TrendingUp, Star, Briefcase, Wallet, Sparkles, ArrowUpRight, PlusCircle } from "lucide-react";
 import { fetchJobs, fetchStats, queryKeys } from "@/lib/api";
+import { getStoredUser } from "@/lib/auth";
 import { ApiState } from "@/components/ApiState";
 import { Button } from "@/components/ui/button";
 
@@ -25,6 +26,11 @@ function DashboardHome() {
   const jobs = jobsQuery.data ?? [];
   const stats = statsQuery.data;
   const topMatches = [...jobs].sort((a, b) => b.match - a.match).slice(0, 3);
+  const user = getStoredUser();
+  const role = user?.role ?? "freelancer";
+  const firstName = user?.name?.split(" ")[0] ?? "talento";
+
+  const isClient = role === "client" || role === "admin";
 
   return (
     <div className="space-y-8">
@@ -33,18 +39,29 @@ function DashboardHome() {
         <div className="relative">
           <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-xs text-primary-glow">
             <Sparkles className="h-3 w-3" />
-            <span>3 nuevos matches hoy</span>
+            <span>{isClient ? "Publica con IA · Recibe postulaciones" : "Micro-proyectos con matching IA"}</span>
           </div>
           <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
-            Hola, María 👋
+            Hola, {firstName} 👋
           </h1>
           <p className="mt-1 text-muted-foreground">
-            Tienes proyectos esperando tu propuesta. Tu reputación sigue creciendo.
+            {isClient
+              ? "Describe tu necesidad en tus palabras; nosotros la convertimos en requerimiento para jóvenes talento."
+              : "Explora proyectos reales de empresas locales, postula y suma experiencia a tu portafolio."}
           </p>
           <Button asChild className="mt-5 bg-gradient-primary shadow-glow">
-            <Link to="/dashboard/explore">
-              Ver recomendaciones
-              <ArrowUpRight className="ml-1 h-4 w-4" />
+            <Link to={isClient ? "/dashboard/publish" : "/dashboard/explore"}>
+              {isClient ? (
+                <>
+                  Publicar proyecto
+                  <PlusCircle className="ml-1 h-4 w-4" />
+                </>
+              ) : (
+                <>
+                  Ver proyectos
+                  <ArrowUpRight className="ml-1 h-4 w-4" />
+                </>
+              )}
             </Link>
           </Button>
         </div>

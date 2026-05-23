@@ -68,6 +68,63 @@ class AIService
             "Cuento con experiencia en {$skills} y me comprometo a entregar con comunicación clara y calidad profesional.";
     }
 
+    /**
+     * Estructura la solicitud cruda del empresario en un proyecto publicable.
+     *
+     * @return array<string, mixed>|null null = usar fallback local
+     */
+    public function structureProjectBrief(string $rawNeed, string $budget, ?string $businessContext = null): ?array
+    {
+        $prompt = "Eres consultor de proyectos para PYMEs en Latinoamérica. Convierte esta necesidad en un JSON válido (solo JSON, sin markdown) con keys: ".
+            "title, description (3-5 oraciones), category (Diseño|Desarrollo|Video|Marketing|General), ".
+            "skills (array de strings), deliverables (array de strings), budget (string con $), remote (boolean), summary (1 frase).\n\n".
+            'Presupuesto disponible: '.$budget."\n".
+            'Contexto negocio: '.($businessContext ?: 'no especificado')."\n".
+            "Necesidad del cliente:\n{$rawNeed}";
+
+        $raw = $this->askAiJson($prompt);
+
+        if (! $raw) {
+            return null;
+        }
+
+        return [
+            'title' => (string) ($raw['title'] ?? 'Proyecto para PYME'),
+            'description' => (string) ($raw['description'] ?? $rawNeed),
+            'category' => (string) ($raw['category'] ?? 'General'),
+            'skills' => array_values($raw['skills'] ?? []),
+            'deliverables' => array_values($raw['deliverables'] ?? []),
+            'budget' => (string) ($raw['budget'] ?? $budget),
+            'remote' => (bool) ($raw['remote'] ?? true),
+            'summary' => (string) ($raw['summary'] ?? 'Proyecto estructurado por IA.'),
+            'source' => 'ai',
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function askAiJson(string $prompt): ?array
+    {
+        if (! $this->hasAiKey()) {
+            return null;
+        }
+
+        $text = trim($this->askAi($prompt, 0));
+
+        if (str_starts_with($text, 'Compatibilidad estimada:')) {
+            return null;
+        }
+
+        if (preg_match('/\{[\s\S]*\}/', $text, $m)) {
+            $text = $m[0];
+        }
+
+        $decoded = json_decode($text, true);
+
+        return is_array($decoded) ? $decoded : null;
+    }
+
     public function recommendJobs(User $user, int $limit = 6): array
     {
         return $this->matchingService

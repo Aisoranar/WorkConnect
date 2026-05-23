@@ -1,5 +1,17 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Compass, Send, MessageSquare, User, Settings, Zap, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  Compass,
+  Send,
+  MessageSquare,
+  User,
+  Settings,
+  Zap,
+  LogOut,
+  PlusCircle,
+  Briefcase,
+} from "lucide-react";
+import { getStoredUser } from "@/lib/auth";
 import {
   Sidebar,
   SidebarContent,
@@ -13,16 +25,42 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const items = [
+const freelancerItems = [
   { title: "Inicio", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Explorar trabajos", url: "/dashboard/explore", icon: Compass },
+  { title: "Explorar proyectos", url: "/dashboard/explore", icon: Compass },
   { title: "Mis postulaciones", url: "/dashboard/applications", icon: Send },
   { title: "Mensajes", url: "/dashboard/messages", icon: MessageSquare },
   { title: "Mi perfil", url: "/dashboard/profile", icon: User },
 ];
 
+const clientItems = [
+  { title: "Inicio", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Publicar proyecto", url: "/dashboard/publish", icon: PlusCircle },
+  { title: "Explorar talento", url: "/dashboard/explore", icon: Compass },
+  { title: "Mensajes", url: "/dashboard/messages", icon: MessageSquare },
+  { title: "Mi perfil", url: "/dashboard/profile", icon: User },
+];
+
+const adminItems = [
+  ...freelancerItems.slice(0, 1),
+  { title: "Publicar (demo)", url: "/dashboard/publish", icon: PlusCircle },
+  ...freelancerItems.slice(1),
+  { title: "Admin", url: "/dashboard", icon: Briefcase },
+];
+
 export function DashboardSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const role = getStoredUser()?.role ?? "freelancer";
+
+  const items =
+    role === "client" ? clientItems : role === "admin" ? adminItems : freelancerItems;
+
+  const groupLabel =
+    role === "client"
+      ? "Empresa"
+      : role === "admin"
+        ? "Administración"
+        : "Talento joven";
 
   return (
     <Sidebar collapsible="icon">
@@ -38,7 +76,7 @@ export function DashboardSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navegación</SidebarGroupLabel>
+          <SidebarGroupLabel>{groupLabel}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => {

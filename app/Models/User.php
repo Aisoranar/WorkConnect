@@ -92,4 +92,14 @@ class User extends Authenticatable
     {
         return $this->role === 'admin';
     }
+
+    public function isFreelancer(): bool
+    {
+        return $this->role === 'freelancer';
+    }
+
+    public function isClient(): bool
+    {
+        return $this->role === 'client';
+    }
 }

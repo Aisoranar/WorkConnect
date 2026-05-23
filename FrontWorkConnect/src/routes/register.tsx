@@ -57,7 +57,7 @@ function RegisterPage() {
   return (
     <AuthLayout
       title="Crea tu cuenta"
-      subtitle="Únete a WorkConnect y empieza a conectar tu talento con proyectos reales."
+      subtitle="Elige si buscas experiencia (talento joven) o publicar una necesidad para tu empresa (cliente)."
       footer={
         <>
           ¿Ya tienes cuenta?{" "}

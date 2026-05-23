@@ -77,6 +77,41 @@ export function improveProposal(jobId: string | number, message: string): Promis
   }).then((r) => r.data.message);
 }
 
+export type StructuredProject = {
+  title: string;
+  description: string;
+  category: string;
+  skills: string[];
+  deliverables: string[];
+  budget: string;
+  remote: boolean;
+  summary: string;
+  source: string;
+};
+
+export function structureProjectBrief(payload: {
+  raw_need: string;
+  budget: string;
+  business_context?: string;
+}): Promise<StructuredProject> {
+  return apiPost<ApiItemResponse<StructuredProject>>("/ai/structure-project", payload).then(
+    (r) => r.data,
+  );
+}
+
+export function createJob(payload: {
+  title: string;
+  description: string;
+  budget: string;
+  location?: string;
+  remote?: boolean;
+  category?: string;
+  company?: string;
+  skills?: string[];
+}): Promise<void> {
+  return apiPost("/jobs", payload).then(() => undefined);
+}
+
 export function submitApplication(
   jobId: string | number,
   payload: { proposal: string; price: string; delivery_time: string },

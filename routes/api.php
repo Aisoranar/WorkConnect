@@ -62,6 +62,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
 
+    Route::post('/ai/structure-project', [AIController::class, 'structureProject']);
     Route::post('/ai/match-job', [AIController::class, 'matchJob']);
     Route::post('/ai/analyze-profile', [AIController::class, 'analyzeProfile']);
     Route::post('/ai/recommend-jobs', [AIController::class, 'recommendJobs']);

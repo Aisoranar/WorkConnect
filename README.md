@@ -1,8 +1,10 @@
 # WorkConnect
 
-Plataforma de empleo juvenil que conecta freelancers con proyectos reales usando **reputación, habilidades y matching por IA**.
+Marketplace de **micro-proyectos** que une dos mundos: **jóvenes que necesitan experiencia** y **empresas que necesitan soluciones a bajo costo** pero no saben plantearlas como requerimientos técnicos.
 
-> MVP pensado para hackatón: pocas funciones, bien hechas, listas para demo y pitch.
+La IA convierte la necesidad del empresario (en sus palabras) en un brief claro; el talento joven postula, entrega y construye reputación para el mercado laboral.
+
+> MVP para hackatón / piloto. Visión y problemática detallada en [VISION.md](./VISION.md).
 
 ---
 
@@ -107,24 +109,47 @@ Abre: [http://localhost:8080](http://localhost:8080)
 
 ## Credenciales de demo
 
-| Rol | Email | Contraseña |
-|-----|-------|------------|
-| Freelancer | `maria@workconnect.test` | `password` |
-| Cliente | `cliente@workconnect.test` | `password` |
+Contraseña de **todas** las cuentas: `password`
+
+### Freelancers (postulan a proyectos)
+
+| Email | Perfil |
+|-------|--------|
+| `maria@workconnect.test` | Diseñadora UI / Frontend |
+| `alex@workconnect.test` | Fullstack + IA |
+| `sofia@workconnect.test` | Estudiante · Video |
+| `carlos@workconnect.test` | Dev junior |
+
+### Empresas (publican proyectos)
+
+| Email | Empresa |
+|-------|---------|
+| `nimbus@workconnect.test` | Nimbus Studio |
+| `flux@workconnect.test` | Flux Labs |
+| `fintech@workconnect.test` | Fintech Co. |
+| `brava@workconnect.test` | Brava Co. |
+| `orbit@workconnect.test` | Orbit Agency |
+
+### Superadmin
+
+| Email | Rol |
+|-------|-----|
+| `admin@workconnect.test` | Administrador total |
+| `soporte@workconnect.test` | Soporte |
+
+Detalle de seeders: [`database/seeders/README.md`](database/seeders/README.md)
 
 ---
 
 ## Funcionalidades MVP
 
-- Registro e inicio de sesión (Sanctum, token Bearer)
-- Perfil profesional (skills, portfolio, bio)
-- Publicar y explorar proyectos
-- Postularse a trabajos
-- Mensajes tipo inbox (sin WebSockets)
-- Reseñas y reputación
-- Notificaciones
-- **IA:** matching de trabajos, análisis de perfil, recomendaciones
-- Dashboard con exploración, postulaciones, mensajes y estadísticas
+- Registro por rol: **freelancer** (talento joven) o **client** (empresa)
+- **Publicar proyecto con IA** (`/dashboard/publish`): necesidad en lenguaje natural → requerimiento estructurado → `POST /api/jobs`
+- Explorar proyectos, matching y postulación con propuesta asistida por IA
+- Perfil, skills, mensajes, reseñas y reputación
+- Dashboard con menú distinto según rol (explorar vs. publicar)
+
+Flujo de producto: [VISION.md](./VISION.md)
 
 ---
 
@@ -153,6 +178,8 @@ Prefijo base: `/api`
 | POST | `/jobs/{id}/apply` | Postularse |
 | GET | `/my-applications` | Mis postulaciones |
 | POST | `/messages` | Enviar mensaje |
+| POST | `/ai/structure-project` | Necesidad cruda → requerimiento (solo `client` / `admin`) |
+| POST | `/ai/improve-proposal` | Mejora carta de postulación |
 | POST | `/ai/match-job` | Matching IA con un trabajo |
 | POST | `/ai/analyze-profile` | Análisis de perfil |
 | POST | `/ai/recommend-jobs` | Trabajos recomendados |
@@ -172,6 +199,7 @@ php artisan route:list --path=api
 | `MatchingService` | Score de compatibilidad por skills, rating, ciudad |
 | `ProfileScoreService` | Puntuación y tips del perfil |
 | `AIService` | Capa IA (API externa o fallback local) |
+| `ProjectBriefService` | Estructura brief de empresa → proyecto publicable |
 | `NotificationService` | Avisos in-app |
 
 ---

@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as DashboardPublishRouteImport } from './routes/dashboard.publish'
 import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
 import { Route as DashboardMessagesRouteImport } from './routes/dashboard.messages'
 import { Route as DashboardExploreRouteImport } from './routes/dashboard.explore'
@@ -42,6 +43,11 @@ const IndexRoute = IndexRouteImport.update({
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPublishRoute = DashboardPublishRouteImport.update({
+  id: '/publish',
+  path: '/publish',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardProfileRoute = DashboardProfileRouteImport.update({
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/messages': typeof DashboardMessagesRoute
   '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/publish': typeof DashboardPublishRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRoutesByTo {
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/messages': typeof DashboardMessagesRoute
   '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/publish': typeof DashboardPublishRoute
   '/dashboard': typeof DashboardIndexRoute
 }
 export interface FileRoutesById {
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/messages': typeof DashboardMessagesRoute
   '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/publish': typeof DashboardPublishRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRouteTypes {
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/dashboard/explore'
     | '/dashboard/messages'
     | '/dashboard/profile'
+    | '/dashboard/publish'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/dashboard/explore'
     | '/dashboard/messages'
     | '/dashboard/profile'
+    | '/dashboard/publish'
     | '/dashboard'
   id:
     | '__root__'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/dashboard/explore'
     | '/dashboard/messages'
     | '/dashboard/profile'
+    | '/dashboard/publish'
     | '/dashboard/'
   fileRoutesById: FileRoutesById
 }
@@ -177,6 +189,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/publish': {
+      id: '/dashboard/publish'
+      path: '/publish'
+      fullPath: '/dashboard/publish'
+      preLoaderRoute: typeof DashboardPublishRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/profile': {
       id: '/dashboard/profile'
       path: '/profile'
@@ -213,6 +232,7 @@ interface DashboardRouteChildren {
   DashboardExploreRoute: typeof DashboardExploreRoute
   DashboardMessagesRoute: typeof DashboardMessagesRoute
   DashboardProfileRoute: typeof DashboardProfileRoute
+  DashboardPublishRoute: typeof DashboardPublishRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
@@ -221,6 +241,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardExploreRoute: DashboardExploreRoute,
   DashboardMessagesRoute: DashboardMessagesRoute,
   DashboardProfileRoute: DashboardProfileRoute,
+  DashboardPublishRoute: DashboardPublishRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }
 

@@ -4,13 +4,18 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\WorkJob;
+use App\Http\Requests\StructureProjectRequest;
 use App\Services\AIService;
+use App\Services\ProjectBriefService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AIController extends Controller
 {
-    public function __construct(private readonly AIService $ai) {}
+    public function __construct(
+        private readonly AIService $ai,
+        private readonly ProjectBriefService $projectBrief,
+    ) {}
 
     public function matchJob(Request $request): JsonResponse
     {
@@ -37,6 +42,17 @@ class AIController extends Controller
         return response()->json([
             'data' => $this->ai->recommendJobs($request->user(), $limit),
         ]);
+    }
+
+    public function structureProject(StructureProjectRequest $request): JsonResponse
+    {
+        $data = $this->projectBrief->structure(
+            $request->input('raw_need'),
+            $request->input('budget'),
+            $request->input('business_context'),
+        );
+
+        return response()->json(['data' => $data]);
     }
 
     public function improveProposal(Request $request): JsonResponse
