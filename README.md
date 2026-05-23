@@ -95,6 +95,8 @@ Abre: [http://localhost:8080](http://localhost:8080)
 | `DB_*` | Conexión MySQL |
 | `GEMINI_API_KEY` | Opcional — enriquece textos de IA |
 | `OPENAI_API_KEY` | Opcional — alternativa a Gemini |
+| `MAIL_*` | SMTP (Gmail) — bienvenida al registrarse y reset de contraseña |
+| `FRONTEND_URL` | Primera URL usada en enlaces de correo (ej. `http://localhost:8080`) |
 
 ### Frontend (`FrontWorkConnect/.env`)
 
@@ -164,6 +166,8 @@ Prefijo base: `/api`
 | GET | `/health` | Estado del servidor |
 | POST | `/register` | Registro |
 | POST | `/login` | Login (devuelve `token`) |
+| POST | `/forgot-password` | Envía enlace de recuperación al correo |
+| POST | `/reset-password` | Restablece contraseña (`token`, `email`, `password`) |
 | GET | `/jobs` | Listado de trabajos |
 | GET | `/skills` | Habilidades |
 | GET | `/users`, `/users/{id}` | Perfiles |

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { isAuthenticated, register } from "@/lib/auth";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
@@ -39,13 +40,14 @@ function RegisterPage() {
 
     setLoading(true);
     try {
-      await register({
+      const data = await register({
         name,
         email,
         password,
         password_confirmation: passwordConfirmation,
         role,
       });
+      toast.success(data.message ?? "Cuenta creada. Revisa tu correo.");
       await navigate({ to: "/dashboard" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo crear la cuenta");

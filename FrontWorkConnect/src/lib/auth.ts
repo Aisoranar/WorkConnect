@@ -113,6 +113,39 @@ export async function register(payload: {
   return data;
 }
 
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  const response = await fetch(`${API_BASE}/forgot-password`, {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+
+  return (await response.json()) as { message: string };
+}
+
+export async function resetPassword(payload: {
+  email: string;
+  token: string;
+  password: string;
+  password_confirmation: string;
+}): Promise<{ message: string }> {
+  const response = await fetch(`${API_BASE}/reset-password`, {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+
+  return (await response.json()) as { message: string };
+}
+
 export async function logout(): Promise<void> {
   const token = getToken();
   if (token) {

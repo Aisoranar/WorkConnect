@@ -6,11 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Resources\UserResource;
+use App\Mail\WelcomeRegisteredMail;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
@@ -29,8 +33,10 @@ class AuthController extends Controller
 
         $token = $user->createToken('api')->plainTextToken;
 
+        $this->sendWelcomeEmail($user);
+
         return response()->json([
-            'message' => 'Registro exitoso.',
+            'message' => 'Registro exitoso. Revisa tu correo para confirmar la bienvenida.',
             'user' => new UserResource($user),
             'token' => $token,
         ], 201);
@@ -69,12 +75,50 @@ class AuthController extends Controller
 
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
-        $status = Password::sendResetLink(['email' => $request->input('email')]);
+        Password::sendResetLink(['email' => $request->input('email')]);
 
         return response()->json([
-            'message' => $status === Password::RESET_LINK_SENT
-                ? 'Si el email existe, enviamos instrucciones de recuperación.'
-                : 'Si el email existe, enviamos instrucciones de recuperación.',
+            'message' => 'Si el correo está registrado, enviamos instrucciones para restablecer tu contraseña.',
         ]);
+    }
+
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    {
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password): void {
+                $user->forceFill(['password' => $password])->save();
+            }
+        );
+
+        if ($status !== Password::PASSWORD_RESET) {
+            return response()->json([
+                'message' => match ($status) {
+                    Password::INVALID_TOKEN => 'El enlace de recuperación no es válido o expiró.',
+                    Password::INVALID_USER => 'No encontramos una cuenta con ese correo.',
+                    default => 'No pudimos restablecer la contraseña. Intenta solicitar un nuevo enlace.',
+                },
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'Contraseña actualizada. Ya puedes iniciar sesión.',
+        ]);
+    }
+
+    private function sendWelcomeEmail(User $user): void
+    {
+        if (! filter_var(config('mail.from.address'), FILTER_VALIDATE_EMAIL)) {
+            return;
+        }
+
+        try {
+            Mail::to($user->email)->send(new WelcomeRegisteredMail($user));
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo enviar correo de bienvenida.', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }
