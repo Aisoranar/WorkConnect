@@ -4,7 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Sparkles, MapPin, Clock, Users } from "lucide-react";
 import { fetchJobs, queryKeys } from "@/lib/api";
 import { ApiState } from "@/components/ApiState";
+import { ApplyJobSheet } from "@/components/ApplyJobSheet";
 import { Button } from "@/components/ui/button";
+import type { Job } from "@/lib/types";
 
 export const Route = createFileRoute("/dashboard/explore")({
   component: Explore,
@@ -14,6 +16,8 @@ const categories = ["Todos", "Diseño", "Desarrollo", "Video", "Marketing"];
 
 function Explore() {
   const [active, setActive] = useState("Todos");
+  const [applyJob, setApplyJob] = useState<Job | null>(null);
+
   const { data: jobs = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: queryKeys.jobs,
     queryFn: fetchJobs,
@@ -47,7 +51,10 @@ function Explore() {
 
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           {filtered.map((job) => (
-            <article key={job.id} className="card-gradient flex flex-col rounded-2xl border border-border p-6 shadow-card transition hover:border-primary/50">
+            <article
+              key={job.id}
+              className="card-gradient flex flex-col rounded-2xl border border-border p-6 shadow-card transition hover:border-primary/50"
+            >
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="mb-1 text-xs text-muted-foreground">{job.company}</div>
@@ -61,28 +68,58 @@ function Explore() {
               <p className="mt-3 text-sm text-muted-foreground">{job.description}</p>
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {job.skills.map((s) => (
-                  <span key={s} className="rounded-md border border-border bg-surface/60 px-2 py-0.5 text-xs">{s}</span>
+                  <span
+                    key={s}
+                    className="rounded-md border border-border bg-surface/60 px-2 py-0.5 text-xs"
+                  >
+                    {s}
+                  </span>
                 ))}
               </div>
               <div className="mt-5 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{job.location}</span>
-                <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{job.postedAgo}</span>
-                <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{job.applicants} postulantes</span>
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {job.location}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  {job.postedAgo}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Users className="h-3.5 w-3.5" />
+                  {job.applicants} postulantes
+                </span>
               </div>
               <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
                 <div>
                   <div className="font-display text-xl font-bold">{job.budget}</div>
-                  <div className="text-xs text-muted-foreground">{job.remote ? "Remoto" : "Presencial"}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {job.remote ? "Remoto" : "Presencial"}
+                  </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline">Guardar</Button>
-                  <Button size="sm" className="bg-gradient-primary">Postular</Button>
+                  <Button size="sm" variant="outline">
+                    Guardar
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-gradient-primary"
+                    onClick={() => setApplyJob(job)}
+                  >
+                    Postular
+                  </Button>
                 </div>
               </div>
             </article>
           ))}
         </div>
       </ApiState>
+
+      <ApplyJobSheet
+        job={applyJob}
+        open={Boolean(applyJob)}
+        onOpenChange={(open) => !open && setApplyJob(null)}
+      />
     </div>
   );
 }

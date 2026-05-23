@@ -1,4 +1,4 @@
-import type { Application, Job, Message, Stats } from "./types";
+import type { Application, ApplyContext, Job, Message, Stats } from "./types";
 import { authHeaders } from "./auth";
 
 const API_BASE =
@@ -7,14 +7,34 @@ const API_BASE =
 type ApiListResponse<T> = { data: T[] };
 type ApiItemResponse<T> = { data: T };
 
+async function parseApiError(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as { message?: string; errors?: Record<string, string[]> };
+    if (body.errors) return Object.values(body.errors).flat().join(" ");
+    return body.message ?? `Error ${response.status}`;
+  } catch {
+    return `Error ${response.status}: ${response.statusText}`;
+  }
+}
+
 async function apiGet<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     headers: authHeaders(false),
   });
 
-  if (!response.ok) {
-    throw new Error(`API ${response.status}: ${response.statusText}`);
-  }
+  if (!response.ok) throw new Error(await parseApiError(response));
+
+  return response.json() as Promise<T>;
+}
+
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: authHeaders(true),
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) throw new Error(await parseApiError(response));
 
   return response.json() as Promise<T>;
 }
@@ -44,4 +64,22 @@ export function fetchStats(): Promise<Stats> {
 
 export function getApiBaseUrl(): string {
   return API_BASE;
+}
+
+export function fetchApplyContext(jobId: string | number): Promise<ApplyContext> {
+  return apiGet<ApiItemResponse<ApplyContext>>(`/jobs/${jobId}/apply-context`).then((r) => r.data);
+}
+
+export function improveProposal(jobId: string | number, message: string): Promise<string> {
+  return apiPost<ApiItemResponse<{ message: string }>>("/ai/improve-proposal", {
+    job_id: Number(jobId),
+    message,
+  }).then((r) => r.data.message);
+}
+
+export function submitApplication(
+  jobId: string | number,
+  payload: { proposal: string; price: string; delivery_time: string },
+): Promise<void> {
+  return apiPost<{ message: string }>(`/jobs/${jobId}/apply`, payload).then(() => undefined);
 }

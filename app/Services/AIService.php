@@ -43,6 +43,31 @@ class AIService
     /**
      * @return array<int, array<string, mixed>>
      */
+    public function improveProposal(User $user, WorkJob $job, string $message): string
+    {
+        $skills = $user->skills->pluck('name')->implode(', ');
+        $company = $job->company ?? 'el cliente';
+
+        $prompt = "Mejora esta propuesta freelance en español (máximo 3 oraciones, tono profesional y cercano). ".
+            "Proyecto: {$job->title}. Cliente: {$company}. Skills: {$skills}.\n\nPropuesta:\n{$message}";
+
+        $improved = trim($this->askAi($prompt, 0));
+
+        if ($improved === 'Compatibilidad estimada: 0%.' || str_starts_with($improved, 'Compatibilidad estimada:')) {
+            return $this->improveProposalLocally($message, $job, $skills);
+        }
+
+        return $improved;
+    }
+
+    private function improveProposalLocally(string $message, WorkJob $job, string $skills): string
+    {
+        $company = $job->company ?? 'el cliente';
+
+        return "Hola {$company}, me entusiasma \"{$job->title}\". {$message} ".
+            "Cuento con experiencia en {$skills} y me comprometo a entregar con comunicación clara y calidad profesional.";
+    }
+
     public function recommendJobs(User $user, int $limit = 6): array
     {
         return $this->matchingService

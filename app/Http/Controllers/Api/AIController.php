@@ -38,4 +38,25 @@ class AIController extends Controller
             'data' => $this->ai->recommendJobs($request->user(), $limit),
         ]);
     }
+
+    public function improveProposal(Request $request): JsonResponse
+    {
+        $request->validate([
+            'job_id' => ['required', 'exists:work_jobs,id'],
+            'message' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $job = WorkJob::query()->findOrFail($request->integer('job_id'));
+        $request->user()->load('skills');
+
+        $improved = $this->ai->improveProposal(
+            $request->user(),
+            $job,
+            $request->input('message'),
+        );
+
+        return response()->json([
+            'data' => ['message' => $improved],
+        ]);
+    }
 }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AIController;
 use App\Http\Controllers\Api\ApplicationController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\JobApplicationContextController;
 use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\NotificationController;
@@ -49,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/jobs/{job}', [JobController::class, 'update']);
     Route::delete('/jobs/{job}', [JobController::class, 'destroy']);
 
+    Route::get('/jobs/{job}/apply-context', [JobApplicationContextController::class, 'show']);
     Route::post('/jobs/{job}/apply', [ApplicationController::class, 'apply']);
     Route::get('/my-applications', [ApplicationController::class, 'myApplications']);
 
@@ -63,4 +65,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ai/match-job', [AIController::class, 'matchJob']);
     Route::post('/ai/analyze-profile', [AIController::class, 'analyzeProfile']);
     Route::post('/ai/recommend-jobs', [AIController::class, 'recommendJobs']);
+    Route::post('/ai/improve-proposal', [AIController::class, 'improveProposal']);
 });

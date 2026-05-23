@@ -37,3 +37,36 @@ export type Stats = {
   earnings: string;
   responseRate: number;
 };
+
+export type ApplyContextSkill = {
+  name: string;
+  level: number;
+  level_label: string;
+};
+
+export type ApplyContext = {
+  job: {
+    id: number;
+    title: string;
+    company: string;
+    budget: string;
+  };
+  proposal: {
+    message: string;
+    price: string;
+    delivery_time: string;
+  };
+  cv: {
+    name: string;
+    initials: string;
+    headline: string;
+    city: string | null;
+    bio: string | null;
+    verified: boolean;
+    trust_score: number;
+    professional_score: number;
+    trust_label: string;
+    skills: ApplyContextSkill[];
+    match: number;
+  };
+};
