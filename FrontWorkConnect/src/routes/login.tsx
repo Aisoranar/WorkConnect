@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { isAuthenticated, login } from "@/lib/auth";
 
 export const Route = createFileRoute("/login")({
+  head: () => ({
+    meta: [{ title: "Iniciar sesión · WorkConnect" }],
+  }),
   beforeLoad: () => {
     if (isAuthenticated()) {
       throw redirect({ to: "/dashboard" });

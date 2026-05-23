@@ -1,0 +1,10 @@
+{
+  "name": "WorkConnect",
+  "short_name": "WorkConnect",
+  "description": "Talento joven, oportunidades reales. Matching por IA para freelancers.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1033",
+  "theme_color": "#1a1033",
+  "lang": "es"
+}
