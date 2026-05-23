@@ -2,59 +2,141 @@
 
 namespace Database\Seeders;
 
-use App\Models\Application;
-use App\Models\DashboardStat;
-use App\Models\JobListing;
-use App\Models\Message;
+use App\Models\ChatMessage;
+use App\Models\JobApplication;
+use App\Models\Notification;
+use App\Models\PortfolioProject;
+use App\Models\Review;
+use App\Models\Skill;
+use App\Models\User;
+use App\Models\WorkJob;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class WorkConnectSeeder extends Seeder
 {
     public function run(): void
     {
-        $jobs = [
-            ['id' => '1', 'title' => 'Diseñador UI para landing SaaS', 'company' => 'Nimbus Studio', 'budget' => '$450', 'location' => 'Lima, PE', 'remote' => true, 'category' => 'Diseño', 'description' => 'Buscamos diseñador con experiencia en Figma para crear landing moderna estilo glassmorphism.', 'skills' => ['Figma', 'UI', 'Glassmorphism'], 'match' => 96, 'posted_ago' => 'hace 2h', 'applicants' => 12],
-            ['id' => '2', 'title' => 'Desarrollador React + Tailwind', 'company' => 'Flux Labs', 'budget' => '$1,200', 'location' => 'Remoto', 'remote' => true, 'category' => 'Desarrollo', 'description' => 'Implementar dashboard interactivo con animaciones suaves y dark mode.', 'skills' => ['React', 'Tailwind', 'TanStack Query'], 'match' => 92, 'posted_ago' => 'hace 5h', 'applicants' => 28],
-            ['id' => '3', 'title' => 'Editor de video para reels de marca', 'company' => 'Brava Co.', 'budget' => '$300', 'location' => 'Bogotá, CO', 'remote' => true, 'category' => 'Video', 'description' => 'Editar 10 reels mensuales para Instagram, estilo cinematográfico.', 'skills' => ['Premiere', 'After Effects', 'Color'], 'match' => 88, 'posted_ago' => 'hace 1d', 'applicants' => 9],
-            ['id' => '4', 'title' => 'Community manager bilingüe', 'company' => 'Orbit Agency', 'budget' => '$600/mes', 'location' => 'Remoto', 'remote' => true, 'category' => 'Marketing', 'description' => 'Manejo de redes para cliente fintech, inglés avanzado.', 'skills' => ['Copy', 'Meta Ads', 'Inglés'], 'match' => 84, 'posted_ago' => 'hace 1d', 'applicants' => 41],
-            ['id' => '5', 'title' => 'Backend Laravel + API REST', 'company' => 'Mercado Pulse', 'budget' => '$2,000', 'location' => 'CDMX, MX', 'remote' => false, 'category' => 'Desarrollo', 'description' => 'Construir API de e-commerce con Laravel 12 y Sanctum.', 'skills' => ['Laravel', 'MySQL', 'Sanctum'], 'match' => 80, 'posted_ago' => 'hace 2d', 'applicants' => 17],
-            ['id' => '6', 'title' => 'Ilustrador estilo flat para app móvil', 'company' => 'Pingu Health', 'budget' => '$700', 'location' => 'Remoto', 'remote' => true, 'category' => 'Diseño', 'description' => '12 ilustraciones para onboarding de app de salud mental.', 'skills' => ['Illustrator', 'Flat Design', 'Branding'], 'match' => 76, 'posted_ago' => 'hace 3d', 'applicants' => 22],
-        ];
+        $skills = collect([
+            ['name' => 'React', 'category' => 'Desarrollo'],
+            ['name' => 'Laravel', 'category' => 'Desarrollo'],
+            ['name' => 'Figma', 'category' => 'Diseño'],
+            ['name' => 'Tailwind CSS', 'category' => 'Desarrollo'],
+            ['name' => 'UI Design', 'category' => 'Diseño'],
+            ['name' => 'TypeScript', 'category' => 'Desarrollo'],
+            ['name' => 'MySQL', 'category' => 'Desarrollo'],
+            ['name' => 'Premiere', 'category' => 'Video'],
+        ])->map(fn ($s) => Skill::query()->firstOrCreate(['name' => $s['name']], $s));
 
-        foreach ($jobs as $job) {
-            JobListing::query()->updateOrCreate(['id' => $job['id']], $job);
-        }
-
-        $applications = [
-            ['id' => 'a1', 'job_title' => 'Diseñador UI para landing SaaS', 'company' => 'Nimbus Studio', 'price' => '$420', 'status' => 'en revisión', 'sent_ago' => 'hace 4h'],
-            ['id' => 'a2', 'job_title' => 'Editor de video para reels', 'company' => 'Brava Co.', 'price' => '$280', 'status' => 'aceptada', 'sent_ago' => 'hace 1d'],
-            ['id' => 'a3', 'job_title' => 'Frontend React', 'company' => 'Flux Labs', 'price' => '$1,100', 'status' => 'pendiente', 'sent_ago' => 'hace 2d'],
-            ['id' => 'a4', 'job_title' => 'Logo para startup', 'company' => 'Kova', 'price' => '$150', 'status' => 'rechazada', 'sent_ago' => 'hace 5d'],
-        ];
-
-        foreach ($applications as $application) {
-            Application::query()->updateOrCreate(['id' => $application['id']], $application);
-        }
-
-        $messages = [
-            ['id' => 'm1', 'name' => 'Lucía Mendoza', 'avatar' => 'LM', 'preview' => 'Perfecto, mañana enviamos el brief completo del proyecto.', 'time' => '10:42', 'unread' => 2],
-            ['id' => 'm2', 'name' => 'Daniel Soto', 'avatar' => 'DS', 'preview' => 'Me encantó tu portfolio. ¿Podemos agendar una llamada?', 'time' => '09:15', 'unread' => 1],
-            ['id' => 'm3', 'name' => 'Andrea Rojas', 'avatar' => 'AR', 'preview' => 'Adjunto las referencias visuales que comentábamos.', 'time' => 'Ayer', 'unread' => 0],
-            ['id' => 'm4', 'name' => 'Equipo Flux Labs', 'avatar' => 'FL', 'preview' => 'Tu postulación pasó a la siguiente fase 🎉', 'time' => 'Lun', 'unread' => 0],
-        ];
-
-        foreach ($messages as $message) {
-            Message::query()->updateOrCreate(['id' => $message['id']], $message);
-        }
-
-        DashboardStat::query()->updateOrCreate(
-            ['id' => 1],
+        $maria = User::query()->updateOrCreate(
+            ['email' => 'maria@workconnect.test'],
             [
+                'name' => 'María Álvarez',
+                'username' => 'maria-alvarez',
+                'password' => Hash::make('password'),
+                'role' => 'freelancer',
+                'city' => 'Lima, PE',
+                'bio' => 'Diseñadora UI y frontend. Especialista en SaaS y productos digitales.',
                 'rating' => 4.9,
-                'projects_done' => 23,
-                'earnings' => '$8,420',
-                'response_rate' => 98,
+                'verified' => true,
+                'github' => 'https://github.com/maria',
+                'linkedin' => 'https://linkedin.com/in/maria',
+                'experience' => '3 años creando interfaces para startups.',
             ],
         );
+
+        $client = User::query()->updateOrCreate(
+            ['email' => 'cliente@workconnect.test'],
+            [
+                'name' => 'Nimbus Studio',
+                'username' => 'nimbus',
+                'password' => Hash::make('password'),
+                'role' => 'client',
+                'city' => 'Lima, PE',
+                'bio' => 'Agencia digital.',
+                'rating' => 4.7,
+                'verified' => true,
+            ],
+        );
+
+        $maria->skills()->sync(
+            $skills->whereIn('name', ['React', 'Figma', 'Tailwind CSS', 'UI Design', 'TypeScript', 'Laravel'])
+                ->mapWithKeys(fn ($s) => [$s->id => ['level' => 'avanzado']])
+                ->all(),
+        );
+
+        PortfolioProject::query()->updateOrCreate(
+            ['user_id' => $maria->id, 'title' => 'Landing fintech Nimbus'],
+            [
+                'description' => 'Landing SaaS con glassmorphism.',
+                'technologies' => ['Figma', 'React'],
+                'url' => 'https://example.com',
+            ],
+        );
+
+        $jobsData = [
+            ['title' => 'Diseñador UI para landing SaaS', 'company' => 'Nimbus Studio', 'budget' => '$450', 'location' => 'Lima, PE', 'remote' => true, 'category' => 'Diseño', 'description' => 'Buscamos diseñador con experiencia en Figma para crear landing moderna estilo glassmorphism.', 'skills' => ['Figma', 'UI', 'Glassmorphism']],
+            ['title' => 'Desarrollador React + Tailwind', 'company' => 'Flux Labs', 'budget' => '$1,200', 'location' => 'Remoto', 'remote' => true, 'category' => 'Desarrollo', 'description' => 'Implementar dashboard interactivo con animaciones suaves y dark mode.', 'skills' => ['React', 'Tailwind', 'TanStack Query']],
+            ['title' => 'Editor de video para reels de marca', 'company' => 'Brava Co.', 'budget' => '$300', 'location' => 'Bogotá, CO', 'remote' => true, 'category' => 'Video', 'description' => 'Editar 10 reels mensuales para Instagram, estilo cinematográfico.', 'skills' => ['Premiere', 'After Effects', 'Color']],
+            ['title' => 'Community manager bilingüe', 'company' => 'Orbit Agency', 'budget' => '$600/mes', 'location' => 'Remoto', 'remote' => true, 'category' => 'Marketing', 'description' => 'Manejo de redes para cliente fintech, inglés avanzado.', 'skills' => ['Copy', 'Meta Ads', 'Inglés']],
+            ['title' => 'Backend Laravel + API REST', 'company' => 'Mercado Pulse', 'budget' => '$2,000', 'location' => 'CDMX, MX', 'remote' => false, 'category' => 'Desarrollo', 'description' => 'Construir API de e-commerce con Laravel y Sanctum.', 'skills' => ['Laravel', 'MySQL', 'Sanctum']],
+            ['title' => 'Ilustrador estilo flat para app móvil', 'company' => 'Pingu Health', 'budget' => '$700', 'location' => 'Remoto', 'remote' => true, 'category' => 'Diseño', 'description' => '12 ilustraciones para onboarding de app de salud mental.', 'skills' => ['Illustrator', 'Flat Design', 'Branding']],
+        ];
+
+        foreach ($jobsData as $data) {
+            WorkJob::query()->updateOrCreate(
+                ['user_id' => $client->id, 'title' => $data['title']],
+                [...$data, 'status' => 'open'],
+            );
+        }
+
+        $firstJob = WorkJob::query()->first();
+
+        JobApplication::query()->updateOrCreate(
+            ['job_id' => $firstJob->id, 'user_id' => $maria->id],
+            [
+                'proposal' => 'Puedo entregar el diseño en 5 días con 2 rondas de revisión.',
+                'price' => '$420',
+                'delivery_time' => '5 días',
+                'status' => 'en revisión',
+            ],
+        );
+
+        $fluxJob = WorkJob::query()->where('title', 'like', '%React%')->first();
+        if ($fluxJob) {
+            JobApplication::query()->updateOrCreate(
+                ['job_id' => $fluxJob->id, 'user_id' => $maria->id],
+                [
+                    'proposal' => 'Experiencia en dashboards con React y TanStack Query.',
+                    'price' => '$1,100',
+                    'delivery_time' => '10 días',
+                    'status' => 'pendiente',
+                ],
+            );
+        }
+
+        ChatMessage::query()->updateOrCreate(
+            ['sender_id' => $client->id, 'receiver_id' => $maria->id, 'message' => 'Perfecto, mañana enviamos el brief completo del proyecto.'],
+            ['read_at' => null],
+        );
+
+        ChatMessage::query()->create([
+            'sender_id' => $maria->id,
+            'receiver_id' => $client->id,
+            'message' => '¡Gracias! Quedo atenta al brief.',
+            'read_at' => now(),
+        ]);
+
+        Review::query()->updateOrCreate(
+            ['job_id' => $firstJob->id, 'reviewer_id' => $client->id, 'reviewed_id' => $maria->id],
+            ['rating' => 5, 'comment' => 'Excelente trabajo y comunicación.'],
+        );
+
+        Notification::query()->create([
+            'user_id' => $maria->id,
+            'title' => 'Nueva postulación',
+            'body' => 'Tu perfil tiene 3 nuevos matches hoy.',
+            'read' => false,
+        ]);
     }
 }
