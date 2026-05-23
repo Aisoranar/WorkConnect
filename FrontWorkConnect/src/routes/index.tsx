@@ -13,6 +13,7 @@ import {
   Handshake,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PlatformModules } from "@/components/PlatformModules";
 import heroImg from "@/assets/hero-network.jpg";
 
 export const Route = createFileRoute("/")({
@@ -36,6 +37,9 @@ function Landing() {
             </a>
             <a href="#how" className="text-sm text-muted-foreground transition hover:text-foreground">
               Cómo funciona
+            </a>
+            <a href="#modulos" className="text-sm text-muted-foreground transition hover:text-foreground">
+              Módulos
             </a>
             <a href="#features" className="text-sm text-muted-foreground transition hover:text-foreground">
               Plataforma
@@ -72,13 +76,13 @@ function Landing() {
               <span>IA que traduce necesidades de empresa → proyectos para jóvenes talento</span>
             </div>
             <h1 className="text-balance text-5xl font-bold leading-[1.05] tracking-tight md:text-7xl">
-              Experiencia real para jóvenes.{" "}
-              <span className="text-gradient">Soluciones reales para empresas.</span>
+              Transformamos pequeños proyectos en{" "}
+              <span className="text-gradient">experiencia profesional real.</span>
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-balance text-lg text-muted-foreground">
-              Las PYMEs no tienen presupuesto para un equipo completo ni saben redactar un brief técnico.
-              Los jóvenes no tienen portafolio. WorkConnect los conecta con micro-proyectos acotados y
-              matching inteligente.
+              Las PYMEs describen su problema y presupuesto; la IA lo convierte en un requerimiento técnico claro.
+              Los jóvenes postulan, entregan y construyen portafolio, reputación y un perfil con QR — no solo
+              ejercicios de curso.
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
               <Button asChild size="lg" className="bg-gradient-primary shadow-glow">
@@ -179,6 +183,8 @@ function Landing() {
           </ol>
         </div>
       </section>
+
+      <PlatformModules />
 
       <section id="features" className="container mx-auto px-6 py-24">
         <div className="mx-auto max-w-2xl text-center">

@@ -5,12 +5,50 @@ export type Job = {
   budget: string;
   location: string;
   remote: boolean;
+  status?: string;
   category: string;
   description: string;
   skills: string[];
   match: number;
   postedAgo: string;
   applicants: number;
+  alreadyApplied?: boolean;
+  applicationStatus?: string | null;
+  isNew?: boolean;
+};
+
+export type JobsListMeta = {
+  total: number;
+  categories: string[];
+};
+
+export type FreelancerCard = {
+  id: number;
+  name: string;
+  username: string | null;
+  city: string | null;
+  bio: string | null;
+  rating: number;
+  verified: boolean;
+  skills: { id: number; name: string; level?: string }[];
+  applications_count?: number;
+};
+
+export type JobApplicationDetail = {
+  id: number;
+  proposal: string;
+  price: string;
+  delivery_time: string;
+  status: string;
+  created_at?: string;
+  user: {
+    id: number;
+    name: string;
+    username?: string | null;
+    city?: string | null;
+    rating?: number;
+    skills?: { name: string; level?: string }[];
+  };
 };
 
 export type Application = {

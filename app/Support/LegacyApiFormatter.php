@@ -12,7 +12,7 @@ class LegacyApiFormatter
 {
     public function __construct(private readonly MatchingService $matching) {}
 
-    public function job(WorkJob $job, ?User $user = null): array
+    public function job(WorkJob $job, ?User $user = null, ?JobApplication $application = null): array
     {
         $match = $user
             ? $this->matching->scoreJobForUser($user, $job)
@@ -24,13 +24,17 @@ class LegacyApiFormatter
             'company' => $job->company ?? $job->owner?->name ?? 'Cliente',
             'budget' => $job->budget,
             'location' => $job->location ?? 'Remoto',
-            'remote' => $job->remote,
+            'remote' => (bool) $job->remote,
+            'status' => $job->status,
             'category' => $job->category ?? 'General',
             'description' => $job->description,
             'skills' => $job->skills ?? [],
             'match' => $match,
             'postedAgo' => $job->created_at?->locale('es')->diffForHumans(short: true) ?? 'reciente',
             'applicants' => (int) ($job->applications_count ?? $job->applications()->count()),
+            'alreadyApplied' => $application !== null,
+            'applicationStatus' => $application?->status,
+            'isNew' => $job->created_at?->isAfter(now()->subDays(5)) ?? false,
         ];
     }
 

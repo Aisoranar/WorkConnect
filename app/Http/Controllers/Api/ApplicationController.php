@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ApplyJobRequest;
+use App\Http\Requests\UpdateApplicationStatusRequest;
 use App\Http\Resources\ApplicationResource;
 use App\Models\JobApplication;
 use App\Models\WorkJob;
@@ -75,6 +76,48 @@ class ApplicationController extends Controller
 
         return response()->json([
             'data' => ApplicationResource::collection($applications),
+        ]);
+    }
+
+    /** Postulaciones recibidas en un proyecto de la empresa. */
+    public function forJob(Request $request, WorkJob $job): JsonResponse
+    {
+        if ($job->user_id !== $request->user()->id && ! $request->user()->isAdmin()) {
+            return response()->json(['message' => 'No autorizado.'], 403);
+        }
+
+        $applications = $job->applications()
+            ->with(['user.skills'])
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'data' => ApplicationResource::collection($applications),
+        ]);
+    }
+
+    public function updateStatus(UpdateApplicationStatusRequest $request, JobApplication $application): JsonResponse
+    {
+        $application->load('job', 'user');
+        $job = $application->job;
+
+        if ($job->user_id !== $request->user()->id && ! $request->user()->isAdmin()) {
+            return response()->json(['message' => 'No autorizado.'], 403);
+        }
+
+        $application->update(['status' => $request->input('status')]);
+
+        if ($request->input('status') === 'aceptada') {
+            $this->notifications->notify(
+                $application->user,
+                '¡Postulación aceptada!',
+                "Tu propuesta para «{$job->title}» fue aceptada. Coordina la entrega por mensajes.",
+            );
+        }
+
+        return response()->json([
+            'message' => 'Estado actualizado.',
+            'data' => new ApplicationResource($application->fresh(['job', 'user.skills'])),
         ]);
     }
 }

@@ -25,6 +25,7 @@ class UserResource extends JsonResource
             'experience' => $this->experience,
             'skills' => SkillResource::collection($this->whenLoaded('skills')),
             'portfolio' => PortfolioProjectResource::collection($this->whenLoaded('portfolioProjects')),
+            'applications_count' => $this->whenCounted('applications'),
             'created_at' => $this->created_at,
         ];
     }

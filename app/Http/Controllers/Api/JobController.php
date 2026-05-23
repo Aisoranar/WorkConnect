@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreJobRequest;
 use App\Http\Resources\JobResource;
+use App\Models\JobApplication;
 use App\Models\WorkJob;
 use App\Services\MatchingService;
 use App\Support\LegacyApiFormatter;
@@ -22,20 +23,71 @@ class JobController extends Controller
     {
         $user = $request->user('sanctum');
 
-        $jobs = WorkJob::query()
+        $query = WorkJob::query()
             ->with('owner')
             ->withCount('applications')
-            ->where('status', 'open')
-            ->latest()
-            ->get();
+            ->where('status', 'open');
+
+        if ($user) {
+            $query->where('user_id', '!=', $user->id);
+        }
+
+        $category = $request->string('category')->toString();
+        if ($category !== '' && $category !== 'Todos') {
+            $query->where('category', $category);
+        }
+
+        if ($search = $request->string('q')->trim()->toString()) {
+            $query->where(function ($builder) use ($search) {
+                $builder
+                    ->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('company', 'like', "%{$search}%");
+            });
+        }
+
+        $jobs = $query->get();
+
+        $sort = $request->input('sort', 'match');
+        if ($sort === 'recent') {
+            $jobs = $jobs->sortByDesc('created_at')->values();
+        } elseif ($sort === 'budget') {
+            $jobs = $jobs->sortByDesc(fn (WorkJob $job) => (int) preg_replace('/\D/', '', $job->budget))->values();
+        } else {
+            $jobs = $jobs
+                ->sortByDesc(fn (WorkJob $job) => $user ? $this->matching->scoreJobForUser($user, $job) : 0)
+                ->values();
+        }
+
+        $applicationsByJob = collect();
+        if ($user) {
+            $applicationsByJob = JobApplication::query()
+                ->where('user_id', $user->id)
+                ->whereIn('job_id', $jobs->pluck('id'))
+                ->get()
+                ->keyBy('job_id');
+        }
 
         if ($request->boolean('legacy', true)) {
-            $data = $jobs
-                ->sortByDesc(fn (WorkJob $job) => $user ? $this->matching->scoreJobForUser($user, $job) : 0)
-                ->values()
-                ->map(fn (WorkJob $job) => $this->legacy->job($job, $user));
+            $data = $jobs->map(
+                fn (WorkJob $job) => $this->legacy->job($job, $user, $applicationsByJob->get($job->id)),
+            );
 
-            return response()->json(['data' => $data]);
+            $categories = WorkJob::query()
+                ->where('status', 'open')
+                ->whereNotNull('category')
+                ->distinct()
+                ->orderBy('category')
+                ->pluck('category')
+                ->values();
+
+            return response()->json([
+                'data' => $data,
+                'meta' => [
+                    'total' => $data->count(),
+                    'categories' => $categories,
+                ],
+            ]);
         }
 
         return response()->json([
@@ -43,9 +95,15 @@ class JobController extends Controller
         ]);
     }
 
-    public function show(WorkJob $job): JsonResponse
+    public function show(Request $request, WorkJob $job): JsonResponse
     {
         $job->load(['owner'])->loadCount('applications');
+
+        if ($request->boolean('legacy', false)) {
+            return response()->json([
+                'data' => $this->legacy->job($job, $request->user('sanctum')),
+            ]);
+        }
 
         return response()->json(['data' => new JobResource($job)]);
     }
@@ -87,5 +145,24 @@ class JobController extends Controller
         $job->delete();
 
         return response()->json(['message' => 'Proyecto eliminado.']);
+    }
+
+    /** M17 — Proyectos publicados por la empresa autenticada. */
+    public function myJobs(Request $request): JsonResponse
+    {
+        $jobs = WorkJob::query()
+            ->where('user_id', $request->user()->id)
+            ->with('owner')
+            ->withCount('applications')
+            ->latest()
+            ->get();
+
+        if ($request->boolean('legacy', true)) {
+            $data = $jobs->map(fn (WorkJob $job) => $this->legacy->job($job, $request->user(), null));
+
+            return response()->json(['data' => $data]);
+        }
+
+        return response()->json(['data' => JobResource::collection($jobs)]);
     }
 }

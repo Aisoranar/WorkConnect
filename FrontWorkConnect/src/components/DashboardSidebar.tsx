@@ -1,4 +1,5 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Compass,
@@ -11,7 +12,7 @@ import {
   PlusCircle,
   Briefcase,
 } from "lucide-react";
-import { getStoredUser } from "@/lib/auth";
+import { getStoredUser, logout } from "@/lib/auth";
 import {
   Sidebar,
   SidebarContent,
@@ -36,6 +37,7 @@ const freelancerItems = [
 const clientItems = [
   { title: "Inicio", url: "/dashboard", icon: LayoutDashboard },
   { title: "Publicar proyecto", url: "/dashboard/publish", icon: PlusCircle },
+  { title: "Mis proyectos", url: "/dashboard/my-projects", icon: Briefcase },
   { title: "Explorar talento", url: "/dashboard/explore", icon: Compass },
   { title: "Mensajes", url: "/dashboard/messages", icon: MessageSquare },
   { title: "Mi perfil", url: "/dashboard/profile", icon: User },
@@ -49,8 +51,16 @@ const adminItems = [
 ];
 
 export function DashboardSidebar() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const role = getStoredUser()?.role ?? "freelancer";
+
+  async function handleLogout() {
+    await logout();
+    queryClient.clear();
+    await navigate({ to: "/login", replace: true });
+  }
 
   const items =
     role === "client" ? clientItems : role === "admin" ? adminItems : freelancerItems;
@@ -100,18 +110,20 @@ export function DashboardSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link to="/dashboard" className="flex items-center gap-2">
+              <Link to="/dashboard/profile" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 <span>Configuración</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link to="/" className="flex items-center gap-2 text-muted-foreground">
-                <LogOut className="h-4 w-4" />
-                <span>Salir</span>
-              </Link>
+            <SidebarMenuButton
+              type="button"
+              className="flex w-full items-center gap-2 text-muted-foreground"
+              onClick={() => void handleLogout()}
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Salir</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

@@ -11,7 +11,10 @@ export const Route = createFileRoute("/dashboard/")({
 });
 
 function DashboardHome() {
-  const jobsQuery = useQuery({ queryKey: queryKeys.jobs, queryFn: fetchJobs });
+  const jobsQuery = useQuery({
+    queryKey: queryKeys.jobs,
+    queryFn: () => fetchJobs({ sort: "match" }),
+  });
   const statsQuery = useQuery({ queryKey: queryKeys.stats, queryFn: fetchStats });
 
   const isLoading = jobsQuery.isLoading || statsQuery.isLoading;
@@ -23,7 +26,7 @@ function DashboardHome() {
     void statsQuery.refetch();
   };
 
-  const jobs = jobsQuery.data ?? [];
+  const jobs = jobsQuery.data?.data ?? [];
   const stats = statsQuery.data;
   const topMatches = [...jobs].sort((a, b) => b.match - a.match).slice(0, 3);
   const user = getStoredUser();
@@ -49,21 +52,31 @@ function DashboardHome() {
               ? "Describe tu necesidad en tus palabras; nosotros la convertimos en requerimiento para jóvenes talento."
               : "Explora proyectos reales de empresas locales, postula y suma experiencia a tu portafolio."}
           </p>
-          <Button asChild className="mt-5 bg-gradient-primary shadow-glow">
-            <Link to={isClient ? "/dashboard/publish" : "/dashboard/explore"}>
-              {isClient ? (
-                <>
-                  Publicar proyecto
-                  <PlusCircle className="ml-1 h-4 w-4" />
-                </>
-              ) : (
-                <>
-                  Ver proyectos
-                  <ArrowUpRight className="ml-1 h-4 w-4" />
-                </>
-              )}
-            </Link>
-          </Button>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Button asChild className="bg-gradient-primary shadow-glow">
+              <Link to={isClient ? "/dashboard/publish" : "/dashboard/explore"}>
+                {isClient ? (
+                  <>
+                    Publicar proyecto
+                    <PlusCircle className="ml-1 h-4 w-4" />
+                  </>
+                ) : (
+                  <>
+                    Ver proyectos
+                    <ArrowUpRight className="ml-1 h-4 w-4" />
+                  </>
+                )}
+              </Link>
+            </Button>
+            {isClient && (
+              <Button asChild variant="outline">
+                <Link to="/dashboard/my-projects">
+                  <Briefcase className="mr-1 h-4 w-4" />
+                  Mis proyectos
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

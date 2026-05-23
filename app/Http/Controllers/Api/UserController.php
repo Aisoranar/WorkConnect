@@ -13,12 +13,24 @@ use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $users = User::query()
-            ->with('skills')
-            ->latest()
-            ->paginate(20);
+        $query = User::query()->with('skills')->withCount('applications');
+
+        if ($role = $request->string('role')->toString()) {
+            $query->where('role', $role);
+        }
+
+        if ($search = $request->string('q')->trim()->toString()) {
+            $query->where(function ($builder) use ($search) {
+                $builder
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('bio', 'like', "%{$search}%")
+                    ->orWhere('city', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $query->orderByDesc('rating')->paginate(min(30, $request->integer('per_page', 20)));
 
         return UserResource::collection($users)->response();
     }
@@ -28,6 +40,29 @@ class UserController extends Controller
         $user->load(['skills', 'portfolioProjects']);
 
         return response()->json(['data' => new UserResource($user)]);
+    }
+
+    /** M13 — Perfil público por username (ferias / QR). */
+    public function showByUsername(string $username): JsonResponse
+    {
+        $user = User::query()
+            ->where('username', $username)
+            ->whereIn('role', ['freelancer', 'admin'])
+            ->withCount([
+                'applications as projects_completed_count' => fn ($q) => $q->where('status', 'aceptada'),
+                'reviewsReceived',
+            ])
+            ->firstOrFail();
+
+        $user->load(['skills', 'portfolioProjects']);
+
+        return response()->json([
+            'data' => new UserResource($user),
+            'meta' => [
+                'projects_completed' => (int) $user->projects_completed_count,
+                'reviews_count' => (int) $user->reviews_received_count,
+            ],
+        ]);
     }
 
     public function update(UpdateUserRequest $request, User $user): JsonResponse

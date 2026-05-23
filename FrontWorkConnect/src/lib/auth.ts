@@ -16,8 +16,17 @@ type LoginResponse = {
 
 type RegisterResponse = LoginResponse & { message?: string };
 
-const API_BASE =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "http://172.20.10.14:8000/api";
+function resolveApiBase(): string {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/$/, "");
+  }
+  if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+    return "http://127.0.0.1:8000/api";
+  }
+  return "http://127.0.0.1:8000/api";
+}
+
+const API_BASE = resolveApiBase();
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;

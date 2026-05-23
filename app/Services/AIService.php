@@ -73,13 +73,27 @@ class AIService
      *
      * @return array<string, mixed>|null null = usar fallback local
      */
-    public function structureProjectBrief(string $rawNeed, string $budget, ?string $businessContext = null): ?array
-    {
+    public function structureProjectBrief(
+        string $rawNeed,
+        string $currency,
+        float $budgetAmount,
+        ?string $businessContext = null,
+    ): ?array {
+        $currency = strtoupper($currency);
+        $budgetLabel = $currency === 'COP'
+            ? number_format($budgetAmount, 0, ',', '.').' COP'
+            : '$'.number_format($budgetAmount, 0, '.', ',').' USD';
+
         $prompt = "Eres consultor de proyectos para PYMEs en Latinoamérica. Convierte esta necesidad en un JSON válido (solo JSON, sin markdown) con keys: ".
             "title, description (3-5 oraciones), category (Diseño|Desarrollo|Video|Marketing|General), ".
-            "skills (array de strings), deliverables (array de strings), budget (string con $), remote (boolean), summary (1 frase).\n\n".
-            'Presupuesto disponible: '.$budget."\n".
+            "skills (array de habilidades buscadas), deliverables (array de strings), ".
+            "recommended_technologies (array: stack sugerido ej. WordPress, Laravel, PHP, React, MySQL, Figma según alcance), ".
+            "solution_type (string: ej. Landing page, Tienda virtual, Automatización), ".
+            "estimated_time (string: ej. 1-2 semanas), difficulty_level (Básico|Intermedio|Avanzado), ".
+            "remote (boolean), summary (1 frase).\n\n".
+            "Moneda de pago: {$currency}. Monto: {$budgetLabel}.\n".
             'Contexto negocio: '.($businessContext ?: 'no especificado')."\n".
+            "Para web sencilla de negocio local prioriza WordPress/HTML. Para app o sistema: Laravel+PHP+MySQL. Para UI moderna: React+TypeScript.\n".
             "Necesidad del cliente:\n{$rawNeed}";
 
         $raw = $this->askAiJson($prompt);
@@ -94,7 +108,11 @@ class AIService
             'category' => (string) ($raw['category'] ?? 'General'),
             'skills' => array_values($raw['skills'] ?? []),
             'deliverables' => array_values($raw['deliverables'] ?? []),
-            'budget' => (string) ($raw['budget'] ?? $budget),
+            'recommended_technologies' => array_values($raw['recommended_technologies'] ?? []),
+            'solution_type' => (string) ($raw['solution_type'] ?? 'Proyecto digital'),
+            'estimated_time' => (string) ($raw['estimated_time'] ?? '1–2 semanas'),
+            'difficulty_level' => (string) ($raw['difficulty_level'] ?? 'Básico–intermedio'),
+            'budget' => $budgetLabel,
             'remote' => (bool) ($raw['remote'] ?? true),
             'summary' => (string) ($raw['summary'] ?? 'Proyecto estructurado por IA.'),
             'source' => 'ai',

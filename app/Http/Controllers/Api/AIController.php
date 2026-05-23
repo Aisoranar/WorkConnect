@@ -48,7 +48,8 @@ class AIController extends Controller
     {
         $data = $this->projectBrief->structure(
             $request->input('raw_need'),
-            $request->input('budget'),
+            strtoupper($request->input('currency')),
+            (float) $request->input('budget_amount'),
             $request->input('business_context'),
         );
 

@@ -8,7 +8,12 @@ class StoreJobRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->isClient() || $this->user()?->isAdmin();
+    }
+
+    protected function failedAuthorization(): void
+    {
+        abort(403, 'Solo empresas pueden publicar proyectos.');
     }
 
     public function rules(): array

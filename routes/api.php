@@ -28,6 +28,7 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 // Público
 Route::get('/skills', [SkillController::class, 'index']);
 Route::get('/users', [UserController::class, 'index']);
+Route::get('/talent/{username}', [UserController::class, 'showByUsername']);
 Route::get('/users/{user}', [UserController::class, 'show']);
 Route::get('/users/{user}/reviews', [UserController::class, 'reviews']);
 Route::get('/jobs', [JobController::class, 'index']);
@@ -47,6 +48,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/skills', [SkillController::class, 'store']);
 
+    Route::get('/my-jobs', [JobController::class, 'myJobs']);
+    Route::get('/my-jobs/{job}/applications', [ApplicationController::class, 'forJob']);
     Route::post('/jobs', [JobController::class, 'store']);
     Route::put('/jobs/{job}', [JobController::class, 'update']);
     Route::delete('/jobs/{job}', [JobController::class, 'destroy']);
@@ -54,6 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/jobs/{job}/apply-context', [JobApplicationContextController::class, 'show']);
     Route::post('/jobs/{job}/apply', [ApplicationController::class, 'apply']);
     Route::get('/my-applications', [ApplicationController::class, 'myApplications']);
+    Route::patch('/applications/{application}', [ApplicationController::class, 'updateStatus']);
 
     Route::post('/reviews', [ReviewController::class, 'store']);
 
