@@ -24,11 +24,11 @@ function Landing() {
             <a href="#metrics" className="text-sm text-muted-foreground transition hover:text-foreground">Comunidad</a>
           </nav>
           <div className="flex items-center gap-3">
-            <Link to="/dashboard" className="hidden text-sm text-muted-foreground transition hover:text-foreground sm:inline">
+            <Link to="/login" className="hidden text-sm text-muted-foreground transition hover:text-foreground sm:inline">
               Entrar
             </Link>
             <Button asChild size="sm" className="bg-gradient-primary shadow-glow">
-              <Link to="/dashboard">
+              <Link to="/register">
                 Empezar
                 <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
@@ -61,13 +61,13 @@ function Landing() {
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
               <Button asChild size="lg" className="bg-gradient-primary shadow-glow">
-                <Link to="/dashboard">
+                <Link to="/register">
                   Encontrar trabajo
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="border-border bg-surface/40 backdrop-blur">
-                <Link to="/dashboard">Publicar proyecto</Link>
+                <Link to="/login">Ya tengo cuenta</Link>
               </Button>
             </div>
           </div>
@@ -186,8 +186,8 @@ function Landing() {
               Crea tu perfil gratis y deja que la IA haga el trabajo pesado por ti.
             </p>
             <Button asChild size="lg" variant="secondary" className="mt-8 shadow-glow">
-              <Link to="/dashboard">
-                Entrar al dashboard
+              <Link to="/register">
+                Crear cuenta gratis
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>

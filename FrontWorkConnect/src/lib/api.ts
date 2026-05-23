@@ -1,4 +1,5 @@
 import type { Application, Job, Message, Stats } from "./types";
+import { authHeaders } from "./auth";
 
 const API_BASE =
   import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "http://172.20.10.14:8000/api";
@@ -8,7 +9,7 @@ type ApiItemResponse<T> = { data: T };
 
 async function apiGet<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
-    headers: { Accept: "application/json" },
+    headers: authHeaders(false),
   });
 
   if (!response.ok) {
