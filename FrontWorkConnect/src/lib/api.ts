@@ -1,7 +1,7 @@
 import type { Application, Job, Message, Stats } from "./types";
 
 const API_BASE =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:8000/api";
+  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "http://172.20.10.14:8000/api";
 
 type ApiListResponse<T> = { data: T[] };
 type ApiItemResponse<T> = { data: T };
