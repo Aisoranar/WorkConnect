@@ -14,9 +14,21 @@ type Props = {
   onApply: (result: { bio: string; skills: string[] }) => void;
 };
 
+const MAX_REPOS_FOR_AI = 15;
+
 function extractUsername(url: string): string {
   const m = url.match(/github\.com\/([^/\s]+)/);
   return m ? m[1] : url.trim();
+}
+
+function prepareRepoForApi(repo: GitHubRepo) {
+  const desc = repo.description?.trim() ?? "";
+  return {
+    name: repo.name,
+    description: desc.length > 500 ? `${desc.slice(0, 497)}…` : desc || null,
+    language: repo.language,
+    topics: (repo.topics ?? []).slice(0, 20),
+  };
 }
 
 export function GitHubImporter({ initialGithubUrl, currentBio, onApply }: Props) {
@@ -47,7 +59,8 @@ export function GitHubImporter({ initialGithubUrl, currentBio, onApply }: Props)
     mutationFn: () => {
       const selectedRepos = repos
         .filter((r) => selected.has(r.name))
-        .map(({ name, description, language, topics }) => ({ name, description, language, topics }));
+        .slice(0, MAX_REPOS_FOR_AI)
+        .map(prepareRepoForApi);
       return generateProfileFromGithub(selectedRepos, currentBio);
     },
     onSuccess: (data) => {
@@ -60,9 +73,25 @@ export function GitHubImporter({ initialGithubUrl, currentBio, onApply }: Props)
   function toggleRepo(name: string) {
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(name) ? next.delete(name) : next.add(name);
+      if (next.has(name)) {
+        next.delete(name);
+        return next;
+      }
+      if (next.size >= MAX_REPOS_FOR_AI) {
+        toast.message(`Máximo ${MAX_REPOS_FOR_AI} repositorios para la IA.`);
+        return prev;
+      }
+      next.add(name);
       return next;
     });
+  }
+
+  function selectAllRepos() {
+    const names = repos.slice(0, MAX_REPOS_FOR_AI).map((r) => r.name);
+    setSelected(new Set(names));
+    if (repos.length > MAX_REPOS_FOR_AI) {
+      toast.message(`Se seleccionaron los primeros ${MAX_REPOS_FOR_AI} (límite de la IA).`);
+    }
   }
 
   function handleLoad() {
@@ -110,22 +139,27 @@ export function GitHubImporter({ initialGithubUrl, currentBio, onApply }: Props)
       {/* Repo list */}
       {repos.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-medium">
-              {repos.length} repositorios públicos
+              {repos.length} repositorios · máx. {MAX_REPOS_FOR_AI} para IA
               {selected.size > 0 && (
-                <span className="ml-2 text-primary-glow">· {selected.size} seleccionado{selected.size !== 1 ? "s" : ""}</span>
+                <span className="ml-2 text-primary-glow">
+                  ({selected.size}/{MAX_REPOS_FOR_AI} seleccionados)
+                </span>
               )}
             </p>
             <button
+              type="button"
               className="text-xs text-muted-foreground underline-offset-2 hover:underline"
               onClick={() =>
-                selected.size === repos.length
+                selected.size > 0 && selected.size === Math.min(repos.length, MAX_REPOS_FOR_AI)
                   ? setSelected(new Set())
-                  : setSelected(new Set(repos.map((r) => r.name)))
+                  : selectAllRepos()
               }
             >
-              {selected.size === repos.length ? "Deseleccionar todos" : "Seleccionar todos"}
+              {selected.size > 0 && selected.size === Math.min(repos.length, MAX_REPOS_FOR_AI)
+                ? "Deseleccionar todos"
+                : `Seleccionar hasta ${MAX_REPOS_FOR_AI}`}
             </button>
           </div>
 
@@ -198,7 +232,12 @@ export function GitHubImporter({ initialGithubUrl, currentBio, onApply }: Props)
 
           <Button
             className="w-full bg-gradient-primary"
-            onClick={() => onApply({ bio: generated.bio, skills: generated.skills })}
+            onClick={() =>
+              onApply({
+                bio: generated.bio,
+                skills: generated.skills.slice(0, 30),
+              })
+            }
           >
             <Check className="mr-2 h-4 w-4" />
             Aplicar a mi perfil

@@ -75,10 +75,13 @@ class AIController extends Controller
             'repos'               => ['required', 'array', 'min:1', 'max:15'],
             'repos.*.name'        => ['required', 'string', 'max:100'],
             'repos.*.language'    => ['nullable', 'string', 'max:50'],
-            'repos.*.topics'      => ['nullable', 'array'],
+            'repos.*.topics'      => ['nullable', 'array', 'max:20'],
             'repos.*.topics.*'    => ['string', 'max:50'],
             'repos.*.description' => ['nullable', 'string', 'max:500'],
             'current_bio'         => ['nullable', 'string', 'max:2000'],
+        ], [
+            'repos.max' => 'Selecciona como máximo 15 repositorios para la IA.',
+            'repos.min' => 'Selecciona al menos un repositorio.',
         ]);
 
         $result = $this->ai->generateProfileFromGithub(

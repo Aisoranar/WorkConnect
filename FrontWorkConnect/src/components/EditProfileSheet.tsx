@@ -12,7 +12,7 @@ import {
   queryKeys,
 } from "@/lib/api";
 import type { PortfolioItem, UserProfile } from "@/lib/types";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +53,9 @@ export function EditProfileSheet({
       <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-lg">
         <SheetHeader className="border-b border-border px-6 py-4">
           <SheetTitle>Editar perfil</SheetTitle>
+          <SheetDescription className="sr-only">
+            Actualiza tu información, habilidades, portfolio o importa desde GitHub.
+          </SheetDescription>
         </SheetHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="flex flex-1 flex-col overflow-hidden">
@@ -234,9 +237,15 @@ function SkillsTab({
         .slice(0, 5)
     : [];
 
+  const MAX_SKILLS = 30;
+
   function addSkill(name: string) {
     const trimmed = name.trim();
     if (!trimmed || skills.includes(trimmed)) return;
+    if (skills.length >= MAX_SKILLS) {
+      toast.message(`Máximo ${MAX_SKILLS} habilidades en el perfil.`);
+      return;
+    }
     setSkills((prev) => [...prev, trimmed]);
     setInput("");
   }
@@ -247,7 +256,7 @@ function SkillsTab({
 
   const saveMutation = useMutation({
     mutationFn: () =>
-      updateProfile(profile.id, { skill_names: skills }),
+      updateProfile(profile.id, { skill_names: skills.slice(0, MAX_SKILLS) }),
     onSuccess: () => {
       toast.success("Habilidades actualizadas.");
       onSaved();

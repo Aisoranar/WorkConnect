@@ -36,6 +36,28 @@ function trackSessionActivity(): void {
   }
 }
 
+const VALIDATION_MESSAGES: Record<string, string> = {
+  "validation.max.array": "Hay demasiados elementos en la lista. Reduce la selección e intenta de nuevo.",
+  "validation.required": "Falta un campo obligatorio.",
+};
+
+function humanizeValidationLine(line: string, field?: string): string {
+  if (VALIDATION_MESSAGES[line]) return VALIDATION_MESSAGES[line];
+  if (line.includes("validation.max.array")) {
+    if (field === "repos") {
+      return "Selecciona como máximo 15 repositorios para generar el perfil con IA.";
+    }
+    if (field === "skill_names") {
+      return "Puedes guardar como máximo 30 habilidades en tu perfil.";
+    }
+    return VALIDATION_MESSAGES["validation.max.array"];
+  }
+  if (line.includes("validation.max.string")) {
+    return "Uno de los textos es demasiado largo. Acórtalo e intenta de nuevo.";
+  }
+  return line;
+}
+
 async function parseApiError(response: Response): Promise<string> {
   if (response.status === 401) {
     handleUnauthorized();
@@ -43,8 +65,14 @@ async function parseApiError(response: Response): Promise<string> {
   }
   try {
     const body = (await response.json()) as { message?: string; errors?: Record<string, string[]> };
-    if (body.errors) return Object.values(body.errors).flat().join(" ");
-    return body.message ?? `Error ${response.status}`;
+    if (body.errors) {
+      const lines = Object.entries(body.errors).flatMap(([field, msgs]) =>
+        msgs.map((m) => humanizeValidationLine(m, field)),
+      );
+      if (lines.length > 0) return lines.join(" ");
+    }
+    if (body.message) return humanizeValidationLine(body.message);
+    return `Error ${response.status}`;
   } catch {
     return `Error ${response.status}: ${response.statusText}`;
   }

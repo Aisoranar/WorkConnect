@@ -27,8 +27,19 @@ class UpdateUserRequest extends FormRequest
             'experience' => ['nullable', 'string', 'max:5000'],
             'skill_ids'    => ['nullable', 'array'],
             'skill_ids.*'  => ['exists:skills,id'],
-            'skill_names'   => ['nullable', 'array'],
+            'skill_names'   => ['nullable', 'array', 'max:30'],
             'skill_names.*' => ['string', 'max:100'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'skill_names.max' => 'Puedes tener como máximo 30 habilidades en tu perfil.',
+            'skill_names.*.max' => 'Cada habilidad puede tener hasta 100 caracteres.',
         ];
     }
 }
