@@ -98,7 +98,7 @@ function DashboardShell() {
               : "md:h-(--dashboard-header-h)",
           )}
         >
-          <LogoLink size="lg" className="md:hidden" />
+            <LogoLink size="lg" to="/dashboard" className="md:hidden" />
           <SidebarTrigger className="hidden shrink-0 md:inline-flex" />
           <div className="hidden min-w-0 flex-1 items-center gap-2 rounded-xl border border-border bg-surface/40 px-3 py-1.5 text-sm text-muted-foreground transition focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-ring md:flex md:max-w-md">
             <Search className="h-4 w-4" />
