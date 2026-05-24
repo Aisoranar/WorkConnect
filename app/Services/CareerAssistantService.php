@@ -145,7 +145,9 @@ class CareerAssistantService
 
         $raw = $this->careerPromptJson($this->targetRolePrompt($user, $targetRole), 1500);
 
-        $courses = $this->matchFreeCourses([]);
+        $roleKeywords = preg_split('/[\s,\-\/]+/', mb_strtolower($targetRole));
+        $gapSkills = $raw['skills_to_learn'] ?? $raw['current_gap_analysis'] ?? $roleKeywords;
+        $courses = $this->matchFreeCourses(is_array($gapSkills) ? $gapSkills : [$targetRole]);
         $result = $raw
             ? array_merge($this->normalizeTargetRole($raw), ['free_courses' => $courses])
             : $this->fallbackTargetRole($user, $targetRole, $courses);

@@ -38,14 +38,15 @@ Route::get('/users/{user}/reviews', [UserController::class, 'reviews']);
 Route::get('/jobs', [JobController::class, 'index']);
 Route::get('/jobs/{job}', [JobController::class, 'show']);
 
-// Legacy / demo (front actual)
-Route::get('/applications', [ApplicationController::class, 'legacyIndex']);
-Route::get('/messages', [MessageController::class, 'legacyInbox']);
-
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
     Route::get('/stats', [StatsController::class, 'show']);
+
+    // Legacy (front actual)
+    Route::get('/applications', [ApplicationController::class, 'legacyIndex']);
+    Route::get('/messages', [MessageController::class, 'legacyInbox']);
 
     Route::put('/users/{user}', [UserController::class, 'update']);
     Route::post('/users/avatar', [UserController::class, 'uploadAvatar']);
@@ -80,14 +81,16 @@ Route::middleware('auth:sanctum')->group(function () {
     // GitHub proxy
     Route::get('/github/repos', [GithubController::class, 'repos']);
 
-    // IA
-    Route::post('/ai/structure-project', [AIController::class, 'structureProject']);
-    Route::post('/ai/match-job', [AIController::class, 'matchJob']);
-    Route::post('/ai/analyze-profile', [AIController::class, 'analyzeProfile']);
-    Route::post('/ai/recommend-jobs', [AIController::class, 'recommendJobs']);
-    Route::post('/ai/improve-proposal', [AIController::class, 'improveProposal']);
-    Route::post('/ai/improve-bio', [AIController::class, 'improveBio']);
-    Route::post('/ai/github-profile', [AIController::class, 'generateGithubProfile']);
+    // IA (throttle: 30 requests / minuto por usuario)
+    Route::middleware('throttle:30,1')->group(function () {
+        Route::post('/ai/structure-project', [AIController::class, 'structureProject']);
+        Route::post('/ai/match-job', [AIController::class, 'matchJob']);
+        Route::post('/ai/analyze-profile', [AIController::class, 'analyzeProfile']);
+        Route::post('/ai/recommend-jobs', [AIController::class, 'recommendJobs']);
+        Route::post('/ai/improve-proposal', [AIController::class, 'improveProposal']);
+        Route::post('/ai/improve-bio', [AIController::class, 'improveBio']);
+        Route::post('/ai/github-profile', [AIController::class, 'generateGithubProfile']);
+    });
 
     // Asesor de perfil y skills (IA + demanda del mercado)
     Route::prefix('profile')->group(function () {
@@ -98,8 +101,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/skill-quiz/submit', [ProfileAdvisorController::class, 'submitSkillQuiz']);
     });
 
-    // Asistente de carrera (talento joven)
-    Route::prefix('career')->group(function () {
+    // Asistente de carrera (talento joven, throttle: 20 requests / minuto)
+    Route::prefix('career')->middleware('throttle:20,1')->group(function () {
         Route::get('/external-jobs', [CareerController::class, 'externalJobs']);
         Route::get('/history', [CareerController::class, 'history']);
         Route::post('/analyze-profile', [CareerController::class, 'analyzeProfile']);

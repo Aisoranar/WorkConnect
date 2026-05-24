@@ -6,14 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\CareerSession;
 use App\Models\ExternalJobListing;
 use App\Models\WorkJob;
+use App\Services\AIService;
 use App\Services\CareerAssistantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Smalot\PdfParser\Parser as PdfParser;
 
 class CareerController extends Controller
 {
     public function __construct(
         private readonly CareerAssistantService $career,
+        private readonly AIService $ai,
     ) {}
 
     public function externalJobs(Request $request): JsonResponse
@@ -245,31 +248,73 @@ class CareerController extends Controller
 
     private function extractOfferText(Request $request): string
     {
+        $parts = [];
+
         if ($request->filled('offer_text')) {
-            return $request->string('offer_text')->toString();
+            $parts[] = $request->string('offer_text')->toString();
         }
 
         if (! $request->hasFile('file')) {
-            return '';
+            return implode("\n", $parts);
         }
 
         $file = $request->file('file');
         $ext = strtolower($file->getClientOriginalExtension());
 
         if (in_array($ext, ['txt', 'md'], true)) {
-            return trim((string) file_get_contents($file->getRealPath()));
+            $parts[] = trim((string) file_get_contents($file->getRealPath()));
+
+            return implode("\n", $parts);
         }
 
         if ($ext === 'pdf') {
-            $binary = file_get_contents($file->getRealPath());
-            preg_match_all('/\(([^()\\\\]{4,120})\)/', $binary, $matches);
-            $extracted = trim(implode(' ', array_slice($matches[1] ?? [], 0, 80)));
+            $parts[] = $this->extractPdfText($file->getRealPath());
 
-            return $extracted !== ''
-                ? $extracted
-                : 'PDF adjunto. Complementa pegando el texto de la oferta en el campo de texto.';
+            return implode("\n", $parts);
         }
 
-        return 'Imagen de oferta adjunta. Pega el texto visible de la vacante en el campo de texto para un análisis completo con IA.';
+        if (in_array($ext, ['png', 'jpg', 'jpeg', 'webp'], true)) {
+            $parts[] = $this->extractImageText($file->getRealPath(), $file->getMimeType());
+
+            return implode("\n", $parts);
+        }
+
+        return implode("\n", $parts);
+    }
+
+    private function extractPdfText(string $path): string
+    {
+        try {
+            $parser = new PdfParser();
+            $pdf = $parser->parseFile($path);
+            $text = trim($pdf->getText());
+
+            if (mb_strlen($text) > 30) {
+                return mb_substr($text, 0, 15000);
+            }
+        } catch (\Throwable) {
+            // fallback silencioso
+        }
+
+        return '';
+    }
+
+    private function extractImageText(string $path, ?string $mime): string
+    {
+        $imageData = file_get_contents($path);
+        if (! $imageData) {
+            return '';
+        }
+
+        $base64 = base64_encode($imageData);
+        $mimeType = $mime ?: 'image/jpeg';
+
+        $prompt = 'Extrae TODO el texto visible en esta imagen de una oferta laboral. '
+            . 'Devuelve el texto tal cual aparece, sin resúmenes ni interpretaciones. '
+            . 'Si ves requisitos, responsabilidades, beneficios o datos de contacto, inclúyelos.';
+
+        $extracted = $this->ai->extractTextFromImage($base64, $mimeType, $prompt);
+
+        return $extracted ?? '';
     }
 }

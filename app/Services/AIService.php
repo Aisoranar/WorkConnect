@@ -414,6 +414,58 @@ PROMPT;
         return null;
     }
 
+    // ─── OCR con visión IA ─────────────────────────────────────────────────────────
+
+    public function extractTextFromImage(string $base64, string $mimeType, string $prompt): ?string
+    {
+        if ($text = $this->askGeminiVision($base64, $mimeType, $prompt)) {
+            return $text;
+        }
+
+        return null;
+    }
+
+    private function askGeminiVision(string $base64, string $mimeType, string $prompt): ?string
+    {
+        $key = config('services.gemini.key');
+        if (! $key) {
+            return null;
+        }
+
+        $model = (string) config('services.gemini.model', 'gemini-2.0-flash');
+        $url = rtrim((string) config('services.gemini.url'), '/').'/models/'.$model.':generateContent';
+
+        try {
+            $response = Http::withHeaders(['Content-Type' => 'application/json'])
+                ->timeout(45)
+                ->post($url.'?key='.$key, [
+                    'contents' => [[
+                        'parts' => [
+                            ['text' => $prompt],
+                            ['inline_data' => [
+                                'mime_type' => $mimeType,
+                                'data' => $base64,
+                            ]],
+                        ],
+                    ]],
+                    'generationConfig' => [
+                        'maxOutputTokens' => 3000,
+                        'temperature' => 0.1,
+                    ],
+                ]);
+
+            if ($response->successful()) {
+                $text = trim((string) $response->json('candidates.0.content.parts.0.text'));
+
+                return $text !== '' ? $text : null;
+            }
+        } catch (\Throwable) {
+            // silencioso
+        }
+
+        return null;
+    }
+
     // ─── Bio e IA de GitHub ───────────────────────────────────────────────────────
 
     public function improveBio(User $user, string $bio): string

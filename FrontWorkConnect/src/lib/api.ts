@@ -604,8 +604,19 @@ export function careerStudyPlan(offerText: string, targetRole?: string): Promise
   }).then((r) => r.data);
 }
 
-export function careerTargetRole(targetRole: string): Promise<Record<string, unknown>> {
-  return apiPost<ApiItemResponse<Record<string, unknown>>>("/career/target-role", { target_role: targetRole }).then(
+export type CareerTargetRolePath = {
+  market_summary: string;
+  how_to_apply: string[];
+  current_gap_analysis: string[];
+  skills_to_learn: string[];
+  roadmap: string[];
+  salary_range: string;
+  free_courses: { title: string; url: string; provider: string; skills: string[] }[];
+  source: string;
+};
+
+export function careerTargetRole(targetRole: string): Promise<CareerTargetRolePath> {
+  return apiPost<ApiItemResponse<CareerTargetRolePath>>("/career/target-role", { target_role: targetRole }).then(
     (r) => r.data,
   );
 }
@@ -665,5 +676,41 @@ export function submitSkillQuiz(
   return apiPost<ApiItemResponse<SkillQuizResult>>("/profile/skill-quiz/submit", {
     quiz_id: quizId,
     answers,
+  }).then((r) => r.data);
+}
+
+// ─── Contraseña ──────────────────────────────────────────────────────────────
+
+export function changePassword(payload: {
+  current_password: string;
+  password: string;
+  password_confirmation: string;
+}): Promise<{ message: string }> {
+  return apiPost<{ message: string }>("/change-password", payload);
+}
+
+// ─── Chat real ───────────────────────────────────────────────────────────────
+
+export type ChatMessageItem = {
+  id: number;
+  sender_id: number;
+  receiver_id: number;
+  message: string;
+  read_at: string | null;
+  created_at: string;
+  sender?: { id: number; name: string; avatar?: string | null };
+  receiver?: { id: number; name: string; avatar?: string | null };
+};
+
+export function fetchChatMessages(contactId: number): Promise<ChatMessageItem[]> {
+  return apiGet<ApiListResponse<ChatMessageItem>>(`/chat/messages?with=${contactId}`).then(
+    (r) => r.data,
+  );
+}
+
+export function sendChatMessage(receiverId: number, message: string): Promise<ChatMessageItem> {
+  return apiPost<{ message: string; data: ChatMessageItem }>("/messages", {
+    receiver_id: receiverId,
+    message,
   }).then((r) => r.data);
 }

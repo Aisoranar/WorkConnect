@@ -1,20 +1,27 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 import {
   Bell,
   ExternalLink,
+  Eye,
+  EyeOff,
   Lock,
   Mail,
   MapPin,
   Shield,
   User,
   UserCircle,
+  Loader2,
 } from "lucide-react";
-import { fetchMe, queryKeys } from "@/lib/api";
+import { fetchMe, changePassword, queryKeys } from "@/lib/api";
 import { getStoredUser } from "@/lib/auth";
 import { ApiState } from "@/components/ApiState";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { LogoutConfirmButton } from "@/components/LogoutConfirmButton";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard/settings")({
   component: SettingsPage,
@@ -28,7 +35,13 @@ const roleLabels: Record<string, string> = {
 
 function SettingsPage() {
   const stored = getStoredUser();
-  const { data: profile, isLoading, isError, error, refetch } = useQuery({
+  const {
+    data: profile,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: queryKeys.me,
     queryFn: fetchMe,
   });
@@ -63,7 +76,7 @@ function SettingsPage() {
                   <dt className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Mail className="h-3 w-3" /> Email
                   </dt>
-                  <dd className="font-medium break-all">{profile.email}</dd>
+                  <dd className="break-all font-medium">{profile.email}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground">Rol</dt>
@@ -79,14 +92,18 @@ function SettingsPage() {
                 )}
               </dl>
               <Button asChild variant="outline" className="w-full sm:w-auto">
-                <Link to="/dashboard/profile">
+                <Link to="/dashboard/profile" search={{ edit: undefined, skill: undefined }}>
                   <User className="mr-2 h-4 w-4" />
                   Editar perfil público y skills
                 </Link>
               </Button>
               {profile.username && (
                 <Button asChild variant="ghost" size="sm" className="text-primary-glow">
-                  <Link to="/talento/$username" params={{ username: profile.username }} target="_blank">
+                  <Link
+                    to="/talento/$username"
+                    params={{ username: profile.username }}
+                    target="_blank"
+                  >
                     <ExternalLink className="mr-2 h-4 w-4" />
                     Ver perfil público
                   </Link>
@@ -100,25 +117,12 @@ function SettingsPage() {
                 Notificaciones
               </h2>
               <p className="text-sm text-muted-foreground">
-                Próximamente podrás elegir alertas por email y en la app (postulaciones, mensajes,
-                match).
+                Las notificaciones de postulaciones, mensajes y coincidencias aparecen en el icono
+                de campana del panel.
               </p>
-              <div className="rounded-lg border border-dashed border-border bg-surface/30 px-4 py-3 text-xs text-muted-foreground">
-                Por ahora revisa el icono de campana en el panel cuando haya novedades.
-              </div>
             </section>
 
-            <section className="card-paper space-y-3 p-5 sm:p-6">
-              <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
-                <Shield className="h-5 w-5 text-primary-glow" />
-                Seguridad
-              </h2>
-              <p className="flex items-start gap-2 text-sm text-muted-foreground">
-                <Lock className="mt-0.5 h-4 w-4 shrink-0" />
-                Para cambiar contraseña usa «Olvidé mi contraseña» en la pantalla de inicio de
-                sesión con tu mismo email.
-              </p>
-            </section>
+            <ChangePasswordSection />
 
             <section className="card-paper border-destructive/20 p-5 sm:p-6">
               <h2 className="font-display text-lg font-semibold text-destructive">Sesión</h2>
@@ -135,5 +139,106 @@ function SettingsPage() {
         )}
       </ApiState>
     </div>
+  );
+}
+
+function ChangePasswordSection() {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      changePassword({
+        current_password: currentPassword,
+        password: newPassword,
+        password_confirmation: confirmPassword,
+      }),
+    onSuccess: (data) => {
+      toast.success(data.message);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const isValid = currentPassword.length >= 1 && newPassword.length >= 8 && newPassword === confirmPassword;
+
+  return (
+    <section className="card-paper space-y-4 p-5 sm:p-6">
+      <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
+        <Shield className="h-5 w-5 text-primary-glow" />
+        Cambiar contraseña
+      </h2>
+
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="current_password">Contraseña actual</Label>
+          <div className="relative">
+            <Input
+              id="current_password"
+              type={showCurrent ? "text" : "password"}
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="pr-10"
+            />
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              onClick={() => setShowCurrent(!showCurrent)}
+            >
+              {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="new_password">Nueva contraseña</Label>
+          <div className="relative">
+            <Input
+              id="new_password"
+              type={showNew ? "text" : "password"}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Mínimo 8 caracteres"
+              className="pr-10"
+            />
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              onClick={() => setShowNew(!showNew)}
+            >
+              {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="confirm_password">Confirmar nueva contraseña</Label>
+          <Input
+            id="confirm_password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+          {confirmPassword && newPassword !== confirmPassword && (
+            <p className="text-xs text-destructive">Las contraseñas no coinciden.</p>
+          )}
+        </div>
+
+        <Button
+          className="w-full sm:w-auto"
+          disabled={!isValid || mutation.isPending}
+          onClick={() => mutation.mutate()}
+        >
+          {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Lock className="mr-2 h-4 w-4" />
+          Cambiar contraseña
+        </Button>
+      </div>
+    </section>
   );
 }

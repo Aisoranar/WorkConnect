@@ -37,6 +37,7 @@ import {
   type CareerProfileAnalysis,
   type CareerReadiness,
   type CareerStudyPlan,
+  type CareerTargetRolePath,
 } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -125,7 +126,7 @@ function CareerAssistantPage() {
   const [interviewQ, setInterviewQ] = useState("");
   const [interviewAnswer, setInterviewAnswer] = useState("");
   const [interviewFeedback, setInterviewFeedback] = useState<string | null>(null);
-  const [targetRoleResult, setTargetRoleResult] = useState<Record<string, unknown> | null>(null);
+  const [targetRoleResult, setTargetRoleResult] = useState<CareerTargetRolePath | null>(null);
 
   const jobsQuery = useQuery({
     queryKey: ["career-external-jobs"],
@@ -471,7 +472,31 @@ function CareerAssistantPage() {
                   {readiness.can_apply_now ? "Puedes aplicar" : "Prepara antes de aplicar"}
                 </p>
                 <BulletList items={readiness.improve_before_apply} />
+                <Button
+                  className="mt-3"
+                  variant="outline"
+                  size="sm"
+                  disabled={uiLocked}
+                  onClick={() => interviewStartMut.mutate()}
+                >
+                  <MessageCircleQuestion className="mr-2 h-4 w-4" />
+                  Simular entrevista para esta oferta
+                </Button>
               </ResultBox>
+            )}
+
+            {studyPlan && !readiness && (
+              <div className="mt-3 flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={uiLocked || !offerText.trim()}
+                  onClick={() => readinessMut.mutate()}
+                >
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  ¿Ya estoy preparado?
+                </Button>
+              </div>
             )}
           </div>
         </TabsContent>
@@ -499,9 +524,45 @@ function CareerAssistantPage() {
             </Button>
             {targetRoleResult && (
               <ResultBox title="Ruta profesional">
-                <p>{String(targetRoleResult.market_summary ?? "")}</p>
-                <BulletList items={(targetRoleResult.how_to_apply as string[]) ?? []} />
-                <BulletList items={(targetRoleResult.current_gap_analysis as string[]) ?? []} />
+                <p className="text-foreground/90">{targetRoleResult.market_summary}</p>
+                {targetRoleResult.salary_range && (
+                  <p className="font-medium text-primary-glow">Rango salarial: {targetRoleResult.salary_range}</p>
+                )}
+                <p className="font-medium text-foreground">Cómo aplicar</p>
+                <BulletList items={targetRoleResult.how_to_apply ?? []} />
+                <p className="font-medium text-foreground">Brecha actual</p>
+                <BulletList items={targetRoleResult.current_gap_analysis ?? []} />
+                {targetRoleResult.skills_to_learn?.length > 0 && (
+                  <>
+                    <p className="font-medium text-foreground">Skills a aprender</p>
+                    <div className="flex flex-wrap gap-1">
+                      {targetRoleResult.skills_to_learn.map((s) => (
+                        <span key={s} className="chip chip-primary text-[10px]">{s}</span>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {targetRoleResult.roadmap?.length > 0 && (
+                  <>
+                    <p className="font-medium text-foreground">Roadmap</p>
+                    <BulletList items={targetRoleResult.roadmap} />
+                  </>
+                )}
+                {targetRoleResult.free_courses?.length > 0 && (
+                  <>
+                    <p className="font-medium text-foreground">Cursos gratuitos recomendados</p>
+                    <ul className="space-y-1">
+                      {targetRoleResult.free_courses.map((c) => (
+                        <li key={c.url}>
+                          <a href={c.url} target="_blank" rel="noreferrer" className="text-primary-glow underline text-xs">
+                            {c.title}
+                          </a>{" "}
+                          <span className="text-[10px] text-muted-foreground">— {c.provider}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </ResultBox>
             )}
           </div>
