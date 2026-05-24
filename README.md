@@ -6,7 +6,7 @@
 
 No es solo otro marketplace freelance: democratiza la **primera oportunidad laboral** y baja la barrera técnica de las PYMEs. El empresario explica su problema en lenguaje cotidiano; la IA genera un requerimiento con **objetivo, tipo de solución, tecnologías, tiempo estimado, alcance y dificultad**; el talento postula, entrega y acumula **portafolio, reputación y perfil público con QR**.
 
-**Índice:** [El problema](#el-problema) · [Cómo funciona](#cómo-funciona) · [MVP vs roadmap](#mvp-implementado-vs-roadmap) · [Módulos](#módulos-de-la-plataforma-m118) · [Inicio rápido](#inicio-rápido) · [Manual de usuario](#manual-de-usuario) · [Casos de uso](#diagrama-de-casos-de-uso) · [API](#api-rest)
+**Índice:** [El problema](#el-problema) · [Cómo funciona](#cómo-funciona) · [MVP vs roadmap](#mvp-implementado-vs-roadmap) · [Novedades IA y carrera](#novedades-ia-perfil-habilidades-y-carrera) · [Módulos](#módulos-de-la-plataforma-m118) · [Inicio rápido](#inicio-rápido) · [Manual de usuario](#manual-de-usuario) · [Casos de uso](#diagrama-de-casos-de-uso) · [API](#api-rest)
 
 ---
 
@@ -61,12 +61,14 @@ Miles de emprendimientos necesitan web, catálogo, redes, diseño o automatizaci
 
 1. Estructurar necesidades → proyectos publicables  
 2. Recomendar tecnologías según alcance  
-3. Matching perfil ↔ proyecto  
+3. Matching perfil ↔ proyecto (y **coach de match** con skills faltantes)  
 4. Mejorar propuestas de postulación  
-5. Analizar perfil y sugerir mejoras  
+5. Analizar perfil y sugerir mejoras (perfil + **asesor de habilidades**)  
 6. Recomendar trabajos al talento  
+7. **Mini lecciones** y **quiz** por skill (evaluación con puntuación)  
+8. **Asistente de carrera:** CV/LinkedIn ATS, oferta, plan de estudio, entrevista simulada (texto + archivos + visión en imágenes)  
 
-Sin API key externa (Gemini/OpenAI), el brief y el matching funcionan con **lógica local en español**.
+Cadena de proveedores: **NVIDIA (Gemini)** → **Google Gemini** → **OpenAI** → fallback **`source: local`** en español si no hay keys o falla la red.
 
 ### Flujo técnico (resumen)
 
@@ -87,13 +89,74 @@ Trayectoria: reseñas + perfil público + QR
 | IA: necesidad → brief (COP/USD, tech stack, tiempo, dificultad) | ✅ |
 | Publicar, explorar, postular, aceptar/rechazar | ✅ |
 | Matching %, mejorar propuesta con IA | ✅ |
+| **Coach de match** (brechas, aprender skill, enlace a perfil) | ✅ |
+| **Asesor de habilidades** (demanda mercado, recomendaciones, quiz) | ✅ |
+| **Asistente de carrera** (CV, LinkedIn, oferta, entrevista, empleos externos) | ✅ |
+| Explorar: **detalle de proyecto** + deep link `?job=` | ✅ |
+| Postulaciones: **panel detalle**, filtros, coaching IA | ✅ |
+| Perfil: portafolio, GitHub→perfil IA, bio con IA | ✅ |
 | Perfil público `/talento/{username}` + QR | ✅ |
 | Mensajes, notificaciones, reseñas (API) | ✅ básico |
+| Configuración, cierre de sesión con confirmación, sesión persistente | ✅ |
+| Modales de carga IA (pasos rotativos, pipeline NVIDIA) | ✅ |
 | Workspace (entregas, tareas, archivos) | 🔜 planificado |
 | Pagos / escrow | 🔜 planificado |
 | Estados entrega → pagado | 🔜 parcial |
 | Matching automático “mejor candidato” | 🔜 parcial |
-| Filtros por sector, CV exportable, métricas universidades | 🔜 planificado |
+| Filtros por sector, CV exportable PDF, métricas universidades | 🔜 planificado |
+
+---
+
+## Novedades: IA, perfil, habilidades y carrera
+
+Bloques añadidos al MVP para preparar al talento **antes y durante** la postulación, no solo en el marketplace.
+
+### Asesor de perfil y habilidades (`/dashboard/profile`)
+
+| Función | Descripción |
+|---------|-------------|
+| **Recomendaciones de skills** | IA + demanda de proyectos abiertos: qué aprender y por qué. |
+| **Coach de compatibilidad** | Por proyecto: % match, fortalezas, skills que faltan, tips de postulación. |
+| **Aprender skill** | Mini lección generada (conceptos, pasos, recursos). |
+| **Quiz de skill** | Evaluación con preguntas, puntuación y feedback. |
+| **Mejorar bio** | Reescritura profesional con IA. |
+| **Perfil desde GitHub** | Importar repos seleccionados → bio, skills y portafolio sugeridos. |
+| **Portafolio** | CRUD de proyectos con imagen y tecnologías. |
+
+API: prefijo `POST /api/profile/*` (`skill-recommendations`, `job-match-coach`, `learn-skill`, `skill-quiz/start`, `skill-quiz/submit`).
+
+### Asistente de carrera (`/dashboard/career`)
+
+Mentor laboral con IA (badge **NVIDIA Developers**). Pestañas:
+
+| Pestaña | Qué hace |
+|---------|----------|
+| **Perfil** | Diagnóstico de empleabilidad (fortalezas, brechas, acciones). |
+| **Oferta** | Pega vacante o sube archivo → compatibilidad, keywords ATS, consejos. |
+| **Puesto** | Ruta hacia un rol objetivo (skills, plan, networking). |
+| **CV con IA** | CV optimizado para ATS + bullets de impacto. |
+| **Empleos** | Listado de vacantes externas sembradas + enlace a postular. |
+| **Entrevista** | Sube CV, capturas de oferta o notas (PDF, DOCX, TXT, imágenes con **visión IA**). Modal de análisis con pasos (*analizando propuesta*, *perfil*, *consejos*…), tips, pregunta simulada y **evaluación STAR** con puntuación y siguiente pregunta. |
+
+API: prefijo `POST /api/career/*` (ver [API REST](#api-rest)).
+
+### Marketplace y postulaciones (UX)
+
+- **Explorar** (`/dashboard/explore`): modal de detalle por proyecto; URL `?job={id}` abre y resalta la vacante.
+- **Mis postulaciones** (`/dashboard/applications`): filtros por estado, panel lateral con propuesta, plazo, match y enlace al proyecto; coach IA desde el detalle.
+- **Modales de carga**: textos rotativos (*compatibilidad*, *afinidad*, *pipeline de análisis*) en coach, skills y carrera.
+
+### Sesión y configuración
+
+- **Sesión Sanctum** persistente al recargar (validación `/me` en layout dashboard).
+- **Inactividad:** aviso tras 30 min sin uso; 60 s para confirmar o cierre automático.
+- **Configuración** (`/dashboard/settings`) y **Salir** con diálogo de confirmación.
+
+### Cuenta demo para probar IA con match bajo
+
+| Email | Uso |
+|-------|-----|
+| `demo@workconnect.test` | Freelancer **sin skills** (~8 % match) — ideal para coach de match y asesor. |
 
 ---
 
@@ -102,25 +165,27 @@ Trayectoria: reseñas + perfil público + QR
 | Código | Módulo | Estado | Descripción |
 |--------|--------|--------|-------------|
 | M1 | Identidad y acceso | ✅ MVP | Registro, login, reset password, correo bienvenida |
-| M2 | Perfiles y habilidades | ✅ MVP | Bio, skills, avatar (`/dashboard/profile`) |
+| M2 | Perfiles y habilidades | ✅ MVP | Bio, skills, avatar, portafolio, asesor IA, quiz (`/dashboard/profile`) |
 | M3 | Solicitud empresa (necesidad cruda) | ✅ MVP | `/dashboard/publish` |
 | M4 | IA → requerimiento | ✅ MVP | `POST /api/ai/structure-project` |
 | M5 | Marketplace micro-proyectos | ✅ MVP | `GET /jobs`, explore |
-| M6 | Matching | ✅ MVP | `match-job`, `recommend-jobs`, % en explore |
-| M7 | Postulación y propuesta | ✅ MVP | apply + `improve-proposal` |
+| M6 | Matching | ✅ MVP | `match-job`, `job-match-coach`, `recommend-jobs`, % en explore |
+| M7 | Postulación y propuesta | ✅ MVP | apply + `improve-proposal` + detalle y filtros en front |
 | M8 | Selección de talento | ✅ MVP | `PATCH /applications/{id}` |
 | M9 | Ejecución y entrega | 🔜 | Estados entrega → cierre |
 | M10 | Reputación y reseñas | ⚡ parcial | API lista; UI post-entrega pendiente |
 | M11 | Mensajería | ✅ MVP | `/dashboard/messages` |
 | M12 | Notificaciones | ✅ MVP | In-app |
 | M13 | Portafolio público + QR | ✅ MVP | `/talento/{username}` |
-| M14 | Trayectoria laboral | ⚡ parcial | Stats; export CV pendiente |
+| M14 | Trayectoria laboral | ✅ MVP | Asistente carrera: CV, LinkedIn, entrevista, empleos externos |
+| M19 | Asesor de habilidades | ✅ MVP | Recomendaciones, lecciones, quiz, coach por vacante |
+| M20 | Coach de entrevista | ✅ MVP | Material multimodal + evaluación con IA |
 | M15 | Presupuesto acotado | ✅ MVP | COP/USD en publicar y postular |
 | M16 | Puente sectorial | 🔜 | Filtros por rubro |
 | M17 | Panel empresa mis proyectos | ✅ MVP | `/dashboard/my-projects` |
 | M18 | Administración | ✅ básico | Rol `admin` |
 
-**Backend:** `AuthController`, `JobController`, `ApplicationController`, `AIController`, `ProjectBriefService`, `MatchingService`, `NotificationService`.
+**Backend:** `AuthController`, `JobController`, `ApplicationController`, `AIController`, `ProfileAdvisorController`, `CareerController`, `ProjectBriefService`, `MatchingService`, `ProfileAdvisorService`, `CareerAssistantService`, `CareerDocumentExtractor`, `NotificationService`.
 
 ---
 
@@ -141,7 +206,7 @@ Trayectoria: reseñas + perfil público + QR
 ```
 WorkConnect/
 ├── app/Http/Controllers/Api/
-├── app/Services/              # AIService, MatchingService, ProjectBriefService…
+├── app/Services/              # AIService, ProfileAdvisorService, CareerAssistantService…
 ├── config/cors.php
 ├── database/migrations/
 ├── database/seeders/
@@ -246,7 +311,7 @@ Contraseña de **todas** las cuentas: **`password`**
 php artisan migrate:fresh --seed
 ```
 
-**Orden de seeders:** `SkillsSeeder` → `AdminSeeder` → `FreelancerSeeder` → `ClientSeeder` (proyectos) → `DemoRelationsSeeder` (postulaciones, chat, reseñas).
+**Orden de seeders:** `SkillsSeeder` → `AdminSeeder` → `FreelancerSeeder` → `ClientSeeder` → `DemoRelationsSeeder` → `ExternalJobListingSeeder`. Al finalizar, la consola imprime la tabla de cuentas demo.
 
 | Rol | Quién es | Qué hace |
 |-----|----------|----------|
@@ -262,6 +327,7 @@ php artisan migrate:fresh --seed
 | `alex@workconnect.test` | Fullstack + IA |
 | `sofia@workconnect.test` | Estudiante · Video |
 | `carlos@workconnect.test` | Dev junior |
+| `demo@workconnect.test` | Sin skills · match bajo · probar coach y asesor IA |
 
 ### Empresas
 
@@ -293,6 +359,10 @@ php artisan migrate:fresh --seed
 
 **D — Feria / QR:** [http://localhost:8080/talento/maria-alvarez](http://localhost:8080/talento/maria-alvarez) (sin login).
 
+**E — Coach con match bajo:** `demo@workconnect.test` → Explorar → Coach de compatibilidad → Aprender skill / Quiz.
+
+**F — Carrera y entrevista:** `maria@workconnect.test` → Asistente carrera → Entrevista → adjuntar captura de oferta → Iniciar simulación → Evaluar respuesta.
+
 ---
 
 ## Manual de usuario
@@ -308,7 +378,8 @@ Guía paso a paso de la aplicación web ([http://localhost:8080](http://localhos
 | 3 | Tras el registro llega un correo de bienvenida (si `MAIL_*` está configurado). |
 | 4 | **Iniciar sesión** en `/login` con correo y contraseña. |
 | 5 | Si olvidó la clave: **¿Olvidaste tu contraseña?** → correo con enlace → `/reset-password`. |
-| 6 | **Cerrar sesión:** menú lateral del panel → **Salir** (cierra sesión en el servidor y redirige al login). |
+| 6 | **Cerrar sesión:** menú lateral → **Salir** (diálogo de confirmación) o **Configuración** (`/dashboard/settings`). |
+| 7 | La sesión **permanece al recargar** la página; tras **30 min** sin actividad aparece aviso para extender o cerrar. |
 
 ### 2. Visitante (sin cuenta)
 
@@ -360,31 +431,55 @@ Menú lateral tras iniciar sesión: **Inicio**, **Publicar proyecto**, **Mis pro
 
 ### 4. Talento joven (rol `freelancer`)
 
-Menú: **Inicio**, **Explorar proyectos**, **Mis postulaciones**, **Mensajes**, **Mi perfil**.
+Menú: **Inicio**, **Explorar proyectos**, **Mis postulaciones**, **Mensajes**, **Asistente carrera**, **Mi perfil**, **Configuración**.
 
 #### 4.1 Explorar y filtrar proyectos
 
 1. **Explorar proyectos** (`/dashboard/explore`).
 2. Usar **búsqueda**, **categoría** y **orden** (compatibilidad, recientes, presupuesto).
 3. Cada tarjeta muestra presupuesto, skills, **% de match** y si ya postuló (**Ya postulaste**).
-4. Badges útiles: **Nuevo**, **Alta compatibilidad**.
+4. Pulsar una tarjeta o enlace → **detalle del proyecto** (modal con descripción completa, skills, presupuesto).
+5. Opcional: **Coach de compatibilidad** (IA): % match, qué te falta, mini lección de una skill.
+6. Badges útiles: **Nuevo**, **Alta compatibilidad**.
 
 #### 4.2 Postular a un proyecto
 
-1. Abrir un proyecto y pulsar **Postular**.
+1. Desde el detalle o la tarjeta, pulsar **Postular**.
 2. Completar **propuesta**, **precio** y **plazo** (dentro del presupuesto del cliente).
 3. Opcional: **Mejorar con IA** para pulir la carta de presentación.
 4. Revisar la **vista previa de hoja de vida** (skills, trust score, match) que se envía con la postulación.
 5. Confirmar **Enviar postulación**.
-6. Seguimiento en **Mis postulaciones** (`/dashboard/applications`): estados pendiente / aceptada / rechazada.
+6. Seguimiento en **Mis postulaciones** (`/dashboard/applications`):
+   - Filtros por estado (pendiente, aceptada, rechazada).
+   - **Panel de detalle:** propuesta, plazo, % match, proyecto vinculado.
+   - **Coach IA** desde el detalle para mejorar la siguiente postulación.
 
-#### 4.3 Perfil y reputación
+#### 4.3 Perfil, habilidades y evaluación
 
-- **Mi perfil:** bio, ciudad, habilidades y enlaces (completar mejora el matching).
-- **Perfil público:** `https://tu-dominio/talento/tu-usuario` — compartir o imprimir el **QR** en eventos laborales.
-- Tras proyectos cerrados, las **reseñas** del cliente alimentan rating y credibilidad (API disponible; flujo completo de entrega en roadmap).
+- **Mi perfil** (`/dashboard/profile`):
+  - Bio, ciudad, avatar, GitHub/LinkedIn, skills con nivel.
+  - **Recomendaciones de skills** según demanda del marketplace.
+  - **Aprender skill:** mini lección con IA.
+  - **Quiz:** evaluación con puntuación y feedback.
+  - **Importar desde GitHub** (repos → perfil sugerido).
+  - Portafolio con imágenes y tecnologías.
+- **Perfil público:** `/talento/{username}` — compartir o **QR** en ferias.
+- Reseñas del cliente alimentan rating (API; UI post-entrega en roadmap).
 
-#### 4.4 Mensajes
+#### 4.4 Asistente de carrera
+
+1. **Asistente carrera** (`/dashboard/career`) — freelancer y admin en demo.
+2. **Perfil:** diagnóstico de empleabilidad con IA.
+3. **Oferta:** pegar vacante o archivo → análisis de compatibilidad y plan de estudio.
+4. **Puesto:** ruta hacia un rol objetivo (ej. “Desarrollador React junior”).
+5. **CV con IA** y **LinkedIn:** textos optimizados para ATS.
+6. **Empleos:** vacantes externas de referencia.
+7. **Entrevista:**
+   - Indicar puesto, oferta, notas y/o **adjuntar archivos** (CV, capturas).
+   - Modal de análisis con pasos (*analizando propuesta*, *perfil*, *consejos*…).
+   - Tips, pregunta simulada, responder y **Evaluar respuesta** (puntuación, feedback STAR, siguiente pregunta).
+
+#### 4.5 Mensajes
 
 - Coordinar con la empresa en **Mensajes** una vez aceptada la postulación.
 
@@ -407,6 +502,8 @@ Menú: **Inicio**, **Explorar proyectos**, **Mis postulaciones**, **Mensajes**, 
 | Pagos / escrow en plataforma | Planificado |
 | Marcar proyecto como entregado y pagado | Parcial (backend) |
 | Dejar reseña desde el front tras cerrar proyecto | Parcial |
+| Exportar CV del asistente de carrera a PDF | Planificado |
+| Certificado descargable tras quiz (más allá de puntuación en pantalla) | Planificado |
 
 Para pruebas sin datos: `php artisan migrate:fresh --seed` y usar las [cuentas demo](#roles-seeders-y-cuentas-demo).
 
@@ -560,6 +657,12 @@ flowchart TB
 | UC42 | Calificar | Empresa | Reseña al talento (API; UI post-entrega parcial). |
 | UC43 | Estadísticas | Talento, Empresa | Métricas en dashboard. |
 | UC50–54 | Servicios IA | Sistema IA | Estructurar, matching, recomendar, analizar. |
+| UC55 | Recomendar skills | Talento | Demanda de mercado + IA en perfil. |
+| UC56 | Coach match por vacante | Talento | Brechas, tips y aprender skill. |
+| UC57 | Quiz de skill | Talento | Evaluación con puntuación. |
+| UC58 | Asistente de carrera | Talento | CV, LinkedIn, oferta, plan de estudio. |
+| UC59 | Simular entrevista | Talento | Material multimodal + preguntas + evaluación STAR. |
+| UC60 | Ver detalle de postulación | Talento | Panel con propuesta, match y enlace al proyecto. |
 
 ### Relaciones entre casos (include / extend)
 
@@ -568,6 +671,8 @@ flowchart TB
 | **UC21** incluye **UC50** y **UC51** | Al convertir con IA siempre se estructura el proyecto y se sugieren tecnologías. |
 | **UC33** puede extender **UC34** | La postulación es opcionalmente asistida por IA. |
 | **UC30** incluye **UC32** | Al listar proyectos autenticado se calcula el % de match. |
+| **UC33** puede extender **UC56** | Postulación asistida por coach de compatibilidad. |
+| **UC59** incluye **UC50** | La entrevista usa IA para leer oferta, CV e imágenes. |
 | **UC25** extiende **UC40** | Tras aceptar, se espera coordinación por mensajes (flujo de negocio). |
 
 > **Nota:** Casos planificados (workspace, pagos, entrega formal) no aparecen en el diagrama hasta estar en el MVP.
@@ -580,11 +685,11 @@ flowchart TB
 
 **Empresa:** `/dashboard/publish` (COP/USD, IA con tipo solución, tiempo, dificultad, tecnologías), `/dashboard/my-projects`, aceptar/rechazar, explorar talento.
 
-**Talento:** `/dashboard/explore` (filtros, match, badges), postulación con `improve-proposal`, `/dashboard/applications`.
+**Talento:** `/dashboard/explore` (detalle proyecto, coach match), postulación con `improve-proposal`, `/dashboard/applications` (detalle + filtros), `/dashboard/career`, `/dashboard/profile` (asesor skills, quiz).
 
 **Reputación:** reseñas API, perfil público + QR, stats dashboard.
 
-**Otros:** mensajes, notificaciones, landing `#modulos`, CORS local.
+**Otros:** mensajes, notificaciones, `/dashboard/settings`, sesión con inactividad 30 min, modales IA, landing `#modulos`, CORS local.
 
 ---
 
@@ -601,9 +706,16 @@ flowchart TB
 | `/dashboard/publish` | client | Publicar con IA |
 | `/dashboard/my-projects` | client | Mis proyectos |
 | `/dashboard/my-projects/{id}` | client | Postulaciones |
-| `/dashboard/applications` | freelancer | Mis postulaciones |
-| `/dashboard/profile` | Auth | Perfil |
+| `/dashboard/applications` | freelancer | Mis postulaciones (filtros + detalle + coach) |
+| `/dashboard/profile` | Auth | Perfil, skills, portafolio, asesor IA, quiz |
+| `/dashboard/career` | freelancer, admin | Asistente de carrera (CV, entrevista, empleos) |
+| `/dashboard/settings` | Auth | Configuración de cuenta |
 | `/dashboard/messages` | Auth | Mensajes |
+
+Parámetros útiles:
+
+- `/dashboard/explore?job={id}` — abre el detalle del proyecto indicado.
+- `/dashboard/profile?edit=skills&skill=react` — edición de habilidades con skill sugerida.
 
 ---
 
@@ -647,8 +759,32 @@ Prefijo: **`/api`**
 | POST | `/ai/match-job` | Matching |
 | POST | `/ai/analyze-profile` | Análisis perfil |
 | POST | `/ai/recommend-jobs` | Jobs recomendados |
+| POST | `/ai/improve-bio` | Mejorar biografía |
+| POST | `/ai/github-profile` | Perfil sugerido desde GitHub |
+| POST | `/profile/skill-recommendations` | Skills recomendadas (mercado + IA) |
+| POST | `/profile/job-match-coach` | Coach de compatibilidad por `job_id` |
+| POST | `/profile/learn-skill` | Mini lección de una skill |
+| POST | `/profile/skill-quiz/start` | Iniciar quiz de skill |
+| POST | `/profile/skill-quiz/submit` | Enviar respuestas del quiz |
+| GET | `/career/external-jobs` | Vacantes externas |
+| GET | `/career/history` | Historial de análisis de carrera |
+| POST | `/career/analyze-profile` | Diagnóstico empleabilidad |
+| POST | `/career/achievements` | Bullets de logros desde experiencia |
+| POST | `/career/improve-cv` | CV optimizado ATS |
+| POST | `/career/improve-linkedin` | Headline y «Acerca de» LinkedIn |
+| POST | `/career/analyze-offer` | Análisis de vacante (texto o archivo) |
+| POST | `/career/study-plan` | Plan de estudio para una oferta |
+| POST | `/career/target-role` | Ruta hacia rol objetivo |
+| POST | `/career/readiness` | ¿Listo para postular? |
+| POST | `/career/interview/start` | Iniciar simulación (multipart: archivos + contexto) |
+| POST | `/career/interview/evaluate` | Evaluar respuesta (puntuación, feedback STAR) |
+| POST | `/career/project-tips` | Tips para postular a un proyecto |
+| POST | `/portfolio`, PUT/DELETE `/portfolio/{id}` | Portafolio |
+| POST | `/portfolio/{id}/image` | Imagen de proyecto |
+| GET | `/github/repos` | Repos públicos por username |
 | PUT | `/users/{id}` | Actualizar perfil |
 | POST | `/users/avatar` | Subir avatar |
+| POST | `/skills` | Crear skill (si no existe) |
 
 ```bash
 php artisan route:list --path=api
@@ -661,9 +797,12 @@ php artisan route:list --path=api
 | Servicio | Función |
 |----------|---------|
 | `ProjectBriefService` | Necesidad → proyecto publicable |
-| `AIService` | Gemini/OpenAI o lógica local |
-| `MatchingService` | % compatibilidad |
-| `ProfileScoreService` | Score y tips |
+| `AIService` | NVIDIA / Gemini / OpenAI o lógica local; visión en imágenes |
+| `MatchingService` | % compatibilidad perfil ↔ vacante |
+| `ProfileAdvisorService` | Recomendaciones de skills, coach, lecciones, quiz |
+| `CareerAssistantService` | CV, LinkedIn, oferta, entrevista, readiness |
+| `CareerDocumentExtractor` | Texto desde PDF, DOCX, TXT e imágenes |
+| `ProfileScoreService` | Score y tips de perfil |
 | `NotificationService` | Avisos in-app |
 
 ---

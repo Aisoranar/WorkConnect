@@ -4,8 +4,8 @@ const TOKEN_KEY = "workconnect_token";
 const USER_KEY = "workconnect_user";
 const LAST_ACTIVITY_KEY = "workconnect_last_activity";
 
-/** 5 minutos sin actividad → aviso; otros 60 s para responder o cierre de sesión. */
-export const SESSION_IDLE_MS = 5 * 60 * 1000;
+/** 30 min sin actividad → aviso; 60 s para confirmar o cierre automático. */
+export const SESSION_IDLE_MS = 30 * 60 * 1000;
 export const SESSION_PROMPT_MS = 60 * 1000;
 
 export type AuthUser = {
@@ -23,7 +23,24 @@ type LoginResponse = {
 
 type RegisterResponse = LoginResponse & { message?: string };
 
-const API_BASE = getApiBaseUrl();
+/** Evita cerrar sesión por 401 paralelos antes de validar /me tras recargar. */
+let sessionRevokeOn401Enabled = false;
+
+export function enableSessionRevokeOn401(): void {
+  sessionRevokeOn401Enabled = true;
+}
+
+export function disableSessionRevokeOn401(): void {
+  sessionRevokeOn401Enabled = false;
+}
+
+export function shouldRevokeSessionOn401(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    sessionRevokeOn401Enabled &&
+    isAuthenticated()
+  );
+}
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -77,7 +94,30 @@ function notifySessionChange(): void {
   window.dispatchEvent(new Event(SESSION_CHANGE_EVENT));
 }
 
+export function syncStoredUserFromProfile(profile: {
+  id: number;
+  name: string;
+  email?: string;
+  username?: string | null;
+  role?: string;
+}): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  const current = getStoredUser();
+  const next: AuthUser = {
+    id: profile.id,
+    name: profile.name,
+    email: profile.email ?? current?.email,
+    username: profile.username ?? current?.username ?? null,
+    role: profile.role ?? current?.role,
+  };
+  localStorage.setItem(USER_KEY, JSON.stringify(next));
+  notifySessionChange();
+}
+
 export function setSession(token: string, user: AuthUser): void {
+  disableSessionRevokeOn401();
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(USER_KEY, JSON.stringify(user));
   touchSessionActivity();
@@ -85,10 +125,31 @@ export function setSession(token: string, user: AuthUser): void {
 }
 
 export function clearSession(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  disableSessionRevokeOn401();
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
   clearSessionActivity();
   notifySessionChange();
+}
+
+/** Cierra sesión y redirige a login (solo cliente, tras validar token). */
+export function revokeSessionAndRedirectToLogin(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  clearSession();
+  window.location.replace("/login");
+}
+
+/** Tras recargar: la visita cuenta como actividad si el token sigue en localStorage. */
+export function bootstrapSessionOnPageLoad(): void {
+  if (typeof window === "undefined" || !isAuthenticated()) {
+    return;
+  }
+  touchSessionActivity();
 }
 
 export function authHeaders(json = false): HeadersInit {
@@ -120,7 +181,7 @@ async function parseError(response: Response): Promise<string> {
 export async function login(email: string, password: string): Promise<LoginResponse> {
   let response: Response;
   try {
-    response = await fetch(`${API_BASE}/login`, {
+    response = await fetch(`${getApiBaseUrl()}/login`, {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -147,7 +208,7 @@ export async function register(payload: {
   password_confirmation: string;
   role?: string;
 }): Promise<RegisterResponse> {
-  const response = await fetch(`${API_BASE}/register`, {
+  const response = await fetch(`${getApiBaseUrl()}/register`, {
     method: "POST",
     headers: { Accept: "application/json", "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -163,7 +224,7 @@ export async function register(payload: {
 }
 
 export async function forgotPassword(email: string): Promise<{ message: string }> {
-  const response = await fetch(`${API_BASE}/forgot-password`, {
+  const response = await fetch(`${getApiBaseUrl()}/forgot-password`, {
     method: "POST",
     headers: { Accept: "application/json", "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
@@ -182,7 +243,7 @@ export async function resetPassword(payload: {
   password: string;
   password_confirmation: string;
 }): Promise<{ message: string }> {
-  const response = await fetch(`${API_BASE}/reset-password`, {
+  const response = await fetch(`${getApiBaseUrl()}/reset-password`, {
     method: "POST",
     headers: { Accept: "application/json", "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -199,7 +260,7 @@ export async function logout(): Promise<void> {
   const token = getToken();
   if (token) {
     try {
-      await fetch(`${API_BASE}/logout`, {
+      await fetch(`${getApiBaseUrl()}/logout`, {
         method: "POST",
         headers: authHeaders(),
       });

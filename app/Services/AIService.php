@@ -245,6 +245,24 @@ Devuelve ÚNICAMENTE las 3 oraciones mejoradas, sin etiquetas ni explicaciones a
 PROMPT;
     }
 
+    /**
+     * Extrae texto útil de capturas (oferta, CV, LinkedIn) vía Gemini vision.
+     */
+    public function describeCareerDocumentImage(string $base64, string $mimeType, string $filename): ?string
+    {
+        $prompt = <<<PROMPT
+Analiza esta imagen ({$filename}) para preparar una entrevista laboral de talento joven en LATAM.
+Extrae en español, de forma estructurada:
+1) Tipo de documento (oferta, CV, perfil, otro)
+2) Rol o puesto si aparece
+3) Skills o requisitos clave
+4) Datos útiles para practicar entrevista (empresa, responsabilidades, seniority)
+Sé conciso pero completo (máx. 400 palabras). Si no es legible, dilo claramente.
+PROMPT;
+
+        return $this->askGeminiWithImage($prompt, $base64, $mimeType, 900, 50);
+    }
+
     // ─── Modelos desde .env ───────────────────────────────────────────────────────
 
     public function powerfulModel(): string
@@ -380,6 +398,56 @@ PROMPT;
             }
         } catch (\Throwable) {
             // siguiente proveedor
+        }
+
+        return null;
+    }
+
+    private function askGeminiWithImage(
+        string $prompt,
+        string $base64,
+        string $mimeType,
+        int $maxTokens = 1024,
+        int $timeout = 50,
+    ): ?string {
+        $key = config('services.gemini.key');
+        if (! $key) {
+            return null;
+        }
+
+        $model = (string) config('services.gemini.model', 'gemini-2.0-flash');
+        $url = rtrim((string) config('services.gemini.url'), '/').'/models/'.$model.':generateContent';
+
+        try {
+            $response = Http::withHeaders(['Content-Type' => 'application/json'])
+                ->timeout($timeout)
+                ->post($url.'?key='.$key, [
+                    'contents' => [
+                        [
+                            'parts' => [
+                                ['text' => $prompt],
+                                [
+                                    'inline_data' => [
+                                        'mime_type' => $mimeType,
+                                        'data' => $base64,
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'generationConfig' => [
+                        'maxOutputTokens' => $maxTokens,
+                        'temperature' => 0.4,
+                    ],
+                ]);
+
+            if ($response->successful()) {
+                $text = trim((string) $response->json('candidates.0.content.parts.0.text'));
+
+                return $text !== '' ? $text : null;
+            }
+        } catch (\Throwable) {
+            // sin visión
         }
 
         return null;

@@ -155,7 +155,7 @@ function Landing() {
         />
         <div className="container relative mx-auto px-4 py-8 sm:px-6 sm:py-10 lg:py-12">
           <div className="flex justify-center lg:justify-end">
-            <div className="landing-hero-glass w-full max-w-xl lg:max-w-[32rem]">
+            <div className="landing-hero-glass w-full max-w-xl lg:max-w-lg">
               <div className="landing-eyebrow landing-hero-glass__eyebrow">
                 <Sparkles className="h-3.5 w-3.5" />
                 Puente empresa ↔ talento joven
@@ -212,7 +212,7 @@ function Landing() {
       </section>
 
       {/* ── PROBLEM ── */}
-      <section id="problem" className="landing-section scroll-mt-[4.5rem] container mx-auto px-4 py-16 sm:scroll-mt-20 sm:px-6 sm:py-24">
+      <section id="problem" className="landing-section scroll-mt-18 container mx-auto px-4 py-16 sm:scroll-mt-20 sm:px-6 sm:py-24">
         <div className="mx-auto max-w-2xl text-center">
           <p className="landing-section-label">El problema</p>
           <h2 className="section-heading mt-3">Dos mundos que no se entienden</h2>
@@ -268,7 +268,7 @@ function Landing() {
       </section>
 
       {/* ── HOW ── */}
-      <section id="how" className="landing-section landing-band-dark scroll-mt-[4.5rem] border-y border-border sm:scroll-mt-20">
+      <section id="how" className="landing-section landing-band-dark scroll-mt-18 border-y border-border sm:scroll-mt-20">
         <div className="container mx-auto px-4 py-16 sm:px-6 sm:py-24">
           <div className="mx-auto max-w-2xl text-center">
             <p className="landing-section-label">Proceso</p>
@@ -318,7 +318,7 @@ function Landing() {
       <PlatformModules />
 
       {/* ── FEATURES ── */}
-      <section id="features" className="landing-section scroll-mt-[4.5rem] bg-muted/40 py-16 sm:scroll-mt-20 sm:py-24">
+      <section id="features" className="landing-section scroll-mt-18 bg-muted/40 py-16 sm:scroll-mt-20 sm:py-24">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
             <p className="landing-section-label">Plataforma</p>

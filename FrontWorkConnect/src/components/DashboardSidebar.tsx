@@ -42,7 +42,7 @@ export function DashboardSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-sidebar-border">
       <SidebarHeader className="flex h-(--dashboard-header-h) shrink-0 items-center border-b border-sidebar-border bg-sidebar px-4 transition-[height] duration-200 ease-linear group-data-[collapsible=icon]:h-(--dashboard-header-h-collapsed) group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2">
-        <SidebarBrandLogo size="lg" />
+        <SidebarBrandLogo size="lg" to="/dashboard" />
       </SidebarHeader>
       <SidebarContent className="px-2 py-3 md:px-3 group-data-[collapsible=icon]:px-1.5 group-data-[collapsible=icon]:py-2">
         <SidebarGroup>

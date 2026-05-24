@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
-import { isAuthenticated, touchSessionActivity } from "@/lib/auth";
+import { bootstrapSessionOnPageLoad, getToken } from "@/lib/auth";
 
 type ClientAuthGateProps = {
   children: React.ReactNode;
@@ -15,11 +15,11 @@ export function ClientAuthGate({ children }: ClientAuthGateProps) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
+    if (!getToken()) {
       void navigate({ to: "/login", replace: true });
       return;
     }
-    touchSessionActivity();
+    bootstrapSessionOnPageLoad();
     setReady(true);
   }, [navigate]);
 

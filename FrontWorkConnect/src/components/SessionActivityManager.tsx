@@ -18,6 +18,7 @@ import {
   SESSION_CHANGE_EVENT,
   SESSION_IDLE_MS,
   SESSION_PROMPT_MS,
+  bootstrapSessionOnPageLoad,
   touchSessionActivity,
 } from "@/lib/auth";
 import { toast } from "sonner";
@@ -79,7 +80,14 @@ export function SessionActivityManager() {
       return;
     }
 
-    touchSessionActivity();
+    bootstrapSessionOnPageLoad();
+
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted || isAuthenticated()) {
+        bootstrapSessionOnPageLoad();
+      }
+    };
+    window.addEventListener("pageshow", onPageShow);
 
     const events: (keyof WindowEventMap)[] = [
       "mousedown",
@@ -106,6 +114,7 @@ export function SessionActivityManager() {
     }, IDLE_CHECK_MS);
 
     return () => {
+      window.removeEventListener("pageshow", onPageShow);
       for (const event of events) {
         window.removeEventListener(event, registerActivity);
       }

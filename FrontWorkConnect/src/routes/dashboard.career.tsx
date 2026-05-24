@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CareerAiLoadingModal } from "@/components/career/CareerAiLoadingModal";
 import { CareerCvStudio } from "@/components/career/CareerCvStudio";
+import { CareerInterviewPanel } from "@/components/career/CareerInterviewPanel";
 import { CAREER_LOADING_TASKS, type CareerLoadingTask } from "@/components/career/career-loading-tasks";
 import { useCareerAiLoading } from "@/hooks/use-career-ai-loading";
 import {
@@ -12,9 +13,9 @@ import {
   Target,
   Briefcase,
   GraduationCap,
-  MessageCircleQuestion,
   Trophy,
   CheckCircle2,
+  MessageCircleQuestion,
 } from "lucide-react";
 import { guardRole } from "@/lib/auth-guard";
 import {
@@ -23,8 +24,6 @@ import {
   careerDiscoverAchievements,
   careerImproveCv,
   careerImproveLinkedIn,
-  careerInterviewEvaluate,
-  careerInterviewStart,
   careerReadiness,
   careerStudyPlan,
   careerTargetRole,
@@ -107,8 +106,8 @@ function resolveActiveLoadingTask(flags: {
   if (flags.readiness) return CAREER_LOADING_TASKS.readiness;
   if (flags.offer) return CAREER_LOADING_TASKS.offer;
   if (flags.role) return CAREER_LOADING_TASKS.role;
-  if (flags.interviewEval) return CAREER_LOADING_TASKS.interviewEval;
   if (flags.interviewStart) return CAREER_LOADING_TASKS.interviewStart;
+  if (flags.interviewEval) return CAREER_LOADING_TASKS.interviewEval;
   return null;
 }
 
@@ -123,10 +122,10 @@ function CareerAssistantPage() {
   const [readiness, setReadiness] = useState<CareerReadiness | null>(null);
   const [cvResult, setCvResult] = useState<CareerCvResult | null>(null);
   const [linkedinResult, setLinkedinResult] = useState<CareerLinkedInResult | null>(null);
-  const [interviewQ, setInterviewQ] = useState("");
-  const [interviewAnswer, setInterviewAnswer] = useState("");
-  const [interviewFeedback, setInterviewFeedback] = useState<string | null>(null);
   const [targetRoleResult, setTargetRoleResult] = useState<CareerTargetRolePath | null>(null);
+  const [interviewAiTask, setInterviewAiTask] = useState<"interviewStart" | "interviewEval" | null>(
+    null,
+  );
 
   const jobsQuery = useQuery({
     queryKey: ["career-external-jobs"],
@@ -207,27 +206,6 @@ function CareerAssistantPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const interviewStartMut = useMutation({
-    mutationFn: () => careerInterviewStart(offerText || targetRole, offerText ? "offer" : "target_role"),
-    onSuccess: (d) => {
-      setInterviewQ(d.question);
-      setInterviewFeedback(null);
-      toast.success("Entrevista iniciada");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const interviewEvalMut = useMutation({
-    mutationFn: () =>
-      careerInterviewEvaluate(interviewQ, interviewAnswer, offerText || targetRole),
-    onSuccess: (d) => {
-      setInterviewFeedback(d.feedback);
-      if (d.follow_up_question) setInterviewQ(d.follow_up_question);
-      toast.success(`Puntuación: ${d.score}/100`);
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
   const achievements = achievementsMut.data;
 
   const loadingFlags = useMemo(
@@ -240,8 +218,8 @@ function CareerAssistantPage() {
       studyPlan: planMut.isPending,
       readiness: readinessMut.isPending,
       role: roleMut.isPending,
-      interviewStart: interviewStartMut.isPending,
-      interviewEval: interviewEvalMut.isPending,
+      interviewStart: interviewAiTask === "interviewStart",
+      interviewEval: interviewAiTask === "interviewEval",
     }),
     [
       profileMut.isPending,
@@ -252,8 +230,7 @@ function CareerAssistantPage() {
       planMut.isPending,
       readinessMut.isPending,
       roleMut.isPending,
-      interviewStartMut.isPending,
-      interviewEvalMut.isPending,
+      interviewAiTask,
     ],
   );
 
@@ -472,16 +449,10 @@ function CareerAssistantPage() {
                   {readiness.can_apply_now ? "Puedes aplicar" : "Prepara antes de aplicar"}
                 </p>
                 <BulletList items={readiness.improve_before_apply} />
-                <Button
-                  className="mt-3"
-                  variant="outline"
-                  size="sm"
-                  disabled={uiLocked}
-                  onClick={() => interviewStartMut.mutate()}
-                >
-                  <MessageCircleQuestion className="mr-2 h-4 w-4" />
-                  Simular entrevista para esta oferta
-                </Button>
+                <p className="mt-3 flex items-center gap-2 text-xs text-primary-glow">
+                  <MessageCircleQuestion className="h-4 w-4" />
+                  Usa la pestaña Entrevista para simular una entrevista técnica con esta oferta.
+                </p>
               </ResultBox>
             )}
 
@@ -625,45 +596,12 @@ function CareerAssistantPage() {
         </TabsContent>
 
         <TabsContent value="interview" className="mt-4">
-          <div className="card-paper p-4 sm:p-6">
-            <h2 className="flex items-center gap-2 font-semibold">
-              <MessageCircleQuestion className="h-5 w-5 text-primary-glow" />
-              Simulación técnica
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Usa una oferta o puesto en las otras pestañas como contexto, luego inicia la entrevista.
-            </p>
-            <Button className="mt-4" disabled={uiLocked} onClick={() => interviewStartMut.mutate()}>
-              {interviewStartMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {interviewStartMut.isPending ? "Preparando…" : "Iniciar simulación"}
-            </Button>
-            {interviewQ && (
-              <>
-                <p className="mt-4 font-medium text-foreground">Pregunta: {interviewQ}</p>
-                <Textarea
-                  className="mt-2"
-                  rows={4}
-                  placeholder="Tu respuesta..."
-                  value={interviewAnswer}
-                  onChange={(e) => setInterviewAnswer(e.target.value)}
-                  disabled={uiLocked}
-                />
-                <Button
-                  className="mt-3"
-                  disabled={uiLocked || !interviewAnswer.trim()}
-                  onClick={() => interviewEvalMut.mutate()}
-                >
-                  {interviewEvalMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {interviewEvalMut.isPending ? "Evaluando…" : "Evaluar respuesta"}
-                </Button>
-              </>
-            )}
-            {interviewFeedback && (
-              <ResultBox title="Feedback">
-                <p>{interviewFeedback}</p>
-              </ResultBox>
-            )}
-          </div>
+          <CareerInterviewPanel
+            uiLocked={uiLocked}
+            defaultOfferText={offerText}
+            defaultTargetRole={targetRole}
+            onAiTaskChange={setInterviewAiTask}
+          />
         </TabsContent>
       </Tabs>
     </div>

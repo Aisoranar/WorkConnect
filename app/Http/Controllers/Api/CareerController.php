@@ -8,6 +8,7 @@ use App\Models\ExternalJobListing;
 use App\Models\WorkJob;
 use App\Services\AIService;
 use App\Services\CareerAssistantService;
+use App\Services\CareerDocumentExtractor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Smalot\PdfParser\Parser as PdfParser;
@@ -17,6 +18,7 @@ class CareerController extends Controller
     public function __construct(
         private readonly CareerAssistantService $career,
         private readonly AIService $ai,
+        private readonly CareerDocumentExtractor $documents,
     ) {}
 
     public function externalJobs(Request $request): JsonResponse
@@ -190,17 +192,42 @@ class CareerController extends Controller
         $this->ensureTalent($request);
 
         $request->validate([
-            'context' => ['required', 'string', 'max:20000'],
+            'context' => ['nullable', 'string', 'max:20000'],
+            'offer_text' => ['nullable', 'string', 'max:20000'],
+            'target_role' => ['nullable', 'string', 'max:200'],
+            'notes' => ['nullable', 'string', 'max:5000'],
             'mode' => ['nullable', 'string', 'in:offer,target_role,general'],
+            'files' => ['nullable', 'array', 'max:5'],
+            'files.*' => ['file', 'max:5120', 'mimes:txt,pdf,png,jpg,jpeg,webp,md,doc,docx'],
         ]);
 
-        return response()->json([
-            'data' => $this->career->startInterview(
-                $request->user(),
-                $request->string('context')->toString(),
-                $request->input('mode', 'offer'),
-            ),
-        ]);
+        /** @var array<int, \Illuminate\Http\UploadedFile> $uploaded */
+        $uploaded = $request->file('files') ?? [];
+        $extracted = $this->documents->extractFromFiles(is_array($uploaded) ? $uploaded : []);
+
+        $context = $this->career->resolveInterviewContext(
+            $request->user(),
+            $request->input('offer_text'),
+            $request->input('target_role'),
+            $request->input('notes'),
+            $request->input('context'),
+            $extracted['combined'],
+        );
+
+        if (trim($context) === '') {
+            return response()->json([
+                'message' => 'Indica el puesto, pega la oferta o adjunta un CV/captura para practicar.',
+            ], 422);
+        }
+
+        $mode = $request->input('mode')
+            ?? ($request->filled('offer_text') ? 'offer' : ($request->filled('target_role') ? 'target_role' : 'general'));
+
+        $data = $this->career->startInterview($request->user(), $context, $mode);
+        $data['files_received'] = $extracted['file_summaries'];
+        $data['context_used'] = mb_substr($context, 0, 1200);
+
+        return response()->json(['data' => $data]);
     }
 
     public function interviewEvaluate(Request $request): JsonResponse
@@ -210,15 +237,26 @@ class CareerController extends Controller
         $request->validate([
             'question' => ['required', 'string', 'max:2000'],
             'answer' => ['required', 'string', 'max:8000'],
-            'context' => ['required', 'string', 'max:20000'],
+            'context' => ['nullable', 'string', 'max:20000'],
+            'offer_text' => ['nullable', 'string', 'max:20000'],
+            'target_role' => ['nullable', 'string', 'max:200'],
+            'notes' => ['nullable', 'string', 'max:5000'],
         ]);
+
+        $context = $this->career->resolveInterviewContext(
+            $request->user(),
+            $request->input('offer_text'),
+            $request->input('target_role'),
+            $request->input('notes'),
+            $request->input('context'),
+        );
 
         return response()->json([
             'data' => $this->career->evaluateInterviewAnswer(
                 $request->user(),
                 $request->string('question')->toString(),
                 $request->string('answer')->toString(),
-                $request->string('context')->toString(),
+                $context,
             ),
         ]);
     }

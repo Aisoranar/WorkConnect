@@ -34,7 +34,7 @@ function PublicTalentPage() {
     .toUpperCase();
 
   return (
-    <div className="min-h-[100dvh] overflow-x-hidden bg-background">
+    <div className="min-h-dvh overflow-x-hidden bg-background">
       <header className="relative border-b border-border glass">
         <div className="pointer-events-none absolute inset-0 bg-gradient-hero opacity-40" />
         <div className="container relative mx-auto flex h-14 items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">

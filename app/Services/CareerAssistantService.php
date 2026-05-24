@@ -165,25 +165,73 @@ class CareerAssistantService
         return $this->persist($user, 'readiness', ['offer_text' => mb_substr($offerText, 0, 4000)], $result);
     }
 
+    /**
+     * @param  array<int, array{name: string, type: string, excerpt: string}>  $fileSummaries
+     */
+    public function resolveInterviewContext(
+        User $user,
+        ?string $offerText,
+        ?string $targetRole,
+        ?string $notes,
+        ?string $explicitContext,
+        string $attachmentsText = '',
+    ): string {
+        $user->loadMissing('skills');
+        $parts = [];
+
+        if ($targetRole && trim($targetRole) !== '') {
+            $parts[] = 'Puesto objetivo: '.trim($targetRole);
+        }
+        if ($offerText && trim($offerText) !== '') {
+            $parts[] = "Oferta / vacante:\n".trim($offerText);
+        }
+        if ($notes && trim($notes) !== '') {
+            $parts[] = "Notas del candidato:\n".trim($notes);
+        }
+        if ($attachmentsText !== '') {
+            $parts[] = "Material adjunto (texto o análisis de imagen):\n".$attachmentsText;
+        }
+        if ($explicitContext && trim($explicitContext) !== '') {
+            $parts[] = trim($explicitContext);
+        }
+
+        if ($parts === []) {
+            $parts[] = $this->userContext($user);
+            $parts[] = 'Práctica general de entrevista técnica y comportamental para talento joven freelancer en LATAM.';
+        }
+
+        return mb_substr(implode("\n\n", $parts), 0, 18000);
+    }
+
     public function startInterview(User $user, string $context, string $mode = 'offer'): array
     {
         $user->loadMissing('skills');
-        $raw = $this->careerPromptJson($this->interviewStartPrompt($user, $context, $mode), 600);
+        $materialsRaw = $this->careerPromptJson($this->interviewMaterialsPrompt($user, $context), 700);
+        $materials = $this->normalizeInterviewMaterials($materialsRaw);
 
-        $result = $raw ?: $this->fallbackInterviewStart($user, $context);
+        $raw = $this->careerPromptJson(
+            $this->interviewStartPrompt($user, $context, $mode, $materials),
+            1100,
+        );
 
-        return $this->persist($user, 'interview_start', ['context' => mb_substr($context, 0, 2000), 'mode' => $mode], $result);
+        $result = $this->normalizeInterviewStart($raw ?: $this->fallbackInterviewStart($user, $context), $materials);
+
+        return $this->persist($user, 'interview_start', [
+            'context' => mb_substr($context, 0, 2000),
+            'mode' => $mode,
+        ], $result);
     }
 
     public function evaluateInterviewAnswer(User $user, string $question, string $answer, string $context): array
     {
-        $raw = $this->careerPromptJson($this->interviewAnswerPrompt($user, $question, $answer, $context), 900);
+        $raw = $this->careerPromptJson($this->interviewAnswerPrompt($user, $question, $answer, $context), 1100);
 
-        $result = $raw ?: $this->fallbackInterviewAnswer($question, $answer);
+        $result = $this->normalizeInterviewAnswer($raw ?: $this->fallbackInterviewAnswer($question, $answer));
 
         return $this->persist($user, 'interview_answer', [
             'question' => $question,
             'answer' => mb_substr($answer, 0, 3000),
+            'context' => mb_substr($context, 0, 500),
         ], $result);
     }
 
@@ -515,35 +563,126 @@ Oferta:
 PROMPT;
     }
 
-    private function interviewStartPrompt(User $user, string $context, string $mode): string
+    private function interviewMaterialsPrompt(User $user, string $context): string
     {
         return <<<PROMPT
-Genera la primera pregunta de una simulación de entrevista técnica en español.
-Modo: {$mode}. Responde SOLO JSON:
+Analiza el material del candidato para preparar una entrevista. Responde SOLO JSON en español:
 {
-  "question": "pregunta clara",
-  "topic": "área evaluada",
-  "difficulty": "junior|mid",
-  "tips": ["pista breve sin dar la respuesta"],
+  "materials_summary": "2-4 oraciones: qué rol practica y qué pide el material",
+  "prep_tips": ["5 consejos concretos antes de la entrevista"],
+  "practice_focus": ["3 temas a repasar hoy"],
+  "likely_question_types": ["técnica", "comportamental", "sobre el CV"],
   "source": "nvidia"
 }
 {$this->userContext($user)}
-Contexto vacante:
+Material y contexto:
 {$context}
 PROMPT;
+    }
+
+    /**
+     * @param  array<string, mixed>  $materials
+     */
+    private function interviewStartPrompt(User $user, string $context, string $mode, array $materials): string
+    {
+        $prep = json_encode($materials, JSON_UNESCAPED_UNICODE);
+
+        return <<<PROMPT
+Genera la primera pregunta de una simulación de entrevista en español (técnica o mixta según el rol).
+Modo: {$mode}. Responde SOLO JSON:
+{
+  "question": "pregunta clara y realista",
+  "topic": "área evaluada",
+  "difficulty": "junior|mid",
+  "interview_type": "técnica|comportamental|mixta",
+  "tips": ["2 pistas para responder sin revelar la respuesta"],
+  "prep_tips": ["reutiliza o complementa los del análisis"],
+  "source": "nvidia"
+}
+Análisis previo del material:
+{$prep}
+{$this->userContext($user)}
+Contexto completo:
+{$context}
+PROMPT;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function normalizeInterviewMaterials(?array $raw): array
+    {
+        if (! is_array($raw)) {
+            return [
+                'materials_summary' => '',
+                'prep_tips' => [],
+                'practice_focus' => [],
+                'likely_question_types' => [],
+            ];
+        }
+
+        return [
+            'materials_summary' => (string) ($raw['materials_summary'] ?? ''),
+            'prep_tips' => array_values($raw['prep_tips'] ?? []),
+            'practice_focus' => array_values($raw['practice_focus'] ?? []),
+            'likely_question_types' => array_values($raw['likely_question_types'] ?? []),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $materials
+     * @return array<string, mixed>
+     */
+    private function normalizeInterviewStart(array $raw, array $materials): array
+    {
+        $prep = array_values(array_unique(array_merge(
+            $materials['prep_tips'] ?? [],
+            $raw['prep_tips'] ?? [],
+        )));
+
+        return [
+            'question' => (string) ($raw['question'] ?? 'Cuéntame un proyecto reciente y el impacto que tuvo.'),
+            'topic' => (string) ($raw['topic'] ?? 'experiencia'),
+            'difficulty' => (string) ($raw['difficulty'] ?? 'junior'),
+            'interview_type' => (string) ($raw['interview_type'] ?? 'mixta'),
+            'tips' => array_values($raw['tips'] ?? ['Usa método STAR']),
+            'prep_tips' => array_slice($prep, 0, 8),
+            'materials_summary' => (string) ($materials['materials_summary'] ?? $raw['materials_summary'] ?? ''),
+            'practice_focus' => array_values($materials['practice_focus'] ?? []),
+            'likely_question_types' => array_values($materials['likely_question_types'] ?? []),
+            'source' => (string) ($raw['_ai_provider'] ?? $raw['source'] ?? 'local'),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function normalizeInterviewAnswer(array $raw): array
+    {
+        return [
+            'score' => (int) ($raw['score'] ?? 0),
+            'feedback' => (string) ($raw['feedback'] ?? ''),
+            'strengths' => array_values($raw['strengths'] ?? []),
+            'improvements' => array_values($raw['improvements'] ?? []),
+            'model_answer_hint' => (string) ($raw['model_answer_hint'] ?? ''),
+            'follow_up_question' => (string) ($raw['follow_up_question'] ?? ''),
+            'answer_tips' => array_values($raw['answer_tips'] ?? []),
+            'source' => (string) ($raw['_ai_provider'] ?? $raw['source'] ?? 'local'),
+        ];
     }
 
     private function interviewAnswerPrompt(User $user, string $question, string $answer, string $context): string
     {
         return <<<PROMPT
-Evalúa la respuesta de entrevista técnica. Responde SOLO JSON:
+Evalúa la respuesta de entrevista. Responde SOLO JSON en español:
 {
   "score": 0,
-  "feedback": "feedback constructivo",
-  "strengths": [],
-  "improvements": [],
-  "model_answer_hint": "orientación sin respuesta completa",
-  "follow_up_question": "siguiente pregunta opcional",
+  "feedback": "2-3 oraciones constructivas y cercanas",
+  "strengths": ["qué hizo bien"],
+  "improvements": ["qué mejorar concretamente"],
+  "model_answer_hint": "orientación STAR sin dar respuesta memorizada",
+  "follow_up_question": "siguiente pregunta relacionada",
+  "answer_tips": ["1 tip para la siguiente respuesta"],
   "source": "nvidia"
 }
 Pregunta: {$question}
@@ -794,20 +933,27 @@ PROMPT;
     {
         $skill = $user->skills->first()?->name ?? 'desarrollo web';
 
-        return [
+        return $this->normalizeInterviewStart([
             'question' => "Cuéntame un proyecto reciente donde usaste {$skill} y qué resultado obtuvo el cliente o usuario.",
             'topic' => $skill,
             'difficulty' => 'junior',
+            'interview_type' => 'mixta',
             'tips' => ['Usa método STAR: situación, tarea, acción, resultado'],
+            'prep_tips' => ['Repasa tu CV y 2 proyectos del portafolio', 'Prepara 3 preguntas para el entrevistador'],
             'source' => 'local',
-        ];
+        ], [
+            'materials_summary' => mb_substr($context, 0, 280) ?: 'Práctica basada en tu perfil WorkConnect.',
+            'prep_tips' => [],
+            'practice_focus' => ['Proyectos del portafolio', 'Skills del rol'],
+            'likely_question_types' => ['experiencia', 'motivación'],
+        ]);
     }
 
     private function fallbackInterviewAnswer(string $question, string $answer): array
     {
         $len = strlen(trim($answer));
 
-        return [
+        return $this->normalizeInterviewAnswer([
             'score' => $len > 120 ? 75 : 45,
             'feedback' => $len > 120
                 ? 'Buena extensión. Intenta cuantificar el impacto (%, tiempo, usuarios).'
@@ -816,8 +962,9 @@ PROMPT;
             'improvements' => ['Añade métricas', 'Menciona tu rol específico'],
             'model_answer_hint' => 'Estructura: contexto → qué hiciste tú → resultado medible',
             'follow_up_question' => '¿Qué harías diferente si tuvieras una semana más en ese proyecto?',
+            'answer_tips' => ['Cierra con un resultado numérico si puedes'],
             'source' => 'local',
-        ];
+        ]);
     }
 
     private function fallbackProjectTips(User $user, WorkJob $job, int $match): array
