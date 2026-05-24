@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "@/lib/env";
+
 const TOKEN_KEY = "workconnect_token";
 const USER_KEY = "workconnect_user";
 
@@ -16,17 +18,7 @@ type LoginResponse = {
 
 type RegisterResponse = LoginResponse & { message?: string };
 
-function resolveApiBase(): string {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL.replace(/\/$/, "");
-  }
-  if (typeof window !== "undefined" && window.location.hostname === "localhost") {
-    return "http://127.0.0.1:8000/api";
-  }
-  return "http://127.0.0.1:8000/api";
-}
-
-const API_BASE = resolveApiBase();
+const API_BASE = getApiBaseUrl();
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -85,11 +77,18 @@ async function parseError(response: Response): Promise<string> {
 }
 
 export async function login(email: string, password: string): Promise<LoginResponse> {
-  const response = await fetch(`${API_BASE}/login`, {
-    method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}/login`, {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+  } catch {
+    throw new Error(
+      "No se pudo conectar con el servidor. Comprueba que Laravel esté activo y que VITE_API_URL coincida con php artisan serve.",
+    );
+  }
 
   if (!response.ok) {
     throw new Error(await parseError(response));

@@ -14,18 +14,9 @@ import type {
   UserProfile,
 } from "./types";
 import { authHeaders, clearSession } from "./auth";
+import { getApiBaseUrl } from "./env";
 
-function resolveApiBase(): string {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL.replace(/\/$/, "");
-  }
-  if (typeof window !== "undefined" && window.location.hostname === "localhost") {
-    return "http://127.0.0.1:8000/api";
-  }
-  return "http://127.0.0.1:8000/api";
-}
-
-const API_BASE = resolveApiBase();
+const API_BASE = getApiBaseUrl();
 
 type ApiListResponse<T> = { data: T[] };
 type ApiItemResponse<T> = { data: T };
@@ -213,9 +204,7 @@ export function fetchStats(): Promise<Stats> {
   return apiGet<ApiItemResponse<Stats>>("/stats").then((r) => r.data);
 }
 
-export function getApiBaseUrl(): string {
-  return API_BASE;
-}
+export { getApiBaseUrl } from "./env";
 
 // ─── Perfil propio ────────────────────────────────────────────────────────────
 

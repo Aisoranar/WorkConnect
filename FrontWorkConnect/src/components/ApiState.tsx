@@ -28,7 +28,9 @@ export function ApiState({ isLoading, isError, error, onRetry, children }: ApiSt
         <p className="mt-2 text-xs text-muted-foreground">
           {error?.message ?? "Error desconocido"}
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">API: {getApiBaseUrl()}</p>
+        {import.meta.env.DEV && (
+          <p className="mt-1 text-xs text-muted-foreground">API: {getApiBaseUrl()}</p>
+        )}
         {onRetry && (
           <Button size="sm" variant="outline" className="mt-4" onClick={onRetry}>
             Reintentar

@@ -1,3 +1,5 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig, loadEnv } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
@@ -5,10 +7,16 @@ import tailwindcss from "@tailwindcss/vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 import { cloudflare } from "@cloudflare/vite-plugin";
 
+const frontRoot = path.dirname(fileURLToPath(import.meta.url));
+
 export default defineConfig(({ command, mode }) => {
-  const loadedEnv = loadEnv(mode, process.cwd(), "VITE_");
+  // Solo variables VITE_* desde FrontWorkConnect/.env (nunca el .env de Laravel)
+  const loadedEnv = loadEnv(mode, frontRoot, "VITE_");
   const envDefine: Record<string, string> = {};
   for (const [key, value] of Object.entries(loadedEnv)) {
+    if (!key.startsWith("VITE_")) {
+      continue;
+    }
     envDefine[`import.meta.env.${key}`] = JSON.stringify(value);
   }
 
