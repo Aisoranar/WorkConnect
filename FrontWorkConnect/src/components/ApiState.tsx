@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Loader2 } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
@@ -13,7 +14,8 @@ type ApiStateProps = {
 export function ApiState({ isLoading, isError, error, onRetry, children }: ApiStateProps) {
   if (isLoading) {
     return (
-      <div className="flex min-h-[200px] items-center justify-center text-sm text-muted-foreground">
+      <div className="flex min-h-[200px] flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+        <Loader2 className="h-6 w-6 animate-spin text-primary-glow" />
         Cargando datos…
       </div>
     );
@@ -21,7 +23,7 @@ export function ApiState({ isLoading, isError, error, onRetry, children }: ApiSt
 
   if (isError) {
     return (
-      <div className="card-gradient rounded-2xl border border-destructive/30 p-6 text-center shadow-card">
+      <div className="card-inset border-destructive/30 p-6 text-center">
         <p className="text-sm text-destructive">No se pudo conectar con el servidor.</p>
         <p className="mt-2 text-xs text-muted-foreground">
           {error?.message ?? "Error desconocido"}

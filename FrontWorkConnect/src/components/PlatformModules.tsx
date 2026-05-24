@@ -2,10 +2,10 @@ import { platformModules, type ModuleStatus } from "@/lib/modules";
 import { Building2, GraduationCap, Layers } from "lucide-react";
 
 const statusStyles: Record<ModuleStatus, string> = {
-  mvp: "border-primary/40 bg-primary/10 text-primary-glow",
-  partial: "border-amber-500/40 bg-amber-500/10 text-amber-200",
-  progress: "border-cyan-500/40 bg-cyan-500/10 text-cyan-200",
-  planned: "border-border bg-surface/60 text-muted-foreground",
+  mvp: "chip chip-primary",
+  partial: "chip chip-warning",
+  progress: "chip chip-trust",
+  planned: "chip chip-muted",
 };
 
 const audienceIcon = {
@@ -16,28 +16,28 @@ const audienceIcon = {
 
 export function PlatformModules() {
   return (
-    <section id="modulos" className="container mx-auto px-6 py-24">
+    <section id="modulos" className="container mx-auto px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-2xl text-center">
         <p className="text-sm font-medium uppercase tracking-wider text-primary-glow">Arquitectura</p>
-        <h2 className="mt-2 text-4xl font-bold tracking-tight md:text-5xl">Módulos de la plataforma</h2>
+        <h2 className="section-heading mt-2">Módulos de la plataforma</h2>
         <p className="mt-4 text-muted-foreground">
           Cada pieza ataca un pedazo del pitch: conectar conocimiento del empresario con experiencia del
           talento joven, vía IA y micro-presupuestos.
         </p>
       </div>
 
-      <div className="mt-14 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-10 grid gap-4 sm:mt-14 md:grid-cols-2 lg:grid-cols-3">
         {platformModules.map((mod) => {
           const Icon = audienceIcon[mod.audience];
           return (
             <article
               key={mod.id}
-              className="card-gradient flex flex-col rounded-2xl border border-border p-6 shadow-card"
+              className="card-paper flex flex-col p-6"
             >
               <div className="mb-3 flex items-start justify-between gap-2">
                 <span className="font-mono text-xs text-muted-foreground">{mod.code}</span>
                 <span
-                  className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${statusStyles[mod.status]}`}
+                  className={`shrink-0 uppercase tracking-wide ${statusStyles[mod.status]}`}
                 >
                   {mod.statusLabel}
                 </span>

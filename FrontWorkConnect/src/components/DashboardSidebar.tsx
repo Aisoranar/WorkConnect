@@ -1,18 +1,13 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  LayoutDashboard,
-  Compass,
-  Send,
-  MessageSquare,
-  User,
-  Settings,
-  Zap,
-  LogOut,
-  PlusCircle,
-  Briefcase,
-} from "lucide-react";
+import { Settings, Zap, LogOut } from "lucide-react";
 import { getStoredUser, logout } from "@/lib/auth";
+import {
+  allSidebarNavItems,
+  getDashboardNav,
+  isDashboardNavActive,
+} from "@/lib/dashboard-nav";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sidebar,
   SidebarContent,
@@ -26,35 +21,14 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const freelancerItems = [
-  { title: "Inicio", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Explorar proyectos", url: "/dashboard/explore", icon: Compass },
-  { title: "Mis postulaciones", url: "/dashboard/applications", icon: Send },
-  { title: "Mensajes", url: "/dashboard/messages", icon: MessageSquare },
-  { title: "Mi perfil", url: "/dashboard/profile", icon: User },
-];
-
-const clientItems = [
-  { title: "Inicio", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Publicar proyecto", url: "/dashboard/publish", icon: PlusCircle },
-  { title: "Mis proyectos", url: "/dashboard/my-projects", icon: Briefcase },
-  { title: "Explorar talento", url: "/dashboard/explore", icon: Compass },
-  { title: "Mensajes", url: "/dashboard/messages", icon: MessageSquare },
-  { title: "Mi perfil", url: "/dashboard/profile", icon: User },
-];
-
-const adminItems = [
-  ...freelancerItems.slice(0, 1),
-  { title: "Publicar (demo)", url: "/dashboard/publish", icon: PlusCircle },
-  ...freelancerItems.slice(1),
-  { title: "Admin", url: "/dashboard", icon: Briefcase },
-];
-
 export function DashboardSidebar() {
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const role = getStoredUser()?.role ?? "freelancer";
+  const config = getDashboardNav(role);
+  const items = allSidebarNavItems(config);
 
   async function handleLogout() {
     await logout();
@@ -62,41 +36,42 @@ export function DashboardSidebar() {
     await navigate({ to: "/login", replace: true });
   }
 
-  const items =
-    role === "client" ? clientItems : role === "admin" ? adminItems : freelancerItems;
-
-  const groupLabel =
-    role === "client"
-      ? "Empresa"
-      : role === "admin"
-        ? "Administración"
-        : "Talento joven";
+  if (isMobile) {
+    return null;
+  }
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border p-4">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
-            <Zap className="h-5 w-5 text-primary-foreground" />
+    <Sidebar collapsible="icon" className="border-sidebar-border">
+      <SidebarHeader className="border-b border-sidebar-border p-4 md:p-5">
+        <Link to="/" className="flex items-center gap-3">
+          <div className="logo-mark h-10 w-10 shrink-0 md:h-11 md:w-11">
+            <Zap className="h-5 w-5 text-primary-foreground md:h-[1.35rem] md:w-[1.35rem]" />
           </div>
-          <span className="font-display text-base font-bold tracking-tight group-data-[collapsible=icon]:hidden">
+          <span className="font-display text-base font-bold tracking-tight group-data-[collapsible=icon]:hidden md:text-lg lg:text-xl">
             WorkConnect
           </span>
         </Link>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="px-2 py-3 md:px-3">
         <SidebarGroup>
-          <SidebarGroupLabel>{groupLabel}</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-3 text-xs uppercase tracking-wider md:text-sm">
+            {config.groupLabel}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-1.5 md:gap-2">
               {items.map((item) => {
-                const active = pathname === item.url;
+                const active = isDashboardNavActive(pathname, item.url);
                 return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={active}>
-                      <Link to={item.url} className="flex items-center gap-2">
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
+                  <SidebarMenuItem key={`${item.url}-${item.title}`}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={active}
+                      size="lg"
+                      className="h-11 rounded-xl px-3 text-[0.9375rem] md:h-12 md:px-4 md:text-base lg:h-[3.25rem] lg:px-4 lg:text-[1.0625rem] [&>svg]:size-5 lg:[&>svg]:size-[1.35rem]"
+                    >
+                      <Link to={item.url} className="flex items-center gap-3">
+                        <item.icon className="shrink-0" />
+                        <span className="truncate">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -106,12 +81,16 @@ export function DashboardSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border p-2">
-        <SidebarMenu>
+      <SidebarFooter className="border-t border-sidebar-border p-2 md:p-3">
+        <SidebarMenu className="gap-1.5">
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link to="/dashboard/profile" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
+            <SidebarMenuButton
+              asChild
+              size="lg"
+              className="h-11 rounded-xl px-3 text-[0.9375rem] md:h-12 md:px-4 md:text-base lg:h-[3.25rem] lg:px-4 lg:text-[1.0625rem] [&>svg]:size-5 lg:[&>svg]:size-[1.35rem]"
+            >
+              <Link to="/dashboard/profile" className="flex items-center gap-3">
+                <Settings className="shrink-0" />
                 <span>Configuración</span>
               </Link>
             </SidebarMenuButton>
@@ -119,10 +98,11 @@ export function DashboardSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               type="button"
-              className="flex w-full items-center gap-2 text-muted-foreground"
+              size="lg"
+              className="flex h-11 w-full items-center gap-3 rounded-xl px-3 text-[0.9375rem] text-muted-foreground md:h-12 md:px-4 md:text-base lg:h-[3.25rem] lg:px-4 lg:text-[1.0625rem] [&>svg]:size-5 lg:[&>svg]:size-[1.35rem]"
               onClick={() => void handleLogout()}
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="shrink-0" />
               <span>Salir</span>
             </SidebarMenuButton>
           </SidebarMenuItem>

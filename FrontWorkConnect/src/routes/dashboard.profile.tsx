@@ -12,9 +12,9 @@ export const Route = createFileRoute("/dashboard/profile")({
 const skills = ["React", "TypeScript", "Tailwind CSS", "Figma", "Node.js", "UI Design", "Motion", "Laravel"];
 
 const portfolio = [
-  { title: "Landing fintech Nimbus", tag: "Diseño UI", color: "from-indigo-500/40 to-purple-500/40" },
-  { title: "Dashboard analytics Flux", tag: "Frontend", color: "from-blue-500/40 to-cyan-500/40" },
-  { title: "App de salud Pingu", tag: "Ilustración", color: "from-pink-500/40 to-violet-500/40" },
+  { title: "Landing fintech Nimbus", tag: "Diseño UI", thumb: "portfolio-thumb" },
+  { title: "Dashboard analytics Flux", tag: "Frontend", thumb: "portfolio-thumb-alt" },
+  { title: "App de salud Pingu", tag: "Ilustración", thumb: "portfolio-thumb-warm" },
 ];
 
 function Profile() {
@@ -25,18 +25,19 @@ function Profile() {
 
   return (
     <div className="space-y-6">
-      <div className="card-gradient relative overflow-hidden rounded-2xl border border-border p-8 shadow-card">
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gradient-primary opacity-20 blur-3xl" />
-        <div className="relative flex flex-col gap-6 md:flex-row md:items-start">
-          <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl bg-gradient-primary text-3xl font-bold shadow-glow">
+      <div className="card-hero p-5 sm:p-8">
+        <div className="relative flex flex-col gap-5 pl-3 sm:gap-6 sm:pl-4 md:flex-row md:items-start">
+          <div className="logo-mark mx-auto h-20 w-20 shrink-0 rounded-organic-md text-2xl font-bold sm:mx-0 sm:h-24 sm:w-24 sm:text-3xl">
             MA
           </div>
-          <div className="flex-1">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h1 className="font-display text-3xl font-bold tracking-tight">María Álvarez</h1>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+              <div className="min-w-0 text-center sm:text-left">
+                <h1 className="page-heading">
+                  María <span className="text-gradient-trust">Álvarez</span>
+                </h1>
                 <p className="text-muted-foreground">Diseñadora UI · Frontend Developer</p>
-                <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground sm:justify-start sm:gap-4">
                   <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> Lima, Perú</span>
                   {stats && (
                     <span className="flex items-center gap-1">
@@ -46,13 +47,13 @@ function Profile() {
                   )}
                 </div>
               </div>
-              <Button variant="outline">Editar perfil</Button>
+              <Button variant="outline" className="w-full sm:w-auto">Editar perfil</Button>
             </div>
-            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-4 max-w-2xl text-center text-sm leading-relaxed text-muted-foreground sm:text-left">
               Diseño interfaces minimalistas y desarrollo experiencias web modernas. Me especializo en SaaS y productos
               digitales con foco en conversión y micro-interacciones.
             </p>
-            <div className="mt-5 flex gap-3">
+            <div className="mt-5 flex justify-center gap-3 sm:justify-start">
               <a href="#" className="rounded-lg border border-border bg-surface/60 p-2 transition hover:border-primary/50">
                 <Github className="h-4 w-4" />
               </a>
@@ -68,14 +69,14 @@ function Profile() {
       </div>
 
       <ApiState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-6">
-          <section className="card-gradient rounded-2xl border border-border p-6 shadow-card">
+      <div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,320px)]">
+        <div className="order-2 space-y-6 lg:order-1">
+          <section className="card-paper p-6">
             <h2 className="font-display text-lg font-semibold">Portfolio</h2>
-            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {portfolio.map((p) => (
                 <div key={p.title} className="overflow-hidden rounded-xl border border-border">
-                  <div className={`aspect-video bg-gradient-to-br ${p.color}`} />
+                  <div className={p.thumb} />
                   <div className="p-3">
                     <div className="text-xs text-muted-foreground">{p.tag}</div>
                     <div className="mt-0.5 truncate text-sm font-medium">{p.title}</div>
@@ -85,7 +86,7 @@ function Profile() {
             </div>
           </section>
 
-          <section className="card-gradient rounded-2xl border border-border p-6 shadow-card">
+          <section className="card-paper p-6">
             <h2 className="font-display text-lg font-semibold">Habilidades</h2>
             <div className="mt-4 flex flex-wrap gap-2">
               {skills.map((s) => (
@@ -97,19 +98,19 @@ function Profile() {
           </section>
         </div>
 
-        <aside className="space-y-6">
-          <div className="card-gradient rounded-2xl border border-border p-6 shadow-card">
+        <aside className="order-1 space-y-4 sm:space-y-6 lg:order-2">
+          <div className="card-note p-5 sm:p-6">
             <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-xs text-primary-glow">
               <Sparkles className="h-3 w-3" /> IA · Score perfil
             </div>
-            <div className="font-display text-5xl font-bold text-gradient">92</div>
+            <div className="font-display text-4xl font-bold text-gradient-trust sm:text-5xl">92</div>
             <p className="mt-2 text-sm text-muted-foreground">
               Tu perfil está optimizado. Añade 2 proyectos más para llegar al 95+.
             </p>
-            <Button size="sm" className="mt-4 w-full bg-gradient-primary">Mejorar perfil</Button>
+            <Button size="sm" className="mt-4 w-full">Mejorar perfil</Button>
           </div>
 
-          <div className="card-gradient rounded-2xl border border-border p-6 shadow-card">
+          <div className="card-note p-5 sm:p-6">
             <h3 className="text-sm font-semibold">Verificaciones</h3>
             <ul className="mt-3 space-y-2 text-sm">
               <li className="flex justify-between"><span>Email</span><span className="text-success">✓ Verificado</span></li>

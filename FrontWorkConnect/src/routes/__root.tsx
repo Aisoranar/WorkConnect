@@ -8,15 +8,16 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
-import appCss from "../styles.css?url";
+import "../styles.css";
 import { buildPageHead } from "@/lib/seo";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
+    <div className="relative flex min-h-[100dvh] items-center justify-center bg-background px-4 py-8">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-hero opacity-40" />
+      <div className="card-gradient relative w-full max-w-md rounded-2xl border border-border p-6 text-center shadow-elegant sm:p-10">
+        <h1 className="font-display text-5xl font-bold text-gradient sm:text-7xl">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">Página no encontrada</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           La página que buscas no existe o fue movida.
@@ -24,7 +25,7 @@ function NotFoundComponent() {
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="btn-brand inline-flex items-center justify-center px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90"
           >
             Ir al inicio
           </Link>
@@ -39,10 +40,11 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          No se pudo cargar la página
+    <div className="relative flex min-h-[100dvh] items-center justify-center bg-background px-4 py-8">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-hero opacity-40" />
+      <div className="card-gradient relative w-full max-w-md rounded-2xl border border-border p-6 text-center shadow-elegant sm:p-10">
+        <h1 className="font-display text-xl font-semibold tracking-tight text-foreground">
+          No se pudo cargar la <span className="text-gradient">página</span>
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Ocurrió un error. Puedes reintentar o volver al inicio.
@@ -53,13 +55,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="btn-brand inline-flex items-center justify-center px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90"
           >
             Reintentar
           </button>
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="inline-flex items-center justify-center rounded-md border border-border bg-surface/40 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface"
           >
             Ir al inicio
           </a>
@@ -76,12 +78,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: baseHead.meta,
     links: [
       ...baseHead.links,
-      { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap",
       },
     ],
   }),
@@ -93,7 +94,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" data-palette="purple">
       <head>
         <HeadContent />
       </head>
@@ -111,7 +112,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
-      <Toaster richColors position="top-center" />
+      <Toaster richColors theme="system" position="top-center" />
     </QueryClientProvider>
   );
 }

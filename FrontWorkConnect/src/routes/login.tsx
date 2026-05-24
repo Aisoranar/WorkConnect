@@ -92,7 +92,7 @@ function LoginPage() {
             {error}
           </p>
         )}
-        <Button type="submit" className="w-full bg-gradient-primary shadow-glow" disabled={loading}>
+        <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Entrando…" : "Entrar"}
         </Button>
       </form>

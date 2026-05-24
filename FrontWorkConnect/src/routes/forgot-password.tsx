@@ -75,7 +75,7 @@ function ForgotPasswordPage() {
             {success}
           </p>
         )}
-        <Button type="submit" className="w-full bg-gradient-primary shadow-glow" disabled={loading || Boolean(success)}>
+        <Button type="submit" className="w-full" disabled={loading || Boolean(success)}>
           {loading ? "Enviando…" : "Enviar enlace"}
         </Button>
       </form>

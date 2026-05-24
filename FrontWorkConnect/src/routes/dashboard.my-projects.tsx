@@ -23,6 +23,12 @@ const statusLabel: Record<string, string> = {
   in_progress: "En progreso",
 };
 
+const statusStyles: Record<string, string> = {
+  open: "chip chip-success",
+  closed: "chip chip-muted",
+  in_progress: "chip chip-trust",
+};
+
 function MyProjectsPage() {
   const query = useQuery({
     queryKey: queryKeys.myJobs,
@@ -33,15 +39,17 @@ function MyProjectsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Mis proyectos</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="page-heading">
+            Mis <span className="text-gradient">proyectos</span>
+          </h1>
           <p className="mt-2 text-muted-foreground">
             Proyectos que publicaste en WorkConnect. Entra a cada uno para ver postulaciones y
             aceptar talento.
           </p>
         </div>
-        <Button asChild className="bg-gradient-primary shadow-glow">
+        <Button asChild className="w-full sm:w-auto">
           <Link to="/dashboard/publish">
             <PlusCircle className="mr-2 h-4 w-4" />
             Publicar nuevo
@@ -56,10 +64,10 @@ function MyProjectsPage() {
         onRetry={() => void query.refetch()}
       >
         {jobs.length === 0 ? (
-          <div className="card-gradient rounded-2xl border border-dashed border-border p-12 text-center">
+          <div className="card-inset p-12 text-center">
             <Briefcase className="mx-auto h-10 w-10 text-muted-foreground" />
             <p className="mt-4 text-muted-foreground">Aún no has publicado ningún proyecto.</p>
-            <Button asChild className="mt-6 bg-gradient-primary shadow-glow">
+            <Button asChild className="mt-6">
               <Link to="/dashboard/publish">Publicar con IA</Link>
             </Button>
           </div>
@@ -70,12 +78,12 @@ function MyProjectsPage() {
                 <Link
                   to="/dashboard/my-projects/$jobId"
                   params={{ jobId: job.id }}
-                  className="card-gradient flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border p-6 shadow-card transition hover:border-primary/40"
+                  className="card-list flex flex-col gap-4 p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:p-6"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="font-display text-lg font-semibold">{job.title}</h2>
-                      <span className="rounded-full border border-border px-2 py-0.5 text-[10px] uppercase">
+                      <span className={statusStyles[job.status ?? "open"] ?? "chip chip-muted"}>
                         {statusLabel[job.status ?? "open"] ?? job.status}
                       </span>
                     </div>
@@ -84,8 +92,8 @@ function MyProjectsPage() {
                     </p>
                     <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{job.description}</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm">
+                  <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
+                    <div className="flex items-center gap-2 rounded-full border border-border px-3 py-2 text-sm sm:px-4">
                       <Users className="h-4 w-4 text-primary-glow" />
                       {job.applicants} postulaciones
                     </div>

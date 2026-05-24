@@ -54,10 +54,10 @@ function MyProjectDetailPage() {
   const error = jobQuery.error ?? applicationsQuery.error;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
-      <Button asChild variant="ghost" size="sm" className="-ml-2">
-        <Link to="/dashboard/my-projects">
-          <ArrowLeft className="mr-2 h-4 w-4" />
+    <div className="mx-auto max-w-3xl space-y-6 sm:space-y-8">
+      <Button asChild variant="ghost" size="sm" className="-ml-2 max-w-full">
+        <Link to="/dashboard/my-projects" className="truncate">
+          <ArrowLeft className="mr-2 h-4 w-4 shrink-0" />
           Volver a mis proyectos
         </Link>
       </Button>
@@ -73,8 +73,10 @@ function MyProjectDetailPage() {
       >
         {job && (
           <>
-            <div className="card-gradient rounded-2xl border border-border p-6 shadow-card">
-              <h1 className="font-display text-2xl font-bold">{job.title}</h1>
+            <div className="card-paper p-4 shadow-card sm:p-6">
+              <h1 className="font-display text-xl font-bold sm:text-2xl">
+                <span className="text-gradient">{job.title}</span>
+              </h1>
               <p className="mt-2 text-sm text-muted-foreground">
                 {job.budget} · {job.category}
               </p>
@@ -106,7 +108,7 @@ function MyProjectDetailPage() {
                   {applications.map((app) => (
                     <li
                       key={app.id}
-                      className="card-gradient rounded-2xl border border-border p-5 shadow-card"
+                      className="card-list p-4 sm:p-5"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
@@ -128,12 +130,12 @@ function MyProjectDetailPage() {
                           )}
                         </div>
                         <span
-                          className={`rounded-full px-3 py-1 text-xs capitalize ${
+                          className={`capitalize ${
                             app.status === "aceptada"
-                              ? "bg-primary/20 text-primary-glow"
+                              ? "chip chip-success"
                               : app.status === "rechazada"
-                                ? "bg-destructive/10 text-destructive"
-                                : "border border-border text-muted-foreground"
+                                ? "chip border-destructive/40 bg-destructive/10 text-destructive"
+                                : "chip chip-primary"
                           }`}
                         >
                           {app.status}
@@ -154,10 +156,10 @@ function MyProjectDetailPage() {
                       </div>
 
                       {app.status === "pendiente" && (
-                        <div className="mt-4 flex flex-wrap gap-2">
+                        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                           <Button
                             size="sm"
-                            className="bg-gradient-primary"
+                            className="w-full sm:w-auto"
                             disabled={statusMutation.isPending}
                             onClick={() =>
                               statusMutation.mutate({ id: app.id, status: "aceptada" })
@@ -173,6 +175,7 @@ function MyProjectDetailPage() {
                           <Button
                             size="sm"
                             variant="outline"
+                            className="w-full sm:w-auto"
                             disabled={statusMutation.isPending}
                             onClick={() =>
                               statusMutation.mutate({ id: app.id, status: "rechazada" })
@@ -182,7 +185,7 @@ function MyProjectDetailPage() {
                             Rechazar
                           </Button>
                           {app.user.username && (
-                            <Button asChild size="sm" variant="ghost">
+                            <Button asChild size="sm" variant="ghost" className="w-full sm:w-auto">
                               <Link to="/talento/$username" params={{ username: app.user.username! }}>
                                 Ver perfil
                               </Link>

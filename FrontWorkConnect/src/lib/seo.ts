@@ -28,7 +28,7 @@ export function buildPageHead(options: HeadMeta = {}) {
       { name: "description", content: description },
       { name: "author", content: SITE_NAME },
       { name: "application-name", content: SITE_NAME },
-      { name: "theme-color", content: "#1a1033" },
+      { name: "theme-color", content: "#181022" },
       ...(options.noIndex ? [{ name: "robots", content: "noindex, nofollow" }] : [{ name: "robots", content: "index, follow" }]),
 
       // Open Graph (Facebook, WhatsApp, LinkedIn)

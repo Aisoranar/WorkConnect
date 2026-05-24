@@ -108,16 +108,18 @@ function PublishProjectPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Publicar proyecto</h1>
+    <div className="mx-auto max-w-3xl space-y-6 sm:space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="page-heading">
+            Publicar <span className="text-gradient">proyecto</span>
+          </h1>
           <p className="mt-2 text-muted-foreground">
             Indica cómo pagarás (COP o USD). La IA sugiere WordPress, Laravel, React u otras
             tecnologías según tu necesidad.
           </p>
         </div>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="sm" className="w-full shrink-0 sm:w-auto">
           <Link to="/dashboard/my-projects">
             <List className="mr-2 h-4 w-4" />
             Mis proyectos
@@ -125,7 +127,7 @@ function PublishProjectPage() {
         </Button>
       </div>
 
-      <div className="card-gradient space-y-5 rounded-2xl border border-border p-6 shadow-card">
+      <div className="card-paper space-y-5 p-4 sm:p-6">
         <div className="space-y-2">
           <Label htmlFor="raw_need">¿Qué necesitas resolver?</Label>
           <Textarea
@@ -140,7 +142,7 @@ function PublishProjectPage() {
 
         <div className="space-y-3">
           <Label>¿En qué moneda pagarás?</Label>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             {(["COP", "USD"] as const).map((c) => (
               <button
                 key={c}
@@ -148,11 +150,14 @@ function PublishProjectPage() {
                 onClick={() => setCurrency(c)}
                 className={`flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition ${
                   currency === c
-                    ? "border-primary bg-gradient-primary text-primary-foreground shadow-glow"
+                    ? "border-primary bg-primary text-primary-foreground shadow-soft"
                     : "border-border bg-surface/40 text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {c === "COP" ? "Pesos colombianos (COP)" : "Dólares (USD)"}
+                <span className="sm:hidden">{c}</span>
+                <span className="hidden sm:inline">
+                  {c === "COP" ? "Pesos colombianos (COP)" : "Dólares (USD)"}
+                </span>
               </button>
             ))}
           </div>
@@ -188,7 +193,7 @@ function PublishProjectPage() {
         </div>
 
         <Button
-          className="bg-gradient-primary shadow-glow"
+          className="w-full sm:w-auto"
           disabled={structureMutation.isPending || rawNeed.trim().length < 20 || parsedAmount < 1}
           onClick={() => structureMutation.mutate()}
         >
@@ -202,7 +207,7 @@ function PublishProjectPage() {
       </div>
 
       {draft && (
-        <div className="card-gradient space-y-5 rounded-2xl border border-primary/30 p-6 shadow-card">
+        <div className="card-note space-y-5 p-4 sm:p-6">
           <div className="flex flex-wrap items-center gap-2 text-sm text-primary-glow">
             <Sparkles className="h-4 w-4" />
             {draft.summary}
@@ -348,7 +353,7 @@ function PublishProjectPage() {
           )}
 
           <Button
-            className="w-full bg-gradient-primary shadow-glow"
+            className="w-full"
             disabled={publishMutation.isPending || !draft.title.trim() || !draft.description.trim()}
             onClick={() => publishMutation.mutate()}
           >

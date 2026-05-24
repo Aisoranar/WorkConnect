@@ -97,15 +97,27 @@ function RegisterPage() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="role">Quiero</Label>
-          <select
-            id="role"
-            value={role}
-            onChange={(e) => setRole(e.target.value as "freelancer" | "client")}
-            className="flex h-9 w-full rounded-md border border-border bg-surface/60 px-3 py-1 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          >
-            <option value="freelancer">Encontrar trabajo (freelancer)</option>
-            <option value="client">Publicar proyectos (cliente)</option>
-          </select>
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                { value: "freelancer", label: "Encontrar trabajo" },
+                { value: "client", label: "Publicar proyectos" },
+              ] as const
+            ).map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setRole(value)}
+                className={`rounded-xl border px-2 py-3 text-xs font-medium transition sm:px-3 sm:text-sm ${
+                  role === value
+                    ? "border-primary bg-primary text-primary-foreground shadow-soft"
+                    : "border-border bg-surface/40 text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Contraseña</Label>
@@ -140,7 +152,7 @@ function RegisterPage() {
             {error}
           </p>
         )}
-        <Button type="submit" className="w-full bg-gradient-primary shadow-glow" disabled={loading}>
+        <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Creando cuenta…" : "Crear cuenta"}
         </Button>
       </form>

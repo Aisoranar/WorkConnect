@@ -79,9 +79,9 @@ export function ApplyJobSheet({ job, open, onOpenChange }: ApplyJobSheetProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] max-w-4xl overflow-y-auto border-border bg-background p-0">
-        <DialogHeader className="border-b border-border px-6 py-5 text-left">
-          <DialogTitle className="font-display text-xl">
+      <DialogContent className="max-h-[92dvh] w-[calc(100vw-1rem)] max-w-4xl overflow-y-auto border-border bg-background p-0 sm:w-full">
+        <DialogHeader className="border-b border-border px-4 py-4 text-left sm:px-6 sm:py-5">
+          <DialogTitle className="font-display text-lg sm:text-xl">
             Aplicar a «{job?.title ?? "…"}»
           </DialogTitle>
           <DialogDescription>
@@ -103,7 +103,7 @@ export function ApplyJobSheet({ job, open, onOpenChange }: ApplyJobSheetProps) {
         {ctx && cv && (
           <div className="grid gap-0 lg:grid-cols-2">
             {/* Propuesta */}
-            <div className="space-y-5 border-b border-border p-6 lg:border-b-0 lg:border-r">
+            <div className="space-y-5 border-b border-border p-4 sm:p-6 lg:border-b-0 lg:border-r">
               <div>
                 <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-primary-glow">
                   Tu propuesta
@@ -168,7 +168,7 @@ export function ApplyJobSheet({ job, open, onOpenChange }: ApplyJobSheetProps) {
               </p>
 
               <Button
-                className="w-full bg-gradient-primary shadow-glow"
+                className="w-full"
                 disabled={submitMutation.isPending || !message.trim() || !price.trim()}
                 onClick={() => submitMutation.mutate()}
               >
@@ -180,7 +180,7 @@ export function ApplyJobSheet({ job, open, onOpenChange }: ApplyJobSheetProps) {
             </div>
 
             {/* Preview CV */}
-            <div className="bg-surface/20 p-6">
+            <div className="bg-surface/20 p-4 sm:p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                   Hoja de vida (preview)
@@ -188,9 +188,9 @@ export function ApplyJobSheet({ job, open, onOpenChange }: ApplyJobSheetProps) {
                 <span className="text-xs text-muted-foreground">Lo que verá el cliente</span>
               </div>
 
-              <div className="card-gradient rounded-2xl border border-border p-5 shadow-card">
+              <div className="card-paper p-5">
                 <div className="flex gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-primary text-lg font-bold shadow-glow">
+                  <div className="logo-mark h-14 w-14 shrink-0 text-lg font-bold">
                     {cv.initials}
                   </div>
                   <div className="min-w-0">
@@ -213,8 +213,8 @@ export function ApplyJobSheet({ job, open, onOpenChange }: ApplyJobSheetProps) {
                 <div className="mt-5 grid grid-cols-2 gap-3">
                   <div className="rounded-xl border border-border bg-surface/50 p-3 text-center">
                     <div className="text-xs text-muted-foreground">Trust Score</div>
-                    <div className="font-display text-3xl font-bold text-gradient">{cv.trust_score}</div>
-                    <div className="text-xs text-primary-glow">{cv.trust_label}</div>
+                    <div className="font-display text-3xl font-bold text-gradient-trust">{cv.trust_score}</div>
+                    <div className="text-xs text-trust-glow">{cv.trust_label}</div>
                   </div>
                   <div className="rounded-xl border border-border bg-surface/50 p-3 text-center">
                     <div className="text-xs text-muted-foreground">Profesional</div>
@@ -248,11 +248,11 @@ export function ApplyJobSheet({ job, open, onOpenChange }: ApplyJobSheetProps) {
                   </ul>
                 </div>
 
-                <div className="mt-5 rounded-xl border border-primary/30 bg-primary/10 p-4">
+                <div className="mt-5 rounded-xl border border-trust/30 bg-trust/10 p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Match con este proyecto</span>
-                    <span className="flex items-center gap-1 font-display text-2xl font-bold text-primary-glow">
-                      <Sparkles className="h-4 w-4" />
+                    <span className="flex items-center gap-1 font-display text-2xl font-bold text-gradient-trust">
+                      <Sparkles className="h-4 w-4 text-trust-glow" />
                       {cv.match}%
                     </span>
                   </div>

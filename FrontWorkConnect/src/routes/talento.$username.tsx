@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Star, Github, Linkedin, Briefcase, QrCode } from "lucide-react";
+import { MapPin, Star, Github, Linkedin, Briefcase, QrCode, Zap, Sparkles } from "lucide-react";
 import { fetchTalentProfile, queryKeys } from "@/lib/api";
 import { ApiState } from "@/components/ApiState";
 import { Button } from "@/components/ui/button";
@@ -35,19 +35,26 @@ function PublicTalentPage() {
     .toUpperCase();
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border glass">
-        <div className="container mx-auto flex h-16 items-center justify-between px-6">
-          <Link to="/" className="font-display text-lg font-bold">
-            WorkConnect
+    <div className="min-h-[100dvh] overflow-x-hidden bg-background">
+      <header className="relative border-b border-border glass">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-hero opacity-40" />
+        <div className="container relative mx-auto flex h-14 items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
+          <Link to="/" className="flex min-w-0 items-center gap-2">
+            <div className="logo-mark h-8 w-8 shrink-0">
+              <Zap className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="truncate font-display text-base font-bold sm:text-lg">WorkConnect</span>
           </Link>
-          <Button asChild size="sm" variant="outline">
-            <Link to="/register">Unirme como talento</Link>
+          <Button asChild size="sm" className="shrink-0">
+            <Link to="/register">
+              <span className="hidden sm:inline">Unirme como talento</span>
+              <span className="sm:hidden">Unirme</span>
+            </Link>
           </Button>
         </div>
       </header>
 
-      <main className="container mx-auto max-w-4xl px-6 py-12">
+      <main className="container mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
         <ApiState
           isLoading={query.isLoading}
           isError={query.isError}
@@ -55,14 +62,17 @@ function PublicTalentPage() {
           onRetry={() => void query.refetch()}
         >
           {talent && (
-            <div className="grid gap-8 lg:grid-cols-[1fr_auto]">
-              <div className="card-gradient rounded-2xl border border-border p-8 shadow-card">
-                <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-primary text-2xl font-bold shadow-glow">
+            <div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,280px)] lg:gap-8">
+              <div className="order-2 card-paper p-5 sm:p-8 lg:order-1">
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
+                  <div className="logo-mark mx-auto h-16 w-16 shrink-0 rounded-organic-md text-xl font-bold sm:mx-0 sm:h-20 sm:w-20 sm:text-2xl">
                     {initials}
                   </div>
-                  <div className="flex-1">
-                    <h1 className="font-display text-3xl font-bold">{talent.name}</h1>
+                  <div className="min-w-0 flex-1 text-center sm:text-left">
+                    <h1 className="page-heading">
+                  {talent.name.split(" ")[0]}{" "}
+                  <span className="text-gradient-trust">{talent.name.split(" ").slice(1).join(" ") || ""}</span>
+                </h1>
                     <p className="text-muted-foreground">@{talent.username}</p>
                     {talent.city && (
                       <p className="mt-2 flex items-center gap-1 text-sm text-muted-foreground">
@@ -70,7 +80,7 @@ function PublicTalentPage() {
                         {talent.city}
                       </p>
                     )}
-                    <div className="mt-3 flex flex-wrap gap-4 text-sm">
+                    <div className="mt-3 flex flex-wrap justify-center gap-3 text-sm sm:justify-start sm:gap-4">
                       <span className="flex items-center gap-1">
                         <Star className="h-4 w-4 fill-primary-glow text-primary-glow" />
                         {talent.rating.toFixed(1)}
@@ -83,7 +93,7 @@ function PublicTalentPage() {
                     {talent.bio && (
                       <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{talent.bio}</p>
                     )}
-                    <div className="mt-4 flex gap-3">
+                    <div className="mt-4 flex justify-center gap-3 sm:justify-start">
                       {talent.github && (
                         <a href={talent.github} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground">
                           <Github className="h-5 w-5" />
@@ -128,11 +138,30 @@ function PublicTalentPage() {
                 )}
               </div>
 
-              <aside className="card-gradient h-fit rounded-2xl border border-border p-6 text-center shadow-card">
-                <QrCode className="mx-auto h-8 w-8 text-primary-glow" />
-                <p className="mt-2 text-sm font-medium">Escanea en feria o entrevista</p>
-                <img src={qrSrc} alt="QR perfil WorkConnect" className="mx-auto mt-4 rounded-lg border border-border" width={200} height={200} />
-                <p className="mt-3 break-all text-xs text-muted-foreground">{profileUrl}</p>
+              <aside className="order-1 space-y-4 lg:order-2">
+                <div className="card-note p-5 text-center sm:p-6">
+                  <div className="mb-1 text-xs uppercase tracking-wider text-muted-foreground">Trust Score</div>
+                  <div className="font-display text-4xl font-bold text-gradient-trust sm:text-5xl">
+                    {Math.round(talent.rating * 20)}
+                  </div>
+                  <p className="mt-1 flex items-center justify-center gap-1 text-xs text-trust-glow">
+                    <Sparkles className="h-3 w-3" />
+                    Reputación verificada
+                  </p>
+                </div>
+
+                <div className="card-gradient h-fit rounded-2xl border border-border p-5 text-center shadow-card sm:p-6">
+                  <QrCode className="mx-auto h-8 w-8 text-primary-glow" />
+                  <p className="mt-2 text-sm font-medium">Escanea en feria o entrevista</p>
+                  <img
+                    src={qrSrc}
+                    alt="QR perfil WorkConnect"
+                    className="mx-auto mt-4 max-w-full rounded-lg border border-border"
+                    width={200}
+                    height={200}
+                  />
+                  <p className="mt-3 break-all text-xs text-muted-foreground">{profileUrl}</p>
+                </div>
               </aside>
             </div>
           )}

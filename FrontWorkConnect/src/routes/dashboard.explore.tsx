@@ -65,14 +65,16 @@ function ExploreProjects() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-bold tracking-tight">Explorar proyectos</h1>
+        <h1 className="page-heading">
+          Explorar <span className="text-gradient">proyectos</span>
+        </h1>
         <p className="mt-1 text-muted-foreground">
           Micro-proyectos reales de empresas y PYMEs. Ordenados por compatibilidad con tu perfil.
         </p>
       </div>
 
-      <form onSubmit={handleSearchSubmit} className="flex flex-wrap gap-2">
-        <div className="relative min-w-[200px] flex-1">
+      <form onSubmit={handleSearchSubmit} className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <div className="relative min-w-0 flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
@@ -81,30 +83,32 @@ function ExploreProjects() {
             className="border-border bg-surface/60 pl-9"
           />
         </div>
-        <Button type="submit" variant="outline">
-          Buscar
-        </Button>
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as ExploreJobsFilters["sort"])}
-          className="rounded-lg border border-border bg-surface/60 px-3 py-2 text-sm"
-        >
+        <div className="flex gap-2">
+          <Button type="submit" variant="outline" className="flex-1 sm:flex-none">
+            Buscar
+          </Button>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as ExploreJobsFilters["sort"])}
+            className="min-w-0 flex-1 rounded-lg border border-border bg-surface/60 px-3 py-2 text-sm sm:flex-none"
+          >
           <option value="match">Mayor compatibilidad</option>
           <option value="recent">Más recientes</option>
           <option value="budget">Mayor presupuesto</option>
         </select>
+        </div>
       </form>
 
       <ApiState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
-        <div className="flex flex-wrap gap-2">
+        <div className="scroll-chips">
           {categories.map((c) => (
             <button
               key={c}
               type="button"
               onClick={() => setCategory(c)}
-              className={`rounded-full border px-4 py-1.5 text-sm transition ${
+              className={`shrink-0 rounded-full border px-4 py-1.5 text-sm transition ${
                 category === c
-                  ? "border-primary bg-gradient-primary text-primary-foreground shadow-glow"
+                  ? "border-primary bg-primary text-primary-foreground shadow-soft"
                   : "border-border bg-surface/40 text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -120,7 +124,7 @@ function ExploreProjects() {
         )}
 
         {jobs.length === 0 ? (
-          <div className="card-gradient rounded-2xl border border-dashed border-border p-12 text-center">
+          <div className="card-inset p-12 text-center">
             <Briefcase className="mx-auto h-10 w-10 text-muted-foreground" />
             <p className="mt-4 text-muted-foreground">
               No hay proyectos con esos filtros. Prueba otra categoría o vuelve más tarde.
@@ -149,26 +153,20 @@ function JobCard({ job, onApply }: { job: Job; onApply: () => void }) {
   const status = job.applicationStatus;
 
   return (
-    <article className="card-gradient flex flex-col rounded-2xl border border-border p-6 shadow-card transition hover:border-primary/50">
-      <div className="flex items-start justify-between gap-4">
+    <article className="card-list flex flex-col p-4 sm:p-6">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
         <div className="min-w-0">
           <div className="mb-1 flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground">{job.company}</span>
-            {job.isNew && (
-              <span className="rounded-full bg-cyan-500/15 px-2 py-0.5 text-[10px] font-medium text-cyan-200">
-                Nuevo
-              </span>
-            )}
+            {job.isNew && <span className="chip chip-trust">Nuevo</span>}
             {job.match >= 85 && (
-              <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary-glow">
-                Alta compatibilidad
-              </span>
+              <span className="chip chip-primary">Alta compatibilidad</span>
             )}
           </div>
           <h3 className="font-display text-lg font-semibold leading-snug">{job.title}</h3>
           <span className="mt-1 inline-block text-xs text-muted-foreground">{job.category}</span>
         </div>
-        <div className="flex shrink-0 items-center gap-1 rounded-xl bg-primary/15 px-3 py-1.5 text-sm font-semibold text-primary-glow">
+        <div className="flex shrink-0 items-center gap-1 rounded-xl bg-trust/15 px-3 py-1.5 text-sm font-semibold text-trust-glow">
           <Sparkles className="h-3.5 w-3.5" />
           {job.match}%
         </div>
@@ -199,18 +197,18 @@ function JobCard({ job, onApply }: { job: Job; onApply: () => void }) {
         </span>
       </div>
 
-      <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
+      <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4 sm:mt-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="font-display text-xl font-bold">{job.budget}</div>
+          <div className="font-display text-lg font-bold sm:text-xl">{job.budget}</div>
           <div className="text-xs text-muted-foreground">{job.remote ? "Remoto" : "Presencial"}</div>
         </div>
         {applied ? (
           <div className="flex items-center gap-2 text-sm text-primary-glow">
-            <CheckCircle2 className="h-4 w-4" />
-            Postulaste · {status}
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            <span className="text-pretty">Postulaste · {status}</span>
           </div>
         ) : (
-          <Button size="sm" className="bg-gradient-primary" onClick={onApply}>
+          <Button size="sm" className="w-full sm:w-auto" onClick={onApply}>
             Postular
           </Button>
         )}
@@ -233,7 +231,9 @@ function ExploreTalent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-bold tracking-tight">Explorar talento</h1>
+        <h1 className="page-heading">
+          Explorar <span className="text-gradient-trust">talento</span>
+        </h1>
         <p className="mt-1 text-muted-foreground">
           Jóvenes con skills verificadas. Publica un proyecto o contáctalos desde su perfil público.
         </p>
@@ -244,15 +244,15 @@ function ExploreTalent() {
           e.preventDefault();
           setDebouncedSearch(search);
         }}
-        className="flex gap-2"
+        className="flex flex-col gap-2 sm:flex-row"
       >
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por nombre, ciudad o bio…"
-          className="border-border bg-surface/60"
+          className="min-w-0 border-border bg-surface/60"
         />
-        <Button type="submit" variant="outline">
+        <Button type="submit" variant="outline" className="w-full sm:w-auto">
           Buscar
         </Button>
       </form>
@@ -267,7 +267,7 @@ function ExploreTalent() {
           {freelancers.map((f) => (
             <article
               key={f.id}
-              className="card-gradient rounded-2xl border border-border p-5 shadow-card"
+              className="card-paper p-5"
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
