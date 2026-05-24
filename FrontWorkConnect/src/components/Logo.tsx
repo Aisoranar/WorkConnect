@@ -145,7 +145,7 @@ type SidebarBrandLogoProps = {
 };
 
 /** Wordmark expandido · iso cuadrado al colapsar — sidebar siempre oscuro */
-export function SidebarBrandLogo({ to = "/", size = "lg", className }: SidebarBrandLogoProps) {
+export function SidebarBrandLogo({ to = "/dashboard", size = "lg", className }: SidebarBrandLogoProps) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
 
