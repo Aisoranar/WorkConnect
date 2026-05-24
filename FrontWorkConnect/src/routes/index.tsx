@@ -160,7 +160,7 @@ function Landing() {
                 <Sparkles className="h-3.5 w-3.5" />
                 Puente empresa ↔ talento joven
               </div>
-              <h1 className="mt-4 text-balance font-display text-3xl font-bold leading-[1.08] tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
+              <h1 className="mt-4 text-balance font-display text-3xl font-bold leading-[1.08] tracking-tight text-slate-900 sm:mt-5 sm:text-4xl lg:text-5xl">
                 De &quot;necesito una web&quot; a{" "}
                 <span className="text-gradient">proyecto publicado con IA</span>
               </h1>
@@ -180,12 +180,12 @@ function Landing() {
                   asChild
                   size="lg"
                   variant="outline"
-                  className="h-12 w-full border-white/40 bg-white/50 px-6 text-base backdrop-blur-sm sm:w-auto"
+                  className="landing-hero-glass__btn-secondary h-12 w-full px-6 text-base shadow-soft sm:w-auto"
                 >
                   <Link to="/register">Publicar como empresa</Link>
                 </Button>
               </div>
-              <div className="mt-6 flex flex-wrap gap-6 border-t border-white/30 pt-5">
+              <div className="landing-hero-glass__stats mt-6 flex flex-wrap gap-6 border-t pt-5">
                 {heroStats.map(({ value, label }) => (
                   <div key={label}>
                     <div className="font-display text-xl font-bold text-primary">{value}</div>
@@ -268,14 +268,14 @@ function Landing() {
       </section>
 
       {/* ── HOW ── */}
-      <section id="how" className="landing-section scroll-mt-[4.5rem] landing-band-dark border-y border-sidebar-border sm:scroll-mt-20">
+      <section id="how" className="landing-section landing-band-dark scroll-mt-[4.5rem] border-y border-border sm:scroll-mt-20">
         <div className="container mx-auto px-4 py-16 sm:px-6 sm:py-24">
           <div className="mx-auto max-w-2xl text-center">
             <p className="landing-section-label">Proceso</p>
             <h2 className="section-heading mt-3 text-balance">
               Cuatro pasos. Cero fricción.
             </h2>
-            <p className="mt-4 text-slate-400">
+            <p className="mt-4 text-muted-foreground">
               De la idea en lenguaje cotidiano al proyecto listo para postular.
             </p>
           </div>
@@ -302,13 +302,13 @@ function Landing() {
                 desc: "Producto para la empresa, caso para el CV.",
               },
             ].map(({ icon: Icon, title, desc }, i) => (
-              <li key={title} className="landing-step border-sidebar-border">
+              <li key={title} className="landing-step">
                 <div className="landing-step__num mb-3">{i + 1}</div>
-                <div className="mb-1 flex items-center gap-2 font-semibold text-slate-100">
-                  <Icon className="h-4 w-4 text-primary-glow" />
+                <div className="mb-1 flex items-center gap-2 font-semibold text-foreground">
+                  <Icon className="h-4 w-4 text-primary" />
                   {title}
                 </div>
-                <p className="text-sm text-slate-400">{desc}</p>
+                <p className="text-sm text-muted-foreground">{desc}</p>
               </li>
             ))}
           </ol>

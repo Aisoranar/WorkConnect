@@ -600,6 +600,41 @@
     animation: float 7s ease-in-out infinite;
   }
 
+  .iso-loader-shell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 5.5rem;
+    height: 5.5rem;
+    border-radius: var(--radius-lg);
+    background: var(--sidebar-bg);
+    box-shadow:
+      0 12px 32px color-mix(in srgb, var(--sidebar-bg) 35%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+  }
+
+  @media (min-width: 640px) {
+    .iso-loader-shell {
+      width: 6.5rem;
+      height: 6.5rem;
+    }
+  }
+
+  .iso-loader-spin {
+    animation: iso-loader-spin 2.4s linear infinite;
+  }
+
+  @keyframes iso-loader-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .iso-loader-spin {
+      animation: none;
+    }
+  }
+
   .chip {
     display: inline-flex;
     align-items: center;
@@ -847,12 +882,48 @@
     isolation: isolate;
     border-radius: var(--radius-lg);
     padding: 1.25rem;
-    background: color-mix(in srgb, #ffffff 72%, transparent);
+    background: color-mix(in srgb, #ffffff 92%, transparent);
     backdrop-filter: blur(18px) saturate(1.15);
     -webkit-backdrop-filter: blur(18px) saturate(1.15);
+    color: #1e293b;
     box-shadow:
       0 12px 40px color-mix(in srgb, #1e2130 14%, transparent),
       inset 0 1px 0 color-mix(in srgb, #ffffff 85%, transparent);
+  }
+
+  /* Texto legible en la tarjeta — independiente del modo oscuro del sistema */
+  .landing-hero-glass .text-muted-foreground {
+    color: #475569;
+  }
+
+  .landing-hero-glass .text-foreground {
+    color: #1e293b;
+  }
+
+  .landing-hero-glass .landing-eyebrow {
+    color: #4f46e5;
+    border-color: color-mix(in srgb, #4f46e5 28%, #cbd5e1);
+    background: color-mix(in srgb, #eef2ff 88%, transparent);
+  }
+
+  .landing-hero-glass .text-primary {
+    color: #4f46e5;
+  }
+
+  .landing-hero-glass__stats {
+    border-color: color-mix(in srgb, #1e293b 12%, transparent);
+  }
+
+  .landing-hero-glass__btn-secondary {
+    border-color: #cbd5e1;
+    background: #ffffff;
+    color: #1e293b;
+  }
+
+  .landing-hero-glass__btn-secondary:hover {
+    border-color: color-mix(in srgb, #6366f1 35%, #cbd5e1);
+    background: #f8fafc;
+    color: #1e293b;
   }
 
   .landing-hero-glass::before {
@@ -1027,18 +1098,54 @@
     color: var(--primary);
   }
 
+  /* Banda de contraste — claro por defecto, oscuro en prefers-color-scheme: dark */
   .landing-band-dark {
-    background: var(--sidebar-bg);
-    color: #cbd5e1;
+    background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+    color: var(--foreground);
   }
 
   .landing-band-dark .landing-section-label {
-    color: var(--brand-light);
+    color: var(--primary);
   }
 
   .landing-band-dark h2,
   .landing-band-dark h3 {
-    color: #f1f5f9;
+    color: var(--foreground);
+  }
+
+  .landing-band-dark .landing-step {
+    background: var(--card);
+    border-color: var(--border);
+  }
+
+  .landing-band-dark .landing-step:hover {
+    border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
+    box-shadow: var(--shadow-hover);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .landing-band-dark {
+      background: var(--sidebar-bg);
+      color: #cbd5e1;
+    }
+
+    .landing-band-dark .landing-section-label {
+      color: var(--brand-light);
+    }
+
+    .landing-band-dark h2,
+    .landing-band-dark h3 {
+      color: #f1f5f9;
+    }
+
+    .landing-band-dark .landing-step {
+      background: color-mix(in srgb, var(--sidebar-bg-hover) 70%, var(--sidebar-bg));
+      border-color: var(--sidebar-border);
+    }
+
+    .landing-band-dark .landing-step:hover {
+      border-color: color-mix(in srgb, var(--brand-light) 35%, var(--sidebar-border));
+    }
   }
 
   .landing-testimonial {
@@ -1076,15 +1183,6 @@
 
   .landing-nav-link:hover {
     color: var(--foreground);
-  }
-
-  .landing-band-dark .landing-step {
-    background: color-mix(in srgb, var(--sidebar-bg-hover) 70%, var(--sidebar-bg));
-    border-color: var(--sidebar-border);
-  }
-
-  .landing-band-dark .landing-step:hover {
-    border-color: color-mix(in srgb, var(--brand-light) 35%, var(--sidebar-border));
   }
 
   .landing-feature-icon {
