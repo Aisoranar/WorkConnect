@@ -108,10 +108,10 @@ function RegisterPage() {
                 key={value}
                 type="button"
                 onClick={() => setRole(value)}
-                className={`rounded-xl border px-2 py-3 text-xs font-medium transition sm:px-3 sm:text-sm ${
+                className={`choice-chip flex-1 rounded-xl border px-3 py-3 text-xs font-medium sm:px-3 sm:text-sm ${
                   role === value
-                    ? "border-primary bg-primary text-primary-foreground shadow-soft"
-                    : "border-border bg-surface/40 text-muted-foreground hover:text-foreground"
+                    ? "choice-chip--active border-primary bg-primary text-primary-foreground shadow-soft"
+                    : "border-border bg-surface/40 text-muted-foreground"
                 }`}
               >
                 {label}

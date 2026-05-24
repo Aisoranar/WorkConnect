@@ -1,5 +1,4 @@
-import { Link } from "@tanstack/react-router";
-import { Zap } from "lucide-react";
+import { LogoLink } from "@/components/Logo";
 import type { ReactNode } from "react";
 
 type AuthLayoutProps = {
@@ -15,12 +14,7 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
       <div className="pointer-events-none absolute inset-0 bg-gradient-hero opacity-50" />
       <header className="relative z-10 border-b border-border glass">
         <div className="container mx-auto flex h-14 items-center px-4 sm:h-16 sm:px-6">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="logo-mark h-8 w-8 sm:h-9 sm:w-9">
-              <Zap className="h-4 w-4 text-primary-foreground sm:h-5 sm:w-5" />
-            </div>
-            <span className="font-display text-base font-bold tracking-tight sm:text-lg">WorkConnect</span>
-          </Link>
+          <LogoLink size="lg" />
         </div>
       </header>
 

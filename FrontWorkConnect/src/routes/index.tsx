@@ -1,22 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Sparkles,
   Briefcase,
-  Zap,
-  Shield,
   Star,
   Building2,
   GraduationCap,
   Wand2,
   Handshake,
   Menu,
+  CheckCircle2,
+  TrendingUp,
+  QrCode,
 } from "lucide-react";
+import { Logo, LogoLink } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { PlatformModules } from "@/components/PlatformModules";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import heroImg from "@/assets/hero-network.jpg";
+import heroImg from "@/assets/heroImage.jpg";
+import { handleLandingNavClick, scrollToSection } from "@/lib/smooth-scroll";
 
 const navLinks = [
   { href: "#problem", label: "Problemática" },
@@ -25,200 +28,287 @@ const navLinks = [
   { href: "#features", label: "Plataforma" },
 ] as const;
 
+const heroStats = [
+  { value: "IA", label: "Brief automático" },
+  { value: "92%", label: "Match perfil" },
+  { value: "QR", label: "Perfil verificable" },
+] as const;
+
+const stripStats = [
+  { value: "↓70%", label: "Costo vs. agencia", icon: TrendingUp },
+  { value: "2 sem", label: "Primer entregable", icon: Briefcase },
+  { value: "100%", label: "Casos reales en CV", icon: GraduationCap },
+  { value: "24/7", label: "Matching activo", icon: Sparkles },
+] as const;
+
 export const Route = createFileRoute("/")({
   component: Landing,
 });
 
+function LandingHeader({
+  menuOpen,
+  setMenuOpen,
+}: {
+  menuOpen: boolean;
+  setMenuOpen: (v: boolean) => void;
+}) {
+  return (
+    <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-md">
+      <div className="container mx-auto flex h-14 items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
+        <LogoLink size="lg" className="shrink-0" />
+        <nav className="hidden items-center gap-7 md:flex">
+          {navLinks.map(({ href, label }) => (
+            <a
+              key={href}
+              href={href}
+              className="landing-nav-link"
+              onClick={(e) => handleLandingNavClick(e, href)}
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link to="/login" className="landing-nav-link hidden sm:inline">
+            Entrar
+          </Link>
+          <Button asChild size="sm" className="hidden sm:inline-flex">
+            <Link to="/register">
+              Empezar gratis
+              <ArrowRight className="ml-1 h-4 w-4" />
+            </Link>
+          </Button>
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="md:hidden" aria-label="Abrir menú">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[min(100vw-2rem,20rem)] border-border">
+              <SheetHeader>
+                <SheetTitle className="font-display text-left">
+                  <Logo size="md" />
+                </SheetTitle>
+              </SheetHeader>
+              <nav className="mt-6 flex flex-col gap-1">
+                {navLinks.map(({ href, label }) => (
+                  <a
+                    key={href}
+                    href={href}
+                    className="rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-muted"
+                    onClick={(e) =>
+                      handleLandingNavClick(e, href, {
+                        onBeforeScroll: () => setMenuOpen(false),
+                        delayMs: 320,
+                      })
+                    }
+                  >
+                    {label}
+                  </a>
+                ))}
+                <Link
+                  to="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-muted"
+                >
+                  Entrar
+                </Link>
+                <Button asChild className="mt-4 w-full">
+                  <Link to="/register" onClick={() => setMenuOpen(false)}>
+                    Crear cuenta gratis
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+    </header>
+  );
+}
+
 function Landing() {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  return (
-    <div className="min-h-screen overflow-x-hidden">
-      <header className="sticky top-0 z-50 glass">
-        <div className="container mx-auto flex h-14 items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
-          <Link to="/" className="flex min-w-0 items-center gap-2">
-            <div className="logo-mark h-8 w-8 shrink-0 sm:h-9 sm:w-9">
-              <Zap className="h-4 w-4 text-primary-foreground sm:h-5 sm:w-5" />
-            </div>
-            <span className="truncate font-display text-base font-bold tracking-tight sm:text-lg">WorkConnect</span>
-          </Link>
-          <nav className="hidden items-center gap-8 md:flex">
-            {navLinks.map(({ href, label }) => (
-              <a key={href} href={href} className="text-sm text-muted-foreground transition hover:text-foreground">
-                {label}
-              </a>
-            ))}
-          </nav>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link to="/login" className="hidden text-sm text-muted-foreground transition hover:text-foreground sm:inline">
-              Entrar
-            </Link>
-            <Button asChild size="sm" className="hidden sm:inline-flex">
-              <Link to="/register">
-                Empezar
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
-            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="md:hidden" aria-label="Abrir menú">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[min(100vw-2rem,20rem)] border-border">
-                <SheetHeader>
-                  <SheetTitle className="font-display text-left">WorkConnect</SheetTitle>
-                </SheetHeader>
-                <nav className="mt-6 flex flex-col gap-1">
-                  {navLinks.map(({ href, label }) => (
-                    <a
-                      key={href}
-                      href={href}
-                      onClick={() => setMenuOpen(false)}
-                      className="rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-surface"
-                    >
-                      {label}
-                    </a>
-                  ))}
-                  <Link
-                    to="/login"
-                    onClick={() => setMenuOpen(false)}
-                    className="rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-surface"
-                  >
-                    Entrar
-                  </Link>
-                  <Button asChild className="mt-4 w-full">
-                    <Link to="/register" onClick={() => setMenuOpen(false)}>
-                      Crear cuenta
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </nav>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </div>
-      </header>
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.length > 1) {
+      window.requestAnimationFrame(() => {
+        scrollToSection(hash.slice(1));
+      });
+    }
+  }, []);
 
-      <section className="relative overflow-hidden bg-gradient-hero">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-40"
-          style={{
-            backgroundImage: `url(${heroImg})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            maskImage: "radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 80%)",
-          }}
+  return (
+    <div className="min-h-screen overflow-x-hidden bg-background">
+      <LandingHeader menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
+
+      {/* ── HERO ── */}
+      <section className="landing-hero relative overflow-hidden">
+        <img
+          src={heroImg}
+          alt=""
+          aria-hidden
+          className="landing-hero__image"
+          fetchPriority="high"
         />
-        <div className="container relative mx-auto px-4 py-16 sm:px-6 sm:py-24 md:py-36">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 tag-line max-w-full text-left sm:text-center">
-              <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" />
-              <span className="text-pretty">IA que traduce necesidades de empresa → proyectos para jóvenes talento</span>
-            </div>
-            <h1 className="text-balance text-3xl font-bold leading-[1.08] tracking-tight sm:text-4xl md:text-5xl lg:text-7xl">
-              Transformamos pequeños proyectos en{" "}
-              <span className="text-gradient">experiencia profesional real.</span>
-            </h1>
-            <p className="mx-auto mt-5 max-w-xl text-balance text-base text-muted-foreground sm:mt-6 sm:text-lg">
-              Las PYMEs describen su problema y presupuesto; la IA lo convierte en un requerimiento técnico claro.
-              Los jóvenes postulan, entregan y construyen portafolio, reputación y un perfil con QR — no solo
-              ejercicios de curso.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
-              <Button asChild size="lg" className="w-full sm:w-auto">
-                <Link to="/register">
-                  Soy talento joven
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="w-full border-border bg-surface/40 backdrop-blur sm:w-auto">
-                <Link to="/register">Tengo una empresa</Link>
-              </Button>
+        <div className="container relative mx-auto px-4 py-8 sm:px-6 sm:py-10 lg:py-12">
+          <div className="flex justify-center lg:justify-end">
+            <div className="landing-hero-glass w-full max-w-xl lg:max-w-[32rem]">
+              <div className="landing-eyebrow landing-hero-glass__eyebrow">
+                <Sparkles className="h-3.5 w-3.5" />
+                Puente empresa ↔ talento joven
+              </div>
+              <h1 className="mt-4 text-balance font-display text-3xl font-bold leading-[1.08] tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
+                De &quot;necesito una web&quot; a{" "}
+                <span className="text-gradient">proyecto publicado con IA</span>
+              </h1>
+              <p className="mt-4 text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
+                Las PYMEs describen su necesidad en lenguaje cotidiano. La IA la convierte en
+                requerimiento técnico. Los jóvenes postulan, entregan y construyen{" "}
+                <strong className="font-semibold text-foreground">portafolio real + perfil QR</strong>.
+              </p>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <Button asChild size="lg" className="h-12 w-full px-6 text-base sm:w-auto">
+                  <Link to="/register">
+                    Soy talento joven
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="h-12 w-full border-white/40 bg-white/50 px-6 text-base backdrop-blur-sm sm:w-auto"
+                >
+                  <Link to="/register">Publicar como empresa</Link>
+                </Button>
+              </div>
+              <div className="mt-6 flex flex-wrap gap-6 border-t border-white/30 pt-5">
+                {heroStats.map(({ value, label }) => (
+                  <div key={label}>
+                    <div className="font-display text-xl font-bold text-primary">{value}</div>
+                    <div className="text-xs text-muted-foreground">{label}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="problem" className="container mx-auto px-4 py-16 sm:px-6 sm:py-24">
+      {/* ── STATS STRIP ── */}
+      <section className="landing-stat-strip" aria-label="Métricas clave">
+        <div className="container mx-auto grid grid-cols-2 px-4 sm:px-6 md:grid-cols-4">
+          {stripStats.map(({ value, label, icon: Icon }) => (
+            <div key={label} className="landing-stat-item">
+              <Icon className="mx-auto mb-2 h-5 w-5 text-primary" aria-hidden />
+              <div className="font-display text-2xl font-bold sm:text-3xl">{value}</div>
+              <div className="mt-1 text-xs text-muted-foreground sm:text-sm">{label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── PROBLEM ── */}
+      <section id="problem" className="landing-section scroll-mt-[4.5rem] container mx-auto px-4 py-16 sm:scroll-mt-20 sm:px-6 sm:py-24">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="section-heading">Dos problemas, una plataforma</h2>
+          <p className="landing-section-label">El problema</p>
+          <h2 className="section-heading mt-3">Dos mundos que no se entienden</h2>
           <p className="mt-4 text-muted-foreground">
-            No es solo freelance: es un puente entre el conocimiento del empresario y la energía del talento
-            que empieza.
+            No es otro marketplace genérico: conectamos la necesidad real del empresario con la
+            energía del talento que empieza.
           </p>
         </div>
-        <div className="mt-10 grid gap-4 sm:mt-16 sm:gap-6 md:grid-cols-2">
-          <div className="card-paper p-6 sm:p-8">
-            <div className="logo-mark mb-5 inline-flex h-12 w-12">
-              <GraduationCap className="h-6 w-6 text-primary-foreground" />
+        <div className="mt-12 grid gap-6 md:grid-cols-2">
+          <article className="landing-path-card">
+            <div className="landing-feature-icon mb-5">
+              <GraduationCap className="h-6 w-6" />
             </div>
-            <h3 className="text-xl font-semibold">Joven sin experiencia</h3>
-            <ul className="mt-4 space-y-2 text-sm leading-relaxed text-muted-foreground">
-              <li>· Necesita proyectos reales para su CV y entrevistas.</li>
-              <li>· A menudo no conoce los problemas concretos de las PYMEs locales.</li>
-              <li>· Puede aceptar presupuestos modestos a cambio de reputación y casos.</li>
+            <h3 className="font-display text-xl font-bold">Talento joven</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Tiene skills, le falta el caso real que abra la primera entrevista.
+            </p>
+            <ul className="mt-5 space-y-2.5">
+              {[
+                "Proyectos reales para CV y portafolio",
+                "Presupuestos accesibles = más oportunidades",
+                "Reputación verificada con cada entrega",
+              ].map((t) => (
+                <li key={t} className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  {t}
+                </li>
+              ))}
             </ul>
-          </div>
-          <div className="card-paper p-6 sm:p-8">
-            <div className="logo-mark mb-5 inline-flex h-12 w-12">
-              <Building2 className="h-6 w-6 text-primary-foreground" />
+          </article>
+          <article className="landing-path-card">
+            <div className="landing-feature-icon mb-5">
+              <Building2 className="h-6 w-6" />
             </div>
-            <h3 className="text-xl font-semibold">Empresa con poco presupuesto</h3>
-            <ul className="mt-4 space-y-2 text-sm leading-relaxed text-muted-foreground">
-              <li>· Resuelve problemas de su rubro pero no sabe plantear un proyecto digital.</li>
-              <li>· Necesita web, catálogo o herramientas simples sin pagar una agencia.</li>
-              <li>· Publica su necesidad; la IA la convierte en requerimiento claro.</li>
+            <h3 className="font-display text-xl font-bold">PYME / empresa</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Sabe su negocio, no sabe pedir un proyecto digital ni pagar una agencia.
+            </p>
+            <ul className="mt-5 space-y-2.5">
+              {[
+                "Describe en tus palabras — la IA estructura",
+                "Web, catálogo o herramienta sin consultoría previa",
+                "Micro-presupuesto, entrega concreta",
+              ].map((t) => (
+                <li key={t} className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  {t}
+                </li>
+              ))}
             </ul>
-          </div>
+          </article>
         </div>
       </section>
 
-      <section id="how" className="border-y border-border bg-surface/20">
+      {/* ── HOW ── */}
+      <section id="how" className="landing-section scroll-mt-[4.5rem] landing-band-dark border-y border-sidebar-border sm:scroll-mt-20">
         <div className="container mx-auto px-4 py-16 sm:px-6 sm:py-24">
           <div className="mx-auto max-w-2xl text-center">
-            <div className="mb-3 text-sm font-medium uppercase tracking-wider text-primary-glow">Flujo</div>
-            <h2 className="section-heading text-balance">
-              De &quot;vendo papa y quiero una web&quot; a proyecto listo
+            <p className="landing-section-label">Proceso</p>
+            <h2 className="section-heading mt-3 text-balance">
+              Cuatro pasos. Cero fricción.
             </h2>
+            <p className="mt-4 text-slate-400">
+              De la idea en lenguaje cotidiano al proyecto listo para postular.
+            </p>
           </div>
-          <ol className="mx-auto mt-12 grid max-w-4xl gap-4 md:grid-cols-2">
+          <ol className="mx-auto mt-12 grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 icon: Building2,
-                title: "La empresa describe su necesidad",
-                desc: "En lenguaje cotidiano y con el presupuesto que sí tiene.",
+                title: "Describe tu necesidad",
+                desc: "Presupuesto y contexto en lenguaje normal.",
               },
               {
                 icon: Wand2,
-                title: "La IA estructura el requerimiento",
-                desc: "Título, alcance, entregables y habilidades que un joven puede ejecutar.",
+                title: "IA estructura",
+                desc: "Alcance, skills y entregables claros.",
               },
               {
                 icon: Briefcase,
-                title: "El joven elige y postula",
-                desc: "Ve compatibilidad, mejora su propuesta con IA y gana el proyecto.",
+                title: "Talento postula",
+                desc: "Match por habilidades + propuesta con IA.",
               },
               {
                 icon: Handshake,
-                title: "Entrega, reputación, siguiente paso",
-                desc: "La empresa obtiene su producto; el joven suma casos para el mercado laboral.",
+                title: "Entrega y reputación",
+                desc: "Producto para la empresa, caso para el CV.",
               },
             ].map(({ icon: Icon, title, desc }, i) => (
-              <li
-                key={title}
-                className="flex items-start gap-4 rounded-xl border border-border bg-surface/40 p-5 backdrop-blur"
-              >
-                <div className="logo-mark h-8 w-8 shrink-0 text-sm font-bold">
-                  {i + 1}
+              <li key={title} className="landing-step border-sidebar-border">
+                <div className="landing-step__num mb-3">{i + 1}</div>
+                <div className="mb-1 flex items-center gap-2 font-semibold text-slate-100">
+                  <Icon className="h-4 w-4 text-primary-glow" />
+                  {title}
                 </div>
-                <div>
-                  <div className="mb-1 flex items-center gap-2 font-medium">
-                    <Icon className="h-4 w-4 text-primary-glow" />
-                    {title}
-                  </div>
-                  <p className="text-sm text-muted-foreground">{desc}</p>
-                </div>
+                <p className="text-sm text-slate-400">{desc}</p>
               </li>
             ))}
           </ol>
@@ -227,109 +317,177 @@ function Landing() {
 
       <PlatformModules />
 
-      <section id="features" className="container mx-auto px-4 py-16 sm:px-6 sm:py-24">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="section-heading">Herramientas del MVP</h2>
-        </div>
-        <div className="mt-10 grid gap-4 sm:mt-16 sm:gap-6 md:grid-cols-3">
-          {[
-            {
-              icon: Wand2,
-              title: "Brief con IA",
-              desc: "Convierte solicitudes vagas en proyectos publicables sin consultoría previa.",
-            },
-            {
-              icon: Sparkles,
-              title: "Matching por habilidades",
-              desc: "Sugerencias de fit para que el joven invierta tiempo donde puede ganar.",
-            },
-            {
-              icon: Shield,
-              title: "Reputación verificada",
-              desc: "Cada entrega suma score visible para la siguiente empresa o empleador.",
-            },
-          ].map(({ icon: Icon, title, desc }) => (
-            <div
-              key={title}
-              className="card-paper group relative overflow-hidden p-6 transition hover:shadow-lift sm:p-8"
-            >
-              <div className="logo-mark mb-5 inline-flex h-12 w-12">
-                <Icon className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <h3 className="text-xl font-semibold">{title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="container mx-auto px-4 py-16 sm:px-6 sm:py-24">
-        <div className="card-paper rounded-organic-xl p-6 shadow-elegant sm:p-10 md:p-12">
-          <div className="grid gap-6 text-center sm:gap-8 md:grid-cols-3">
-            {[
-              { value: "↓ costo", label: "Para la empresa vs. agencia tradicional" },
-              { value: "↑ casos", label: "Para el joven en semanas, no años" },
-              { value: "IA + humano", label: "Estructura el proyecto; la entrega es talento real" },
-            ].map((m) => (
-              <div key={m.label}>
-                <div className="font-display text-3xl font-bold text-gradient sm:text-4xl">{m.value}</div>
-                <div className="mt-2 text-sm text-muted-foreground">{m.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="container mx-auto px-4 py-10 sm:px-6 sm:py-12">
-        <div className="mx-auto max-w-3xl rounded-organic-xl card-note p-6 text-center sm:p-10">
-          <div className="mb-4 flex justify-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className="h-5 w-5 fill-primary-glow text-primary-glow" />
-            ))}
-          </div>
-          <p className="font-display text-lg leading-snug sm:text-2xl">
-            &quot;Publicamos lo que necesitábamos sin saber de tecnología. En dos semanas teníamos la web y un
-            estudiante con un caso real en su portafolio.&quot;
-          </p>
-          <div className="mt-6 text-sm text-muted-foreground">Cliente demo · WorkConnect seed</div>
-        </div>
-      </section>
-
-      <section className="container mx-auto px-4 pb-20 sm:px-6 sm:pb-32">
-        <div className="relative overflow-hidden rounded-organic-xl border border-border bg-primary p-8 text-center shadow-elegant sm:p-12 md:p-16">
-          <div className="absolute inset-0 bg-gradient-hero opacity-60" />
-          <div className="relative">
-            <h2 className="font-display text-2xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-              ¿Empresa o talento joven?
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-primary-foreground/90">
-              Regístrate como cliente para publicar con IA, o como freelancer para explorar micro-proyectos.
+      {/* ── FEATURES ── */}
+      <section id="features" className="landing-section scroll-mt-[4.5rem] bg-muted/40 py-16 sm:scroll-mt-20 sm:py-24">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="landing-section-label">Plataforma</p>
+            <h2 className="section-heading mt-3">Herramientas que venden el pitch</h2>
+            <p className="mt-4 text-muted-foreground">
+              Cada función resuelve un punto del flujo empresa → IA → talento → entrega.
             </p>
-            <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:justify-center">
-              <Button asChild size="lg" variant="secondary" className="w-full shadow-soft sm:w-auto">
+          </div>
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {[
+              {
+                icon: Wand2,
+                title: "Brief con IA",
+                desc: "Convierte solicitudes vagas en proyectos publicables sin consultoría previa.",
+                tag: "Core MVP",
+              },
+              {
+                icon: Sparkles,
+                title: "Matching inteligente",
+                desc: "Compatibilidad por skills para que el talento invierta tiempo donde puede ganar.",
+                tag: "IA",
+              },
+              {
+                icon: QrCode,
+                title: "Perfil + QR",
+                desc: "Reputación verificada visible en ferias, entrevistas y próximas postulaciones.",
+                tag: "Trust",
+              },
+            ].map(({ icon: Icon, title, desc, tag }) => (
+              <article key={title} className="card-paper flex flex-col p-6 sm:p-8">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="landing-feature-icon">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <span className="chip chip-primary">{tag}</span>
+                </div>
+                <h3 className="font-display text-lg font-bold">{title}</h3>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{desc}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SOCIAL PROOF ── */}
+      <section className="container mx-auto px-4 py-16 sm:px-6 sm:py-20">
+        <div className="landing-testimonial mx-auto max-w-3xl p-8 sm:p-10">
+          <span className="landing-testimonial__quote" aria-hidden>
+            &ldquo;
+          </span>
+          <div className="relative flex justify-center gap-1">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className="h-5 w-5 fill-primary text-primary" />
+            ))}
+          </div>
+          <blockquote className="relative mt-6 text-center font-display text-xl font-medium leading-snug sm:text-2xl">
+            Publicamos lo que necesitábamos sin saber de tecnología. En dos semanas teníamos la web
+            y un estudiante con un caso real en su portafolio.
+          </blockquote>
+          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <div className="logo-mark h-11 w-11 rounded-full text-sm font-bold">PS</div>
+            <div className="text-center sm:text-left">
+              <p className="font-semibold">Panadería El Sol</p>
+              <p className="text-sm text-muted-foreground">Cliente demo · WorkConnect seed</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── DUAL CTA ── */}
+      <section className="container mx-auto px-4 pb-16 sm:px-6 sm:pb-24">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="section-heading">¿Por dónde entras tú?</h2>
+          <p className="mt-3 text-muted-foreground">
+            Elige tu camino. Registro gratis en menos de un minuto.
+          </p>
+        </div>
+        <div className="mx-auto mt-10 grid max-w-4xl gap-6 md:grid-cols-2">
+          <article className="landing-path-card flex flex-col">
+            <div className="landing-feature-icon mb-4">
+              <GraduationCap className="h-6 w-6" />
+            </div>
+            <h3 className="font-display text-xl font-bold">Soy talento joven</h3>
+            <p className="mt-2 flex-1 text-sm text-muted-foreground">
+              Explora micro-proyectos, postula con IA y construye tu portafolio con casos reales.
+            </p>
+            <Button asChild className="mt-6 w-full">
+              <Link to="/register">
+                Crear perfil de talento
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </article>
+          <article className="landing-path-card flex flex-col">
+            <div className="landing-feature-icon mb-4">
+              <Building2 className="h-6 w-6" />
+            </div>
+            <h3 className="font-display text-xl font-bold">Tengo una empresa</h3>
+            <p className="mt-2 flex-1 text-sm text-muted-foreground">
+              Publica tu necesidad, deja que la IA arme el requerimiento y recibe postulaciones.
+            </p>
+            <Button asChild variant="outline" className="mt-6 w-full">
+              <Link to="/register">
+                Publicar mi primer proyecto
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </article>
+        </div>
+      </section>
+
+      {/* ── FINAL CTA ── */}
+      <section className="container mx-auto px-4 pb-20 sm:px-6 sm:pb-28">
+        <div className="landing-cta-final relative overflow-hidden px-6 py-12 text-center sm:px-12 sm:py-16">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
+          <div className="relative">
+            <p className="text-sm font-semibold uppercase tracking-widest text-primary-foreground/80">
+              Empieza hoy
+            </p>
+            <h2 className="mt-3 font-display text-3xl font-bold text-primary-foreground sm:text-4xl">
+              El primer proyecto no debería costar una agencia
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-primary-foreground/85">
+              Únete a WorkConnect y convierte necesidades locales en experiencia profesional real.
+            </p>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Button
+                asChild
+                size="lg"
+                variant="secondary"
+                className="h-12 w-full min-w-[200px] bg-white text-primary hover:bg-white/90 sm:w-auto"
+              >
                 <Link to="/register">
-                  Crear cuenta
+                  Crear cuenta gratis
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="h-12 w-full min-w-[200px] border-white/40 bg-transparent text-white hover:bg-white/10 sm:w-auto"
+              >
+                <Link to="/login">Ya tengo cuenta</Link>
               </Button>
             </div>
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-border">
-        <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-muted-foreground sm:px-6 md:flex-row">
-          <div className="flex items-center gap-2">
-            <div className="logo-mark h-6 w-6">
-              <Zap className="h-3 w-3 text-primary-foreground" />
-            </div>
-            <span>© 2026 WorkConnect</span>
+      <footer className="border-t border-border bg-card">
+        <div className="container mx-auto flex flex-col items-center justify-between gap-6 px-4 py-10 sm:px-6 md:flex-row">
+          <div className="flex flex-col items-center gap-2 md:items-start">
+            <Logo size="md" />
+            <p className="text-xs text-muted-foreground">© 2026 · Todos los derechos reservados</p>
           </div>
-          <div className="flex gap-6">
-            <a href="#problem" className="transition hover:text-foreground">
-              Problemática
-            </a>
-            <Link to="/login" className="transition hover:text-foreground">
+          <div className="flex flex-wrap justify-center gap-6 text-sm">
+            {navLinks.map(({ href, label }) => (
+              <a
+                key={href}
+                href={href}
+                className="landing-nav-link"
+                onClick={(e) => handleLandingNavClick(e, href)}
+              >
+                {label}
+              </a>
+            ))}
+            <Link to="/login" className="landing-nav-link">
               Entrar
             </Link>
           </div>

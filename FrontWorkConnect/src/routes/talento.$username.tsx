@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Star, Github, Linkedin, Briefcase, QrCode, Zap, Sparkles } from "lucide-react";
+import { LogoLink } from "@/components/Logo";
+import { MapPin, Star, Github, Linkedin, Briefcase, QrCode, Sparkles } from "lucide-react";
 import { fetchTalentProfile, queryKeys } from "@/lib/api";
 import { ApiState } from "@/components/ApiState";
 import { Button } from "@/components/ui/button";
@@ -39,12 +40,7 @@ function PublicTalentPage() {
       <header className="relative border-b border-border glass">
         <div className="pointer-events-none absolute inset-0 bg-gradient-hero opacity-40" />
         <div className="container relative mx-auto flex h-14 items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
-          <Link to="/" className="flex min-w-0 items-center gap-2">
-            <div className="logo-mark h-8 w-8 shrink-0">
-              <Zap className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="truncate font-display text-base font-bold sm:text-lg">WorkConnect</span>
-          </Link>
+          <LogoLink size="lg" className="shrink-0" />
           <Button asChild size="sm" className="shrink-0">
             <Link to="/register">
               <span className="hidden sm:inline">Unirme como talento</span>

@@ -74,7 +74,7 @@ function Applications() {
                     {applications.map((a) => (
                       <tr
                         key={a.id}
-                        className="border-b border-border/50 transition last:border-0 hover:bg-surface/30"
+                        className="border-b border-border/50 transition row-enterprise last:border-0"
                       >
                         <td className="px-4 py-4 font-medium lg:px-6">{a.jobTitle}</td>
                         <td className="px-4 py-4 text-muted-foreground lg:px-6">{a.company}</td>

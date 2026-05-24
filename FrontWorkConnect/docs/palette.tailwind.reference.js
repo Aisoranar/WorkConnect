@@ -1,88 +1,82 @@
 /**
- * WorkConnect — Paleta crema + púrpura (referencia para el equipo)
+ * WorkConnect — Paleta dashboard empresarial (referencia para el equipo)
  *
  * Fuente activa: FrontWorkConnect/src/styles.css
- * Verificar en navegador: <html data-palette="purple">
+ * Verificar en navegador: <html data-palette="enterprise">
  *
- * Colores base (referencia del diseño):
- *   #FAF7E4  crema fondo
- *   #563B9C  púrpura profundo
- *   #6A41C3  púrpura principal
- *   #8A5DFE  lavanda / acento
- *   #FFF7D0  crema highlight
+ * Estilo: sidebar navy oscuro + área de contenido gris claro + acento índigo
  */
 
 /** @type {import('tailwindcss').Config['theme']} */
 export const workConnectThemeExtend = {
   colors: {
-    cream: {
-      base: "#FAF7E4",
-      highlight: "#FFF7D0",
-      paper: "#FFFDF8",
+    enterprise: {
+      sidebar: "#1E2130",
+      "sidebar-hover": "#2A3047",
+      canvas: "#F0F2F5",
+      card: "#FFFFFF",
+      ink: "#1E293B",
+      muted: "#64748B",
     },
-    purple: {
-      deep: "#563B9C",
-      main: "#6A41C3",
-      light: "#8A5DFE",
-      glow: "#A585FF",
+    brand: {
+      deep: "#4F46E5",
+      main: "#6366F1",
+      light: "#818CF8",
+      glow: "#A5B4FC",
     },
-    neutral: {
-      ink: "#2A1F47",
-      muted: "#6B5B8A",
-      "ink-dark": "#FAF7E4",
-      "muted-dark": "#A89BC4",
-    },
-    surface: {
-      light: "#FFF7D0",
-      dark: "#221830",
-      "card-dark": "#2A1F3D",
-      "bg-dark": "#181022",
+    trust: {
+      DEFAULT: "#7C6CF0",
+      light: "#818CF8",
     },
     success: {
-      DEFAULT: "#3D8B6E",
-      dark: "#5CB892",
+      DEFAULT: "#059669",
+      dark: "#34D399",
     },
     error: {
-      DEFAULT: "#C04E42",
-      dark: "#E07066",
+      DEFAULT: "#DC2626",
+      dark: "#F87171",
     },
     warning: {
-      DEFAULT: "#B8891A",
-      dark: "#D4A832",
+      DEFAULT: "#D97706",
+      dark: "#FBBF24",
     },
   },
 };
 
 /** Uso semántico — modo claro */
 export const semanticTokensLight = {
-  background: "#FAF7E4",
-  foreground: "#2A1F47",
-  primary: "#6A41C3",
-  primaryHover: "#563B9C",
-  accent: "#8A5DFE",
-  surface: "#FFF7D0",
-  card: "#FFFDF8",
-  border: "color-mix(#563B9C 14%, #FAF7E4)",
-  muted: "#6B5B8A",
-  trust: "#8A5DFE",
-  success: "#3D8B6E",
-  destructive: "#C04E42",
+  background: "#F0F2F5",
+  foreground: "#1E293B",
+  primary: "#6366F1",
+  primaryHover: "#4F46E5",
+  accent: "#818CF8",
+  surface: "#F8FAFC",
+  card: "#FFFFFF",
+  border: "#E2E8F0",
+  muted: "#64748B",
+  sidebar: "#1E2130",
+  sidebarForeground: "#94A3B8",
+  trust: "#7C6CF0",
+  success: "#059669",
+  destructive: "#DC2626",
 };
 
 /** Uso semántico — modo oscuro */
 export const semanticTokensDark = {
-  background: "#181022",
-  foreground: "#FAF7E4",
-  primary: "#8A5DFE",
-  primaryHover: "#6A41C3",
-  accent: "#8A5DFE",
-  surface: "#221830",
-  card: "#2A1F3D",
-  border: "color-mix(#563B9C 55%, #181022)",
-  muted: "#A89BC4",
-  trust: "#8A5DFE",
-  success: "#5CB892",
-  destructive: "#E07066",
+  background: "#0F1219",
+  foreground: "#E2E8F0",
+  primary: "#818CF8",
+  primaryHover: "#6366F1",
+  accent: "#818CF8",
+  surface: "#1A1F2E",
+  card: "#1E2433",
+  border: "#2D3548",
+  muted: "#94A3B8",
+  sidebar: "#141824",
+  sidebarForeground: "#94A3B8",
+  trust: "#A78BFA",
+  success: "#34D399",
+  destructive: "#F87171",
 };
 
 export default workConnectThemeExtend;

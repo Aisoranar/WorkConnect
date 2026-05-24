@@ -106,7 +106,7 @@ function DashboardHome() {
                   <h2 className="font-display text-lg font-semibold sm:text-xl">Mejores matches por IA</h2>
                   <p className="text-sm text-muted-foreground">Proyectos seleccionados para tu perfil hoy.</p>
                 </div>
-                <Link to="/dashboard/explore" className="shrink-0 text-sm text-primary-glow hover:underline">
+                <Link to="/dashboard/explore" className="link-enterprise shrink-0 text-sm text-primary-glow hover:underline">
                   Ver todos
                 </Link>
               </div>

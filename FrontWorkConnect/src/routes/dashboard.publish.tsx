@@ -10,6 +10,7 @@ import {
   type PayCurrency,
   type StructuredProject,
 } from "@/lib/api";
+import { AiSimulatedProgress } from "@/components/AiSimulatedProgress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -148,10 +149,10 @@ function PublishProjectPage() {
                 key={c}
                 type="button"
                 onClick={() => setCurrency(c)}
-                className={`flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition ${
+                className={`choice-chip flex-1 rounded-xl border px-4 py-3 text-sm font-medium ${
                   currency === c
-                    ? "border-primary bg-primary text-primary-foreground shadow-soft"
-                    : "border-border bg-surface/40 text-muted-foreground hover:text-foreground"
+                    ? "choice-chip--active border-primary bg-primary text-primary-foreground shadow-soft"
+                    : "border-border bg-surface/40 text-muted-foreground"
                 }`}
               >
                 <span className="sm:hidden">{c}</span>
@@ -202,8 +203,10 @@ function PublishProjectPage() {
           ) : (
             <Wand2 className="mr-2 h-4 w-4" />
           )}
-          Convertir en requerimiento con IA
+          {structureMutation.isPending ? "Generando requerimiento…" : "Convertir en requerimiento con IA"}
         </Button>
+
+        <AiSimulatedProgress active={structureMutation.isPending} />
       </div>
 
       {draft && (

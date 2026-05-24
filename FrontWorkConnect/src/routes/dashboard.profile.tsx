@@ -139,13 +139,13 @@ function ProfilePage() {
             <div className="mt-4 flex gap-2">
               {profile?.github && (
                 <a href={profile.github} target="_blank" rel="noopener noreferrer"
-                  className="rounded-lg border border-border bg-surface/60 p-2 transition hover:border-primary/50">
+                  className="btn-icon-enterprise p-2">
                   <Github className="h-4 w-4" />
                 </a>
               )}
               {profile?.linkedin && (
                 <a href={profile.linkedin} target="_blank" rel="noopener noreferrer"
-                  className="rounded-lg border border-border bg-surface/60 p-2 transition hover:border-primary/50">
+                  className="btn-icon-enterprise p-2">
                   <Linkedin className="h-4 w-4" />
                 </a>
               )}

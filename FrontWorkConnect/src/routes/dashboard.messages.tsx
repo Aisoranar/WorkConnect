@@ -63,7 +63,7 @@ function Messages() {
                   <button
                     key={m.id}
                     onClick={() => selectConversation(m.id)}
-                    className={`flex w-full items-center gap-3 border-b border-border/50 p-3 text-left transition hover:bg-surface/60 sm:p-4 ${
+                    className={`row-enterprise flex w-full items-center gap-3 border-b border-border/50 p-3 text-left sm:p-4 ${
                       resolvedActiveId === m.id ? "bg-surface/70" : ""
                     }`}
                   >

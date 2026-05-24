@@ -106,10 +106,10 @@ function ExploreProjects() {
               key={c}
               type="button"
               onClick={() => setCategory(c)}
-              className={`shrink-0 rounded-full border px-4 py-1.5 text-sm transition ${
+              className={`choice-chip shrink-0 rounded-full border px-4 py-1.5 text-sm ${
                 category === c
-                  ? "border-primary bg-primary text-primary-foreground shadow-soft"
-                  : "border-border bg-surface/40 text-muted-foreground hover:text-foreground"
+                  ? "choice-chip--active border-primary bg-primary text-primary-foreground shadow-soft"
+                  : "border-border bg-surface/40 text-muted-foreground"
               }`}
             >
               {c}

@@ -28,7 +28,7 @@ export function buildPageHead(options: HeadMeta = {}) {
       { name: "description", content: description },
       { name: "author", content: SITE_NAME },
       { name: "application-name", content: SITE_NAME },
-      { name: "theme-color", content: "#181022" },
+      { name: "theme-color", content: "#1e2130" },
       ...(options.noIndex ? [{ name: "robots", content: "noindex, nofollow" }] : [{ name: "robots", content: "index, follow" }]),
 
       // Open Graph (Facebook, WhatsApp, LinkedIn)
@@ -49,8 +49,8 @@ export function buildPageHead(options: HeadMeta = {}) {
     ],
     links: [
       { rel: "canonical", href: canonical },
-      { rel: "icon", type: "image/jpeg", href: "/og-workconnect.jpg" },
-      { rel: "apple-touch-icon", href: "/og-workconnect.jpg" },
+      { rel: "icon", type: "image/png", href: "/isoLogo.png" },
+      { rel: "apple-touch-icon", href: "/isoLogo.png" },
       { rel: "manifest", href: "/site.webmanifest" },
     ],
   };
