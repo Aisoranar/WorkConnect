@@ -8,6 +8,7 @@ import {
   PlusCircle,
   Briefcase,
   MoreHorizontal,
+  Sparkles,
 } from "lucide-react";
 
 export type DashboardNavItem = {
@@ -34,6 +35,7 @@ const freelancerBottomBar: DashboardNavItem[] = [
 ];
 
 const freelancerSidebarOnly: DashboardNavItem[] = [
+  { title: "Asistente carrera", shortLabel: "Carrera", url: "/dashboard/career", icon: Sparkles },
   { title: "Mi perfil", shortLabel: "Perfil", url: "/dashboard/profile", icon: User },
 ];
 
@@ -57,6 +59,7 @@ const adminBottomBar: DashboardNavItem[] = [
 ];
 
 const adminSidebarOnly: DashboardNavItem[] = [
+  { title: "Asistente carrera", shortLabel: "Carrera", url: "/dashboard/career", icon: Sparkles },
   { title: "Publicar (demo)", shortLabel: "Publicar", url: "/dashboard/publish", icon: PlusCircle },
   { title: "Admin", shortLabel: "Admin", url: "/dashboard", icon: Briefcase },
   { title: "Mi perfil", shortLabel: "Perfil", url: "/dashboard/profile", icon: User },

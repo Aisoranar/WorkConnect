@@ -222,7 +222,10 @@ App: [http://localhost:8080](http://localhost:8080)
 | `APP_URL` | URL del API |
 | `FRONTEND_URL` | CORS y enlaces de correo (coma) |
 | `DB_*` | MySQL |
-| `GEMINI_API_KEY` / `OPENAI_API_KEY` | IA opcional |
+| `NVIDIA_API_KEY`, `NVIDIA_API_URL`, `NVIDIA_DEFAULT_MODEL`, `NVIDIA_FAST_MODEL` | IA principal (cadena prioritaria) |
+| `GEMINI_API_KEY`, `GEMINI_DEFAULT_MODEL` | Fallback 2.º si NVIDIA falla |
+| `OPENAI_API_KEY`, `OPENAI_DEFAULT_MODEL` | Fallback 3.º si Gemini falla |
+| Sin keys / todo falla | Respuestas `source: local` |
 | `MAIL_*` | SMTP |
 | `QUEUE_CONNECTION` | `sync` en local (correos al instante) |
 

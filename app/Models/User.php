@@ -30,6 +30,9 @@ class User extends Authenticatable
         'github',
         'linkedin',
         'experience',
+        'target_role',
+        'cv_text',
+        'linkedin_headline',
     ];
 
     protected $hidden = [

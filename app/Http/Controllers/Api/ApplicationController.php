@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateApplicationStatusRequest;
 use App\Http\Resources\ApplicationResource;
 use App\Models\JobApplication;
 use App\Models\WorkJob;
+use App\Services\CareerAssistantService;
 use App\Services\NotificationService;
 use App\Support\LegacyApiFormatter;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +19,7 @@ class ApplicationController extends Controller
     public function __construct(
         private readonly LegacyApiFormatter $legacy,
         private readonly NotificationService $notifications,
+        private readonly CareerAssistantService $career,
     ) {}
 
     /** Compatibilidad con el front actual (GET /api/applications). */
@@ -107,17 +109,23 @@ class ApplicationController extends Controller
 
         $application->update(['status' => $request->input('status')]);
 
+        $coaching = null;
+
         if ($request->input('status') === 'aceptada') {
             $this->notifications->notify(
                 $application->user,
                 '¡Postulación aceptada!',
                 "Tu propuesta para «{$job->title}» fue aceptada. Coordina la entrega por mensajes.",
             );
+
+            $application->user->load('skills');
+            $coaching = $this->career->projectCoachingTips($application->user, $job);
         }
 
         return response()->json([
             'message' => 'Estado actualizado.',
             'data' => new ApplicationResource($application->fresh(['job', 'user.skills'])),
+            'coaching' => $coaching,
         ]);
     }
 }
