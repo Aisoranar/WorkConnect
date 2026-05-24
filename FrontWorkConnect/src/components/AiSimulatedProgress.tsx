@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { ISO_LOGO_SRC } from "@/components/Logo";
+import { IsoLogo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 
 const STEPS = [
@@ -37,7 +37,7 @@ export function AiSimulatedProgress({ active, className }: AiSimulatedProgressPr
   return createPortal(
     <div
       className={cn(
-        "fixed inset-0 z-[100] flex items-center justify-center bg-background/75 px-6 backdrop-blur-md animate-in fade-in duration-200",
+        "fixed inset-0 z-100 flex items-center justify-center bg-background/75 px-6 backdrop-blur-md animate-in fade-in duration-200",
         className,
       )}
       role="status"
@@ -46,14 +46,8 @@ export function AiSimulatedProgress({ active, className }: AiSimulatedProgressPr
       aria-label="Procesando con IA"
     >
       <div className="flex max-w-sm flex-col items-center text-center">
-        <div className="iso-loader-shell">
-          <img
-            src={ISO_LOGO_SRC}
-            alt=""
-            aria-hidden
-            draggable={false}
-            className="iso-loader-spin size-16 sm:size-20"
-          />
+        <div className="iso-loader-shell iso-loader-shell--auto">
+          <IsoLogo theme="auto" alt="" className="iso-loader-spin size-16 sm:size-20" />
         </div>
         <p
           key={stepIndex}

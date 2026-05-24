@@ -131,7 +131,7 @@ function ExploreProjects() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-2 dashboard-stagger">
             {jobs.map((job) => (
               <JobCard key={job.id} job={job} onApply={() => setApplyJob(job)} />
             ))}
@@ -153,7 +153,7 @@ function JobCard({ job, onApply }: { job: Job; onApply: () => void }) {
   const status = job.applicationStatus;
 
   return (
-    <article className="card-list flex flex-col p-4 sm:p-6">
+    <article className="card-list group flex flex-col p-4 sm:p-6 transition-enterprise">
       <div className="flex items-start justify-between gap-3 sm:gap-4">
         <div className="min-w-0">
           <div className="mb-1 flex flex-wrap items-center gap-2">
@@ -263,7 +263,7 @@ function ExploreTalent() {
         error={query.error}
         onRetry={() => void query.refetch()}
       >
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="dashboard-stagger grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {freelancers.map((f) => (
             <article
               key={f.id}

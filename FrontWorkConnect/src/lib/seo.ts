@@ -49,8 +49,10 @@ export function buildPageHead(options: HeadMeta = {}) {
     ],
     links: [
       { rel: "canonical", href: canonical },
-      { rel: "icon", type: "image/png", href: "/isoLogo.png" },
-      { rel: "apple-touch-icon", href: "/isoLogo.png" },
+      { rel: "icon", type: "image/png", href: "/isoLogoBlack.png", media: "(prefers-color-scheme: light)" },
+      { rel: "icon", type: "image/png", href: "/isoLogo.png", media: "(prefers-color-scheme: dark)" },
+      { rel: "icon", type: "image/png", href: "/isoLogoBlack.png" },
+      { rel: "apple-touch-icon", href: "/isoLogoBlack.png" },
       { rel: "manifest", href: "/site.webmanifest" },
     ],
   };

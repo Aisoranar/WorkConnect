@@ -1,4 +1,5 @@
-import { createFileRoute, isRedirect, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, isRedirect, redirect } from "@tanstack/react-router";
+import { DashboardPageTransition } from "@/components/DashboardPageTransition";
 import { authHeaders, clearSession, getStoredUser, isAuthenticated } from "@/lib/auth";
 import { getApiBaseUrl, queryKeys } from "@/lib/api";
 import type { UserProfile } from "@/lib/types";
@@ -104,7 +105,7 @@ function DashboardShell() {
           <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
             <button className="btn-icon-enterprise relative p-2" aria-label="Notificaciones">
               <Bell className="h-4 w-4" />
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary-glow" />
+              <span className="dashboard-notify-dot absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary-glow" />
             </button>
             <div
               className={cn(
@@ -117,7 +118,7 @@ function DashboardShell() {
           </div>
         </header>
         <main className="dashboard-main min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 sm:p-4 md:p-8">
-          <Outlet />
+          <DashboardPageTransition />
         </main>
       </div>
       <DashboardBottomNav />

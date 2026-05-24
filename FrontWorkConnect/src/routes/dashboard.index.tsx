@@ -82,7 +82,7 @@ function DashboardHome() {
       <ApiState isLoading={isLoading} isError={isError} error={error} onRetry={refetch}>
         {stats && (
           <>
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+            <div className="dashboard-stagger grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
               {[
                 { label: "Rating", value: stats.rating.toFixed(1), icon: Star, hint: "+0.2 este mes" },
                 { label: "Proyectos", value: stats.projectsDone, icon: Briefcase, hint: "+4 nuevos" },
@@ -110,7 +110,7 @@ function DashboardHome() {
                   Ver todos
                 </Link>
               </div>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="dashboard-stagger grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {topMatches.map((job) => (
                   <article key={job.id} className="card-list group flex flex-col p-4 sm:p-6">
                     <div className="mb-4 flex items-center justify-between">
