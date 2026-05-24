@@ -1,13 +1,8 @@
-<<<<<<< HEAD
 import { createFileRoute, isRedirect, redirect } from "@tanstack/react-router";
 import { DashboardPageTransition } from "@/components/DashboardPageTransition";
-import { authHeaders, clearSession, getStoredUser, isAuthenticated } from "@/lib/auth";
-=======
-import { createFileRoute, isRedirect, Outlet, redirect } from "@tanstack/react-router";
 import { ClientAuthGate } from "@/components/ClientAuthGate";
 import { authHeaders, clearSession, getStoredUser } from "@/lib/auth";
 import { guardRequireAuth, isClient } from "@/lib/auth-guard";
->>>>>>> 744bc440193863c58135f2ec799690568e22e5ec
 import { getApiBaseUrl, queryKeys } from "@/lib/api";
 import type { UserProfile } from "@/lib/types";
 import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
