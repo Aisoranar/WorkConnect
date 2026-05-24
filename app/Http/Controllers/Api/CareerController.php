@@ -79,8 +79,19 @@ class CareerController extends Controller
     {
         $this->ensureTalent($request);
 
+        $request->validate([
+            'target_role' => ['nullable', 'string', 'max:200'],
+            'offer_text' => ['nullable', 'string', 'max:20000'],
+            'cv_draft' => ['nullable', 'string', 'max:30000'],
+        ]);
+
         return response()->json([
-            'data' => $this->career->improveCv($request->user()),
+            'data' => $this->career->improveCv(
+                $request->user(),
+                $request->input('target_role'),
+                $request->input('offer_text'),
+                $request->input('cv_draft'),
+            ),
         ]);
     }
 
@@ -88,8 +99,17 @@ class CareerController extends Controller
     {
         $this->ensureTalent($request);
 
+        $request->validate([
+            'cv_text' => ['nullable', 'string', 'max:30000'],
+            'target_role' => ['nullable', 'string', 'max:200'],
+        ]);
+
         return response()->json([
-            'data' => $this->career->improveLinkedIn($request->user()),
+            'data' => $this->career->improveLinkedIn(
+                $request->user(),
+                $request->input('cv_text'),
+                $request->input('target_role'),
+            ),
         ]);
     }
 

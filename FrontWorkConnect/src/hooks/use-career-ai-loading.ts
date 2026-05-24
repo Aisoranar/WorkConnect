@@ -18,7 +18,7 @@ export function useCareerAiLoading(activeTask: CareerLoadingTask | null) {
   const isActive = activeTask !== null;
   const stepCount = frozenTask?.steps.length ?? activeTask?.steps.length ?? 1;
 
-  const { progress, stepIndex, isComplete, reset } = useSimulatedAiProgress(
+  const { progress, stepIndex, isComplete, isFinalizing, reset } = useSimulatedAiProgress(
     isActive,
     stepCount,
     phase === "loading",
@@ -77,6 +77,7 @@ export function useCareerAiLoading(activeTask: CareerLoadingTask | null) {
     task: frozenTask,
     progress: displayProgress,
     stepIndex: displayStepIndex,
+    isFinalizing: isFinalizing && phase === "loading",
     isComplete: isComplete || phase === "success" || phase === "closing",
   };
 }

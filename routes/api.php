@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AIController;
 use App\Http\Controllers\Api\CareerController;
+use App\Http\Controllers\Api\ProfileAdvisorController;
 use App\Http\Controllers\Api\ApplicationController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GithubController;
@@ -40,11 +41,11 @@ Route::get('/jobs/{job}', [JobController::class, 'show']);
 // Legacy / demo (front actual)
 Route::get('/applications', [ApplicationController::class, 'legacyIndex']);
 Route::get('/messages', [MessageController::class, 'legacyInbox']);
-Route::get('/stats', [StatsController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/stats', [StatsController::class, 'show']);
 
     Route::put('/users/{user}', [UserController::class, 'update']);
     Route::post('/users/avatar', [UserController::class, 'uploadAvatar']);
@@ -87,6 +88,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ai/improve-proposal', [AIController::class, 'improveProposal']);
     Route::post('/ai/improve-bio', [AIController::class, 'improveBio']);
     Route::post('/ai/github-profile', [AIController::class, 'generateGithubProfile']);
+
+    // Asesor de perfil y skills (IA + demanda del mercado)
+    Route::prefix('profile')->group(function () {
+        Route::post('/skill-recommendations', [ProfileAdvisorController::class, 'skillRecommendations']);
+        Route::post('/learn-skill', [ProfileAdvisorController::class, 'learnSkill']);
+    });
 
     // Asistente de carrera (talento joven)
     Route::prefix('career')->group(function () {

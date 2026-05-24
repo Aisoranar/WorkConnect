@@ -71,10 +71,26 @@ export type Message = {
 };
 
 export type Stats = {
+  role: "freelancer" | "client";
   rating: number;
+  hasRating?: boolean;
   projectsDone: number;
   earnings: string;
   responseRate: number;
+  hints: {
+    rating: string;
+    projects: string;
+    earnings: string;
+    response: string;
+  };
+  applicationsPending?: number;
+  applicationsTotal?: number;
+  openJobs?: number;
+  activeJobs?: number;
+  totalJobs?: number;
+  applicationsReceived?: number;
+  applicationsPendingReview?: number;
+  talentPool?: number;
 };
 
 export type ProfileSkill = {
@@ -133,6 +149,37 @@ export type ApplyContextSkill = {
   name: string;
   level: number;
   level_label: string;
+};
+
+export type SkillRecommendation = {
+  skill: string;
+  display_name: string;
+  demand_percent: number;
+  open_jobs: number;
+  why_learn: string;
+  impact_on_match: string;
+  priority: "alta" | "media" | "baja";
+};
+
+export type SkillRecommendationsResult = {
+  profile_score: number;
+  profile_tips: string[];
+  your_skills: string[];
+  market_summary: string;
+  top_demanded: { skill: string; count: number }[];
+  recommendations: SkillRecommendation[];
+  source: string;
+};
+
+export type LearnSkillResult = {
+  skill: string;
+  overview: string;
+  why_for_you: string;
+  basics: { concept: string; explanation: string }[];
+  first_steps: string[];
+  practice_idea: string;
+  add_to_profile_tip: string;
+  source?: string;
 };
 
 export type ApplyContext = {

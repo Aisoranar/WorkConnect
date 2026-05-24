@@ -32,11 +32,11 @@ class CareerAssistantService
     {
         $user->loadMissing(['skills', 'portfolioProjects']);
         $base = $this->profileScore->analyze($user);
-        $ai = $this->ai->analyzeProfile($user);
 
-        $raw = $this->ai->promptJson($this->profileDeepPrompt($user, $base));
+        // Una sola llamada IA (modelo rápido) en lugar de analyzeProfile + promptJson.
+        $raw = $this->careerPromptJson($this->profileDeepPrompt($user, $base), 1100);
 
-        $result = $raw ? $this->normalizeProfileDeep($raw, $base, $ai) : $this->fallbackProfileDeep($user, $base, $ai);
+        $result = $raw ? $this->normalizeProfileDeep($raw, $base) : $this->fallbackProfileDeep($user, $base);
 
         return $this->persist($user, 'profile_analysis', [], $result);
     }
@@ -46,45 +46,69 @@ class CareerAssistantService
         $user->loadMissing(['skills', 'portfolioProjects']);
         $notes = $rawNotes ?: ($user->experience ?? '')."\n".($user->bio ?? '');
 
-        $raw = $this->ai->promptJson($this->achievementsPrompt($user, $notes));
+        $raw = $this->careerPromptJson($this->achievementsPrompt($user, $notes), 900);
 
         $result = $raw ?: $this->fallbackAchievements($user, $notes);
 
         return $this->persist($user, 'achievements', ['notes' => $notes], $result);
     }
 
-    public function improveCv(User $user): array
-    {
+    public function improveCv(
+        User $user,
+        ?string $targetRole = null,
+        ?string $offerText = null,
+        ?string $cvDraft = null,
+    ): array {
         $user->loadMissing(['skills', 'portfolioProjects']);
-        $raw = $this->ai->promptJson($this->cvPrompt($user));
 
-        $result = $raw ?: $this->fallbackCv($user);
+        if ($targetRole) {
+            $user->update(['target_role' => $targetRole]);
+        }
+
+        $raw = $this->careerPromptJson(
+            $this->cvPrompt($user, $targetRole, $offerText, $cvDraft),
+            2200,
+        );
+
+        $result = $raw ? $this->normalizeCvResult($raw) : $this->fallbackCv($user, $targetRole);
 
         if (! empty($result['cv_text'])) {
             $user->update(['cv_text' => $result['cv_text']]);
         }
 
-        return $this->persist($user, 'cv_improve', [], $result);
+        return $this->persist($user, 'cv_improve', [
+            'target_role' => $targetRole,
+            'has_offer' => filled($offerText),
+            'has_draft' => filled($cvDraft),
+        ], $result);
     }
 
-    public function improveLinkedIn(User $user): array
+    public function improveLinkedIn(User $user, ?string $cvText = null, ?string $targetRole = null): array
     {
         $user->loadMissing(['skills', 'portfolioProjects']);
-        $raw = $this->ai->promptJson($this->linkedinPrompt($user));
 
-        $result = $raw ?: $this->fallbackLinkedIn($user);
+        if ($targetRole) {
+            $user->update(['target_role' => $targetRole]);
+        }
+
+        $raw = $this->careerPromptJson($this->linkedinPrompt($user, $cvText), 1400);
+
+        $result = $raw ? $this->normalizeLinkedInResult($raw) : $this->fallbackLinkedIn($user);
 
         if (! empty($result['headline'])) {
             $user->update(['linkedin_headline' => $result['headline']]);
         }
 
-        return $this->persist($user, 'linkedin_improve', [], $result);
+        return $this->persist($user, 'linkedin_improve', [
+            'has_cv_sync' => filled($cvText),
+            'target_role' => $targetRole,
+        ], $result);
     }
 
     public function analyzeJobOffer(User $user, string $offerText): array
     {
         $user->loadMissing('skills');
-        $raw = $this->ai->promptJson($this->offerPrompt($user, $offerText), maxTokens: 2500);
+        $raw = $this->careerPromptJson($this->offerPrompt($user, $offerText), 1200);
 
         $result = $raw ?: $this->fallbackOfferAnalysis($user, $offerText);
 
@@ -101,7 +125,7 @@ class CareerAssistantService
         $offerAnalysis = $this->analyzeJobOffer($user, $offerText);
         $gaps = $offerAnalysis['missing_skills'] ?? [];
 
-        $raw = $this->ai->promptJson($this->studyPlanPrompt($user, $offerText, $targetRole, $gaps), maxTokens: 3000);
+        $raw = $this->careerPromptJson($this->studyPlanPrompt($user, $offerText, $targetRole, $gaps), 1800);
 
         $courses = $this->matchFreeCourses(is_array($gaps) ? $gaps : []);
         $result = $raw
@@ -119,7 +143,7 @@ class CareerAssistantService
         $user->update(['target_role' => $targetRole]);
         $user->loadMissing('skills');
 
-        $raw = $this->ai->promptJson($this->targetRolePrompt($user, $targetRole), maxTokens: 2800);
+        $raw = $this->careerPromptJson($this->targetRolePrompt($user, $targetRole), 1500);
 
         $courses = $this->matchFreeCourses([]);
         $result = $raw
@@ -132,7 +156,7 @@ class CareerAssistantService
     public function evaluateReadiness(User $user, string $offerText): array
     {
         $user->loadMissing('skills');
-        $raw = $this->ai->promptJson($this->readinessPrompt($user, $offerText));
+        $raw = $this->careerPromptJson($this->readinessPrompt($user, $offerText), 800);
 
         $result = $raw ?: $this->fallbackReadiness($user, $offerText);
 
@@ -142,7 +166,7 @@ class CareerAssistantService
     public function startInterview(User $user, string $context, string $mode = 'offer'): array
     {
         $user->loadMissing('skills');
-        $raw = $this->ai->promptJson($this->interviewStartPrompt($user, $context, $mode));
+        $raw = $this->careerPromptJson($this->interviewStartPrompt($user, $context, $mode), 600);
 
         $result = $raw ?: $this->fallbackInterviewStart($user, $context);
 
@@ -151,7 +175,7 @@ class CareerAssistantService
 
     public function evaluateInterviewAnswer(User $user, string $question, string $answer, string $context): array
     {
-        $raw = $this->ai->promptJson($this->interviewAnswerPrompt($user, $question, $answer, $context));
+        $raw = $this->careerPromptJson($this->interviewAnswerPrompt($user, $question, $answer, $context), 900);
 
         $result = $raw ?: $this->fallbackInterviewAnswer($question, $answer);
 
@@ -165,7 +189,7 @@ class CareerAssistantService
     {
         $user->loadMissing('skills');
         $match = $this->matching->scoreJobForUser($user, $job);
-        $raw = $this->ai->promptJson($this->projectTipsPrompt($user, $job, $match));
+        $raw = $this->careerPromptJson($this->projectTipsPrompt($user, $job, $match), 700);
 
         $result = $raw ?: $this->fallbackProjectTips($user, $job, $match);
 
@@ -243,27 +267,37 @@ Portfolio: {$portfolio}
 CTX;
     }
 
+    /**
+     * IA de carrera: modelo rápido (NVIDIA fast / cadena de fallback).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function careerPromptJson(string $prompt, int $maxTokens = 1200): ?array
+    {
+        return $this->ai->promptJson($prompt, $this->ai->fastModel(), $maxTokens, fast: true);
+    }
+
     // ─── Prompts ─────────────────────────────────────────────────────────────────
 
     private function profileDeepPrompt(User $user, array $base): string
     {
         $ctx = $this->userContext($user);
+        $score = (int) $base['score'];
 
         return <<<PROMPT
-Eres mentor laboral y recruiter tech. Analiza este perfil de freelancer latinoamericano en WorkConnect.
-Responde SOLO JSON válido:
+Mentor laboral tech LATAM. Analiza perfil WorkConnect. JSON compacto, español, sin markdown:
 {
-  "score": {$base['score']},
-  "summary": "resumen ejecutivo 2-3 oraciones",
-  "strengths": ["fortalezas técnicas detectadas"],
-  "weaknesses": ["debilidades o gaps"],
-  "hidden_potential": ["logros o ángulos que el usuario podría no estar comunicando"],
-  "ats_tips": ["consejos para CV ATS-friendly"],
-  "linkedin_tips": ["consejos para perfil LinkedIn"],
-  "priority_actions": ["3 acciones concretas esta semana"],
+  "score": {$score},
+  "summary": "2 oraciones ejecutivas",
+  "ai_summary": "2 oraciones para perfil público (valor + por qué contratarlo)",
+  "strengths": ["máx 4"],
+  "weaknesses": ["máx 3"],
+  "hidden_potential": ["máx 3"],
+  "ats_tips": ["máx 3 cortos"],
+  "linkedin_tips": ["máx 3 cortos"],
+  "priority_actions": ["3 acciones esta semana"],
   "source": "nvidia"
 }
-Perfil:
 {$ctx}
 PROMPT;
     }
@@ -290,35 +324,104 @@ Notas del usuario:
 PROMPT;
     }
 
-    private function cvPrompt(User $user): string
+    private function cvPrompt(User $user, ?string $targetRole, ?string $offerText, ?string $cvDraft): string
     {
+        $extra = '';
+        if ($targetRole) {
+            $extra .= "\nRol objetivo: {$targetRole}";
+        }
+        if ($offerText) {
+            $extra .= "\n\nVacante (adapta palabras clave y enfoque del CV):\n".mb_substr($offerText, 0, 6000);
+        }
+        if ($cvDraft) {
+            $extra .= "\n\nCV actual del usuario (mejóralo, no lo acortes sin motivo):\n".mb_substr($cvDraft, 0, 8000);
+        }
+
+        $mode = $cvDraft ? 'Mejora el CV existente' : 'Genera un CV completo desde el perfil';
+
         return <<<PROMPT
-Genera un CV ATS-friendly en español para este perfil. Responde SOLO JSON:
+Eres experto en CVs ATS y reclutamiento tech en LATAM. {$mode} en español profesional.
+Responde SOLO JSON válido:
 {
-  "cv_text": "texto completo del CV listo para copiar (secciones: resumen, skills, experiencia, proyectos, educación si aplica)",
-  "sections": {"summary": "", "skills": "", "experience": "", "projects": ""},
-  "ats_keywords": ["palabras clave para ATS"],
-  "improvements": ["qué mejoró respecto a un CV genérico"],
+  "cv_text": "texto completo del CV listo para copiar (nombre, contacto, resumen, skills, experiencia, proyectos, educación si aplica)",
+  "sections": {"summary": "", "skills": "", "experience": "", "projects": "", "education": ""},
+  "ats_score": 0,
+  "ats_keywords": ["keywords ya presentes o recomendadas"],
+  "keywords_to_add": ["keywords que faltan para el rol/vacante"],
+  "improvements": ["cambios clave realizados"],
+  "format_tips": ["consejos de formato ATS: fuentes, longitud, secciones"],
+  "bullet_upgrades": [{"before": "bullet débil", "after": "bullet con impacto y métrica", "section": "experience|projects"}],
+  "red_flags": ["errores a corregir: fechas, huecos, clichés"],
+  "role_fit_summary": "2-3 oraciones sobre encaje con el rol/vacante",
   "source": "nvidia"
 }
+{$extra}
 {$this->userContext($user)}
 PROMPT;
     }
 
-    private function linkedinPrompt(User $user): string
+    private function normalizeCvResult(array $raw): array
     {
+        $bullets = [];
+        foreach ($raw['bullet_upgrades'] ?? [] as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+            $bullets[] = [
+                'before' => (string) ($item['before'] ?? ''),
+                'after' => (string) ($item['after'] ?? ''),
+                'section' => (string) ($item['section'] ?? 'experience'),
+            ];
+        }
+
+        return [
+            'cv_text' => (string) ($raw['cv_text'] ?? ''),
+            'sections' => is_array($raw['sections'] ?? null) ? $raw['sections'] : [],
+            'ats_score' => min(100, max(0, (int) ($raw['ats_score'] ?? 72))),
+            'ats_keywords' => array_values(array_filter($raw['ats_keywords'] ?? [], 'is_string')),
+            'keywords_to_add' => array_values(array_filter($raw['keywords_to_add'] ?? [], 'is_string')),
+            'improvements' => array_values(array_filter($raw['improvements'] ?? [], 'is_string')),
+            'format_tips' => array_values(array_filter($raw['format_tips'] ?? [], 'is_string')),
+            'bullet_upgrades' => $bullets,
+            'red_flags' => array_values(array_filter($raw['red_flags'] ?? [], 'is_string')),
+            'role_fit_summary' => (string) ($raw['role_fit_summary'] ?? ''),
+            'source' => (string) ($raw['source'] ?? 'nvidia'),
+        ];
+    }
+
+    private function linkedinPrompt(User $user, ?string $cvText): string
+    {
+        $cvBlock = $cvText
+            ? "\n\nCV generado (alinea headline, about y bullets con este contenido, sin contradecirlo):\n".mb_substr($cvText, 0, 7000)
+            : '';
+
         return <<<PROMPT
-Optimiza perfil LinkedIn (headline + about + bullets de experiencia). Formato compatible con LinkedIn, no markdown excesivo.
+Optimiza perfil LinkedIn (headline + about + bullets) alineado al CV y al mercado laboral tech LATAM.
+Sin markdown (#, **). Texto listo para pegar en LinkedIn.
 Responde SOLO JSON:
 {
-  "headline": "máx 220 caracteres",
+  "headline": "máx 220 caracteres, keywords del rol",
   "about": "sección Acerca de 2-3 párrafos",
-  "experience_bullets": ["bullets de logros para experiencia"],
-  "featured_suggestions": ["qué destacar en proyectos"],
+  "experience_bullets": ["bullets para experiencia en LinkedIn"],
+  "featured_suggestions": ["qué destacar en proyectos o featured"],
+  "upload_tips": ["2-3 pasos para subir el PDF en LinkedIn y completar el perfil"],
   "source": "nvidia"
 }
+{$cvBlock}
 {$this->userContext($user)}
 PROMPT;
+    }
+
+    private function normalizeLinkedInResult(array $raw): array
+    {
+        return [
+            'headline' => (string) ($raw['headline'] ?? ''),
+            'about' => (string) ($raw['about'] ?? ''),
+            'experience_bullets' => array_values(array_filter($raw['experience_bullets'] ?? [], 'is_string')),
+            'featured_suggestions' => array_values(array_filter($raw['featured_suggestions'] ?? [], 'is_string')),
+            'upload_tips' => array_values(array_filter($raw['upload_tips'] ?? [], 'is_string')),
+            'source' => (string) ($raw['source'] ?? 'nvidia'),
+        ];
     }
 
     private function offerPrompt(User $user, string $offer): string
@@ -470,11 +573,13 @@ PROMPT;
 
     // ─── Normalizers & fallbacks ─────────────────────────────────────────────────
 
-    private function normalizeProfileDeep(array $raw, array $base, array $ai): array
+    private function normalizeProfileDeep(array $raw, array $base): array
     {
+        $summary = (string) ($raw['summary'] ?? $base['summary']);
+
         return [
             'score' => (int) ($raw['score'] ?? $base['score']),
-            'summary' => (string) ($raw['summary'] ?? $ai['ai_summary'] ?? $base['summary']),
+            'summary' => $summary,
             'strengths' => array_values($raw['strengths'] ?? $base['strengths']),
             'weaknesses' => array_values($raw['weaknesses'] ?? []),
             'hidden_potential' => array_values($raw['hidden_potential'] ?? []),
@@ -482,22 +587,20 @@ PROMPT;
             'linkedin_tips' => array_values($raw['linkedin_tips'] ?? []),
             'priority_actions' => array_values($raw['priority_actions'] ?? $base['tips']),
             'tips' => array_values($base['tips']),
-            'ai_summary' => (string) ($ai['ai_summary'] ?? ''),
-            'source' => (string) ($raw['_ai_provider'] ?? $raw['source'] ?? $ai['source'] ?? 'local'),
+            'ai_summary' => (string) ($raw['ai_summary'] ?? $summary),
+            'source' => (string) ($raw['_ai_provider'] ?? $raw['source'] ?? 'local'),
         ];
     }
 
-    private function fallbackProfileDeep(User $user, array $base, array $ai): array
+    private function fallbackProfileDeep(User $user, array $base): array
     {
-        $user->loadMissing('skills');
-
         return [
             ...$this->normalizeProfileDeep([
                 'weaknesses' => $base['score'] < 70 ? ['Completa portfolio y experiencia detallada'] : [],
                 'hidden_potential' => ['Proyectos en WorkConnect como experiencia verificable'],
                 'ats_tips' => ['Usa verbos de acción', 'Incluye skills del job description', 'Una página si eres junior'],
                 'linkedin_tips' => ['Headline con rol + stack', 'About con resultados', 'Añade proyectos con enlace'],
-            ], $base, $ai),
+            ], $base),
             'source' => 'local',
         ];
     }
@@ -537,17 +640,30 @@ PROMPT;
         ];
     }
 
-    private function fallbackCv(User $user): array
+    private function fallbackCv(User $user, ?string $targetRole = null): array
     {
         $skills = $user->skills->pluck('name')->implode(' · ');
-        $cv = "{$user->name}\n{$user->city}\n\nRESUMEN\n{$user->bio}\n\nSKILLS\n{$skills}\n\nEXPERIENCIA\n{$user->experience}\n\nPROYECTOS\n".
+        $role = $targetRole ?: $user->target_role ?: 'Talento digital';
+        $cv = "{$user->name}\n{$user->city}\n\nRESUMEN\n{$user->bio}\n\nOBJETIVO\n{$role}\n\nSKILLS\n{$skills}\n\nEXPERIENCIA\n{$user->experience}\n\nPROYECTOS\n".
             $user->portfolioProjects->map(fn ($p) => "- {$p->title}: {$p->description}")->implode("\n");
 
         return [
             'cv_text' => $cv,
-            'sections' => ['summary' => (string) $user->bio, 'skills' => $skills, 'experience' => (string) $user->experience, 'projects' => ''],
+            'sections' => [
+                'summary' => (string) $user->bio,
+                'skills' => $skills,
+                'experience' => (string) $user->experience,
+                'projects' => $user->portfolioProjects->map(fn ($p) => $p->title)->implode(', '),
+                'education' => '',
+            ],
+            'ats_score' => 68,
             'ats_keywords' => $user->skills->pluck('name')->take(8)->all(),
+            'keywords_to_add' => ['Resultados medibles', 'Stack tecnológico explícito'],
             'improvements' => ['Formato ATS con secciones claras', 'Verbos de acción al inicio de cada bullet'],
+            'format_tips' => ['Una columna, sin tablas complejas', 'PDF con texto seleccionable'],
+            'bullet_upgrades' => [],
+            'red_flags' => ['Completa fechas y enlaces a portfolio'],
+            'role_fit_summary' => "Perfil orientado a {$role} con proyectos demostrables en WorkConnect.",
             'source' => 'local',
         ];
     }
@@ -561,6 +677,10 @@ PROMPT;
             'about' => (string) $user->bio,
             'experience_bullets' => ['Entregué soluciones digitales a PYMEs con alcance definido y comunicación continua'],
             'featured_suggestions' => ['Enlaza tu perfil público WorkConnect con QR'],
+            'upload_tips' => [
+                'Perfil → Añadir sección → Recomendado → Añadir currículum (PDF)',
+                'Copia headline y Acerca de desde WorkConnect al perfil',
+            ],
             'source' => 'local',
         ];
     }

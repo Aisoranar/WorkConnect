@@ -266,15 +266,17 @@ PROMPT;
     {
         $model = $model ?? ($fast ? $this->fastModel() : $this->powerfulModel());
 
-        if ($text = $this->askNvidia($prompt, $model, $maxTokens)) {
+        $timeout = $fast ? 28 : 45;
+
+        if ($text = $this->askNvidia($prompt, $model, $maxTokens, $timeout)) {
             return ['text' => $text, 'source' => 'nvidia'];
         }
 
-        if ($text = $this->askGemini($prompt, $maxTokens)) {
+        if ($text = $this->askGemini($prompt, $maxTokens, $fast ? 22 : 45)) {
             return ['text' => $text, 'source' => 'gemini'];
         }
 
-        if ($text = $this->askOpenAi($prompt, $maxTokens)) {
+        if ($text = $this->askOpenAi($prompt, $maxTokens, $fast ? 22 : 45)) {
             return ['text' => $text, 'source' => 'openai'];
         }
 
@@ -317,7 +319,7 @@ PROMPT;
         return is_array($decoded) ? $decoded : null;
     }
 
-    private function askNvidia(string $prompt, string $model, int $maxTokens = 512): ?string
+    private function askNvidia(string $prompt, string $model, int $maxTokens = 512, int $timeout = 45): ?string
     {
         if (! config('services.nvidia.key')) {
             return null;
@@ -327,11 +329,11 @@ PROMPT;
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer '.config('services.nvidia.key'),
                 'Accept'        => 'application/json',
-            ])->timeout(45)->post(rtrim((string) config('services.nvidia.url'), '/').'/chat/completions', [
+            ])->timeout($timeout)->post(rtrim((string) config('services.nvidia.url'), '/').'/chat/completions', [
                 'model'       => $model,
                 'messages'    => [['role' => 'user', 'content' => $prompt]],
                 'max_tokens'  => $maxTokens,
-                'temperature' => 0.65,
+                'temperature' => 0.55,
                 'top_p'       => 0.9,
                 'stream'      => false,
             ]);
@@ -348,7 +350,7 @@ PROMPT;
         return null;
     }
 
-    private function askGemini(string $prompt, int $maxTokens = 2048): ?string
+    private function askGemini(string $prompt, int $maxTokens = 2048, int $timeout = 45): ?string
     {
         $key = config('services.gemini.key');
         if (! $key) {
@@ -360,7 +362,7 @@ PROMPT;
 
         try {
             $response = Http::withHeaders(['Content-Type' => 'application/json'])
-                ->timeout(45)
+                ->timeout($timeout)
                 ->post($url.'?key='.$key, [
                     'contents' => [
                         ['parts' => [['text' => $prompt]]],
@@ -383,7 +385,7 @@ PROMPT;
         return null;
     }
 
-    private function askOpenAi(string $prompt, int $maxTokens = 2048): ?string
+    private function askOpenAi(string $prompt, int $maxTokens = 2048, int $timeout = 45): ?string
     {
         if (! config('services.openai.key')) {
             return null;
@@ -393,7 +395,7 @@ PROMPT;
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer '.config('services.openai.key'),
                 'Accept'        => 'application/json',
-            ])->timeout(45)->post(rtrim((string) config('services.openai.url'), '/').'/chat/completions', [
+            ])->timeout($timeout)->post(rtrim((string) config('services.openai.url'), '/').'/chat/completions', [
                 'model'       => (string) config('services.openai.model', 'gpt-4o-mini'),
                 'messages'    => [['role' => 'user', 'content' => $prompt]],
                 'max_tokens'  => $maxTokens,
@@ -582,9 +584,9 @@ PROMPT;
      *
      * @return array<string, mixed>|null
      */
-    public function promptJson(string $prompt, ?string $model = null, int $maxTokens = 2048): ?array
+    public function promptJson(string $prompt, ?string $model = null, int $maxTokens = 2048, bool $fast = false): ?array
     {
-        $result = $this->completeJson($prompt, $model, $maxTokens);
+        $result = $this->completeJson($prompt, $model, $maxTokens, $fast);
 
         if (! $result) {
             return null;

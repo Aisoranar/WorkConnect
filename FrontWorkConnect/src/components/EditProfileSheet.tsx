@@ -21,16 +21,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { GitHubImporter } from "@/components/GitHubImporter";
+import { ProfileSkillAdvisor } from "@/components/ProfileSkillAdvisor";
 
 type Props = {
   profile: UserProfile;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultTab?: string;
+  pendingSkill?: string | null;
+  onPendingSkillConsumed?: () => void;
   onSaved: () => void;
 };
 
-export function EditProfileSheet({ profile, open, onOpenChange, defaultTab = "perfil", onSaved }: Props) {
+export function EditProfileSheet({
+  profile,
+  open,
+  onOpenChange,
+  defaultTab = "perfil",
+  pendingSkill = null,
+  onPendingSkillConsumed,
+  onSaved,
+}: Props) {
   const [tab, setTab] = useState(defaultTab);
 
   useEffect(() => {
@@ -57,7 +68,12 @@ export function EditProfileSheet({ profile, open, onOpenChange, defaultTab = "pe
               <ProfileTab profile={profile} onSaved={onSaved} />
             </TabsContent>
             <TabsContent value="habilidades" className="mt-0">
-              <SkillsTab profile={profile} onSaved={onSaved} />
+              <SkillsTab
+                profile={profile}
+                onSaved={onSaved}
+                pendingSkill={pendingSkill}
+                onPendingSkillConsumed={onPendingSkillConsumed}
+              />
             </TabsContent>
             <TabsContent value="portfolio" className="mt-0">
               <PortfolioTab profile={profile} onSaved={onSaved} />
@@ -179,9 +195,28 @@ function ProfileTab({ profile, onSaved }: { profile: UserProfile; onSaved: () =>
 
 // ─── Tab: Habilidades ─────────────────────────────────────────────────────────
 
-function SkillsTab({ profile, onSaved }: { profile: UserProfile; onSaved: () => void }) {
+function SkillsTab({
+  profile,
+  onSaved,
+  pendingSkill,
+  onPendingSkillConsumed,
+}: {
+  profile: UserProfile;
+  onSaved: () => void;
+  pendingSkill?: string | null;
+  onPendingSkillConsumed?: () => void;
+}) {
   const [skills, setSkills] = useState<string[]>(profile.skills.map((s) => s.name));
   const [input, setInput] = useState("");
+
+  useEffect(() => {
+    if (!pendingSkill?.trim()) return;
+    const trimmed = pendingSkill.trim();
+    if (!skills.includes(trimmed)) {
+      setSkills((prev) => [...prev, trimmed]);
+    }
+    onPendingSkillConsumed?.();
+  }, [pendingSkill]);
 
   const { data: allSkills = [] } = useQuery({
     queryKey: ["all-skills"],
@@ -220,8 +255,19 @@ function SkillsTab({ profile, onSaved }: { profile: UserProfile; onSaved: () => 
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const isFreelancer = profile.role === "freelancer" || profile.role === "admin";
+
   return (
     <div className="space-y-4">
+      {isFreelancer && (
+        <ProfileSkillAdvisor
+          variant="inline"
+          excludeSkills={skills}
+          onAddSkill={addSkill}
+          enabled={isFreelancer}
+        />
+      )}
+
       <div className="space-y-1.5">
         <Label>Agregar habilidad</Label>
         <div className="flex gap-2">
@@ -275,7 +321,9 @@ function SkillsTab({ profile, onSaved }: { profile: UserProfile; onSaved: () => 
           ))}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">Sin habilidades aún. Escribe y pulsa Enter para agregar.</p>
+        <p className="text-sm text-muted-foreground">
+          Sin habilidades aún. Usa las recomendaciones de arriba, escribe una y pulsa Enter, o pulsa Agregar.
+        </p>
       )}
 
       <Button

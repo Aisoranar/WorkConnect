@@ -2,16 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CareerAiLoadingModal } from "@/components/career/CareerAiLoadingModal";
+import { CareerCvStudio } from "@/components/career/CareerCvStudio";
 import { CAREER_LOADING_TASKS, type CareerLoadingTask } from "@/components/career/career-loading-tasks";
 import { useCareerAiLoading } from "@/hooks/use-career-ai-loading";
 import {
   Sparkles,
   Loader2,
-  Copy,
   ExternalLink,
   Target,
-  FileText,
-  Linkedin,
   Briefcase,
   GraduationCap,
   MessageCircleQuestion,
@@ -31,6 +29,8 @@ import {
   careerStudyPlan,
   careerTargetRole,
   fetchExternalJobs,
+  fetchMe,
+  queryKeys,
   type CareerCvResult,
   type CareerLinkedInResult,
   type CareerOfferAnalysis,
@@ -132,6 +132,11 @@ function CareerAssistantPage() {
     queryFn: fetchExternalJobs,
   });
 
+  const meQuery = useQuery({
+    queryKey: queryKeys.me,
+    queryFn: fetchMe,
+  });
+
   const profileMut = useMutation({
     mutationFn: careerAnalyzeProfile,
     onSuccess: (d) => {
@@ -151,7 +156,7 @@ function CareerAssistantPage() {
     mutationFn: careerImproveCv,
     onSuccess: (d) => {
       setCvResult(d);
-      toast.success("CV generado");
+      toast.success(`CV optimizado · ATS ${d.ats_score ?? 0}%`);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -160,7 +165,7 @@ function CareerAssistantPage() {
     mutationFn: careerImproveLinkedIn,
     onSuccess: (d) => {
       setLinkedinResult(d);
-      toast.success("LinkedIn optimizado");
+      toast.success("LinkedIn alineado con tu CV");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -266,6 +271,7 @@ function CareerAssistantPage() {
         steps={aiLoading.task?.steps ?? []}
         progress={aiLoading.progress}
         currentStepIndex={aiLoading.stepIndex}
+        isFinalizing={aiLoading.isFinalizing}
       />
       <div>
         <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary-glow">
@@ -296,7 +302,7 @@ function CareerAssistantPage() {
             Puesto
           </TabsTrigger>
           <TabsTrigger value="cv" className="text-xs sm:text-sm">
-            CV / LinkedIn
+            CV con IA
           </TabsTrigger>
           <TabsTrigger value="jobs" className="text-xs sm:text-sm">
             Empleos
@@ -501,52 +507,18 @@ function CareerAssistantPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="cv" className="mt-4 space-y-4">
-          <div className="card-paper flex flex-wrap gap-3 p-4 sm:p-6">
-            <Button disabled={uiLocked} onClick={() => cvMut.mutate()}>
-              {cvMut.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <FileText className="mr-2 h-4 w-4" />
-              )}
-              {cvMut.isPending ? "Generando CV…" : "CV ATS-Friendly"}
-            </Button>
-            <Button variant="outline" disabled={uiLocked} onClick={() => linkedinMut.mutate()}>
-              {linkedinMut.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Linkedin className="mr-2 h-4 w-4" />
-              )}
-              {linkedinMut.isPending ? "Optimizando…" : "Optimizar LinkedIn"}
-            </Button>
-          </div>
-          {cvResult && (
-            <div className="card-paper p-4">
-              <div className="flex justify-between gap-2">
-                <h3 className="font-semibold">Tu CV</h3>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    void navigator.clipboard.writeText(cvResult.cv_text);
-                    toast.success("Copiado");
-                  }}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-              <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap text-xs text-muted-foreground">
-                {cvResult.cv_text}
-              </pre>
-            </div>
-          )}
-          {linkedinResult && (
-            <ResultBox title="LinkedIn">
-              <p className="font-medium text-foreground">{linkedinResult.headline}</p>
-              <p className="whitespace-pre-wrap">{linkedinResult.about}</p>
-              <BulletList items={linkedinResult.experience_bullets} />
-            </ResultBox>
-          )}
+        <TabsContent value="cv" className="mt-4">
+          <CareerCvStudio
+            uiLocked={uiLocked}
+            cvLoading={cvMut.isPending}
+            linkedinLoading={linkedinMut.isPending}
+            cvResult={cvResult}
+            linkedinResult={linkedinResult}
+            candidateName={meQuery.data?.name}
+            profileLinkedIn={meQuery.data?.linkedin}
+            onGenerateCv={(payload) => cvMut.mutate(payload)}
+            onImproveLinkedIn={(payload) => linkedinMut.mutate(payload)}
+          />
         </TabsContent>
 
         <TabsContent value="jobs" className="mt-4">

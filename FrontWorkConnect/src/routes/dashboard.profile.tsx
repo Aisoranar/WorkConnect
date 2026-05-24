@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { EditProfileSheet } from "@/components/EditProfileSheet";
+import { ProfileSkillAdvisor } from "@/components/ProfileSkillAdvisor";
 import type { UserProfile } from "@/lib/types";
 
 export const Route = createFileRoute("/dashboard/profile")({
@@ -22,6 +23,7 @@ function ProfilePage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editTab, setEditTab] = useState("perfil");
+  const [pendingSkill, setPendingSkill] = useState<string | null>(null);
 
   const { data: profile, isLoading, isError, error, refetch } = useQuery({
     queryKey: queryKeys.me,
@@ -221,6 +223,16 @@ function ProfilePage() {
             )}
           </section>
 
+          {(profile?.role === "freelancer" || profile?.role === "admin") && (
+            <ProfileSkillAdvisor
+              excludeSkills={profile?.skills.map((s) => s.name) ?? []}
+              onAddSkill={(skill) => {
+                setPendingSkill(skill);
+                openEditTab("habilidades");
+              }}
+            />
+          )}
+
           {/* Habilidades */}
           <section className="card-gradient rounded-2xl border border-border p-6 shadow-card">
             <div className="flex items-center justify-between">
@@ -250,7 +262,11 @@ function ProfilePage() {
 
         {/* Sidebar */}
         <aside className="space-y-6">
-          <AiScoreCard profile={profile} isLoading={isLoading} onImprove={() => openEditTab("perfil")} />
+          <AiScoreCard
+            profile={profile}
+            isLoading={isLoading}
+            onImprove={() => openEditTab("habilidades")}
+          />
 
           <div className="card-gradient rounded-2xl border border-border p-6 shadow-card">
             <h3 className="text-sm font-semibold">Verificaciones</h3>
@@ -282,8 +298,12 @@ function ProfilePage() {
           open={editOpen}
           onOpenChange={setEditOpen}
           defaultTab={editTab}
+          pendingSkill={pendingSkill}
+          onPendingSkillConsumed={() => setPendingSkill(null)}
           onSaved={() => {
             void queryClient.invalidateQueries({ queryKey: queryKeys.me });
+            void queryClient.invalidateQueries({ queryKey: queryKeys.jobs });
+            void queryClient.invalidateQueries({ queryKey: queryKeys.skillRecommendations });
             setEditOpen(false);
           }}
         />

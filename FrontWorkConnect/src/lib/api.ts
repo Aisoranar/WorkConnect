@@ -12,6 +12,8 @@ import type {
   ProfileSkill,
   Stats,
   UserProfile,
+  SkillRecommendationsResult,
+  LearnSkillResult,
 } from "./types";
 import { authHeaders, clearSession, isAuthenticated, touchSessionActivity } from "./auth";
 import { getApiBaseUrl } from "./env";
@@ -117,6 +119,7 @@ export const queryKeys = {
   job: (jobId: string) => ["job", jobId] as const,
   freelancers: (filters: string) => ["freelancers", filters] as const,
   githubRepos: (username: string) => ["github-repos", username] as const,
+  skillRecommendations: ["skill-recommendations"] as const,
 };
 
 type JobsListResponse = { data: Job[]; meta?: JobsListMeta };
@@ -416,12 +419,30 @@ export type CareerAchievements = {
   source: string;
 };
 
+export type CareerCvBulletUpgrade = {
+  before: string;
+  after: string;
+  section: string;
+};
+
 export type CareerCvResult = {
   cv_text: string;
   sections: Record<string, string>;
+  ats_score: number;
   ats_keywords: string[];
+  keywords_to_add: string[];
   improvements: string[];
+  format_tips: string[];
+  bullet_upgrades: CareerCvBulletUpgrade[];
+  red_flags: string[];
+  role_fit_summary: string;
   source: string;
+};
+
+export type CareerImproveCvPayload = {
+  target_role?: string;
+  offer_text?: string;
+  cv_draft?: string;
 };
 
 export type CareerLinkedInResult = {
@@ -429,7 +450,13 @@ export type CareerLinkedInResult = {
   about: string;
   experience_bullets: string[];
   featured_suggestions: string[];
+  upload_tips?: string[];
   source: string;
+};
+
+export type CareerImproveLinkedInPayload = {
+  cv_text?: string;
+  target_role?: string;
 };
 
 export type CareerOfferAnalysis = {
@@ -515,12 +542,21 @@ export function careerDiscoverAchievements(notes?: string): Promise<CareerAchiev
   );
 }
 
-export function careerImproveCv(): Promise<CareerCvResult> {
-  return apiPost<ApiItemResponse<CareerCvResult>>("/career/improve-cv", {}).then((r) => r.data);
+export function careerImproveCv(payload: CareerImproveCvPayload = {}): Promise<CareerCvResult> {
+  return apiPost<ApiItemResponse<CareerCvResult>>("/career/improve-cv", {
+    target_role: payload.target_role?.trim() || null,
+    offer_text: payload.offer_text?.trim() || null,
+    cv_draft: payload.cv_draft?.trim() || null,
+  }).then((r) => r.data);
 }
 
-export function careerImproveLinkedIn(): Promise<CareerLinkedInResult> {
-  return apiPost<ApiItemResponse<CareerLinkedInResult>>("/career/improve-linkedin", {}).then((r) => r.data);
+export function careerImproveLinkedIn(
+  payload: CareerImproveLinkedInPayload = {},
+): Promise<CareerLinkedInResult> {
+  return apiPost<ApiItemResponse<CareerLinkedInResult>>("/career/improve-linkedin", {
+    cv_text: payload.cv_text?.trim() || null,
+    target_role: payload.target_role?.trim() || null,
+  }).then((r) => r.data);
 }
 
 export function careerAnalyzeOffer(offerText: string, file?: File): Promise<CareerOfferAnalysis> {
@@ -567,4 +603,14 @@ export function careerInterviewEvaluate(
 
 export function careerProjectTips(jobId: number): Promise<ProjectCoaching> {
   return apiPost<ApiItemResponse<ProjectCoaching>>("/career/project-tips", { job_id: jobId }).then((r) => r.data);
+}
+
+export function fetchSkillRecommendations(): Promise<SkillRecommendationsResult> {
+  return apiPost<ApiItemResponse<SkillRecommendationsResult>>("/profile/skill-recommendations", {}).then(
+    (r) => r.data,
+  );
+}
+
+export function learnSkillIntro(skill: string): Promise<LearnSkillResult> {
+  return apiPost<ApiItemResponse<LearnSkillResult>>("/profile/learn-skill", { skill }).then((r) => r.data);
 }

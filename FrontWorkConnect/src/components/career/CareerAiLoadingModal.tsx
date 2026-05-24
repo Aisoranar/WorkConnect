@@ -18,6 +18,7 @@ type CareerAiLoadingModalProps = {
   steps: string[];
   progress: number;
   currentStepIndex: number;
+  isFinalizing?: boolean;
 };
 
 export function CareerAiLoadingModal({
@@ -28,13 +29,16 @@ export function CareerAiLoadingModal({
   steps,
   progress,
   currentStepIndex,
+  isFinalizing = false,
 }: CareerAiLoadingModalProps) {
   const pct = Math.min(100, Math.round(progress));
   const isSuccess = phase === "success" || phase === "closing";
   const isClosing = phase === "closing";
   const stepLabel = isSuccess
     ? "Análisis completado con éxito"
-    : (steps[currentStepIndex] ?? steps[steps.length - 1] ?? "Procesando…");
+    : isFinalizing
+      ? "Finalizando respuesta de la IA…"
+      : (steps[currentStepIndex] ?? steps[steps.length - 1] ?? "Procesando…");
 
   return (
     <Dialog open={open}>
@@ -144,7 +148,9 @@ export function CareerAiLoadingModal({
                     <span className="text-foreground/50"> · {currentStepIndex} completados</span>
                   )}
                 </span>
-                <span>{pct < 94 ? "En progreso…" : "Casi listo…"}</span>
+                <span>
+                  {isFinalizing ? "Un momento más…" : pct < 80 ? "En progreso…" : "Casi listo…"}
+                </span>
               </div>
 
               <div className="rounded-lg border border-border/60 bg-surface/40">
@@ -193,7 +199,9 @@ export function CareerAiLoadingModal({
               </div>
 
               <p className="text-center text-[11px] text-muted-foreground">
-                Suele tardar entre 15 y 60 segundos según la carga del servidor de IA.
+                {isFinalizing
+                  ? "La IA está cerrando el análisis; suele ser cuestión de segundos."
+                  : "Suele tardar entre 8 y 25 segundos con el modelo rápido de NVIDIA."}
               </p>
             </div>
           </>
