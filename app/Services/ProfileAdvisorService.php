@@ -1149,14 +1149,23 @@ PROMPT;
     private function userContext(User $user): string
     {
         $user->loadMissing('skills');
-        $skills = $user->skills->pluck('name')->join(', ') ?: 'ninguna';
-        $bio = Str::limit((string) ($user->bio ?? ''), 200);
+        $skills = $user->skills->pluck('name')->join(', ') ?: 'ninguna registrada';
+        $bio = Str::limit((string) ($user->bio ?? ''), 300);
+        $experience = Str::limit((string) ($user->experience ?? ''), 200);
+        $github = $user->github ?? '';
+        $rating = $user->rating > 0 ? "Rating: {$user->rating}/5" : '';
 
         return <<<CTX
-Usuario: {$user->name}
-Bio: {$bio}
-Skills actuales: {$skills}
+=== PERFIL REAL DEL USUARIO (fuente de verdad) ===
+Nombre: {$user->name}
 Ciudad: {$user->city}
+Bio: {$bio}
+Experiencia: {$experience}
+SKILLS REALES DEL USUARIO (basa TODA tu respuesta en estas habilidades): {$skills}
+{$github}
+{$rating}
+=== FIN PERFIL ===
+IMPORTANTE: Tu respuesta DEBE ser específica para las skills listadas arriba. No inventes skills que el usuario no tiene. No uses skills genéricas si el usuario tiene skills concretas.
 CTX;
     }
 }

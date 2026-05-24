@@ -303,17 +303,27 @@ class CareerAssistantService
 
     private function userContext(User $user): string
     {
+        $user->loadMissing(['skills', 'portfolioProjects']);
         $skills = $user->skills->pluck('name')->implode(', ') ?: 'sin skills registradas';
         $portfolio = $user->portfolioProjects->pluck('title')->implode(', ') ?: 'sin portfolio';
+        $github = $user->github ? "GitHub: {$user->github}" : '';
+        $linkedin = $user->linkedin ? "LinkedIn: {$user->linkedin}" : '';
+        $rating = $user->rating > 0 ? "Rating: {$user->rating}/5" : '';
 
         return <<<CTX
+=== PERFIL REAL DEL USUARIO EN WORKCONNECT (FUENTE DE VERDAD) ===
 Nombre: {$user->name}
 Rol objetivo: {$user->target_role}
 Ciudad: {$user->city}
 Bio: {$user->bio}
 Experiencia declarada: {$user->experience}
-Skills: {$skills}
+SKILLS VERIFICADAS DEL USUARIO (ESTAS son sus habilidades REALES, úsalas como base): {$skills}
 Portfolio: {$portfolio}
+{$github}
+{$linkedin}
+{$rating}
+=== FIN DEL PERFIL ===
+IMPORTANTE: Las skills listadas arriba son las que el usuario REALMENTE tiene. Si hay un CV borrador adjunto, adáptalo a ESTAS skills, no al revés. El perfil de WorkConnect es la fuente de verdad.
 CTX;
     }
 
@@ -387,36 +397,63 @@ PROMPT;
 
     private function cvPrompt(User $user, ?string $targetRole, ?string $offerText, ?string $cvDraft): string
     {
+        $user->loadMissing('skills');
+        $userSkills = $user->skills->pluck('name')->implode(', ') ?: 'sin skills registradas';
+
         $extra = '';
         if ($targetRole) {
-            $extra .= "\nRol objetivo: {$targetRole}";
+            $extra .= "\nRol objetivo del usuario: {$targetRole}";
         }
         if ($offerText) {
-            $extra .= "\n\nVacante (adapta palabras clave y enfoque del CV):\n".mb_substr($offerText, 0, 6000);
-        }
-        if ($cvDraft) {
-            $extra .= "\n\nCV actual del usuario (mejóralo, no lo acortes sin motivo):\n".mb_substr($cvDraft, 0, 8000);
+            $extra .= "\n\nVacante a la que quiere aplicar (adapta keywords y enfoque):\n".mb_substr($offerText, 0, 6000);
         }
 
-        $mode = $cvDraft ? 'Mejora el CV existente' : 'Genera un CV completo desde el perfil';
+        $cvBlock = '';
+        if ($cvDraft) {
+            $cvBlock = "\n\n--- CV BORRADOR (solo como REFERENCIA de formato y estructura, NO como fuente de skills) ---\n".mb_substr($cvDraft, 0, 8000)."\n--- FIN CV BORRADOR ---\n";
+        }
+
+        $mode = $cvDraft
+            ? 'El usuario pegó un CV borrador. ÚSALO SOLO como referencia de formato. Las SKILLS y el ENFOQUE del CV final deben basarse en el perfil real del usuario (abajo), NO en lo que diga el borrador.'
+            : 'Genera un CV completo basado EXCLUSIVAMENTE en el perfil real del usuario.';
 
         return <<<PROMPT
-Eres experto en CVs ATS y reclutamiento tech en LATAM. {$mode} en español profesional.
-Responde SOLO JSON válido:
-{
-  "cv_text": "texto completo del CV listo para copiar (nombre, contacto, resumen, skills, experiencia, proyectos, educación si aplica)",
-  "sections": {"summary": "", "skills": "", "experience": "", "projects": "", "education": ""},
+Eres un experto en CVs ATS y reclutamiento tech en Latinoamérica con 10+ años de experiencia.
+
+INSTRUCCIÓN CRÍTICA: {$mode}
+
+REGLA #1 — SKILLS DEL USUARIO (fuente de verdad):
+Las habilidades REALES del usuario son: {$userSkills}
+El CV generado DEBE reflejar ESTAS skills en la sección de habilidades, en el resumen profesional y en los bullets de experiencia/proyectos. Si el borrador menciona skills que el usuario NO tiene en su perfil, ELIMÍNALAS o REEMPLÁZALAS por las reales.
+
+REGLA #2 — COHERENCIA:
+- El resumen profesional debe mencionar las skills principales del usuario, NO las del borrador
+- Los bullets de experiencia deben conectar con las skills REALES del usuario
+- Si el usuario sabe React y Laravel pero el borrador habla de Figma, genera experiencia con React y Laravel
+- Adapta la narrativa profesional a lo que el usuario REALMENTE sabe hacer
+
+REGLA #3 — CALIDAD PROFESIONAL:
+- Formato ATS optimizado (sin tablas, sin columnas, sin iconos)
+- Bullets con verbos de acción + resultado medible
+- Keywords relevantes para el rol objetivo y las skills del usuario
+- Una página si es junior, máximo dos si tiene experiencia
+
+Responde SOLO JSON válido en español, sin markdown:
+{{
+  "cv_text": "texto completo del CV listo para copiar — DEBE incluir las skills reales del usuario",
+  "sections": {{"summary": "", "skills": "", "experience": "", "projects": "", "education": ""}},
   "ats_score": 0,
-  "ats_keywords": ["keywords ya presentes o recomendadas"],
-  "keywords_to_add": ["keywords que faltan para el rol/vacante"],
-  "improvements": ["cambios clave realizados"],
-  "format_tips": ["consejos de formato ATS: fuentes, longitud, secciones"],
-  "bullet_upgrades": [{"before": "bullet débil", "after": "bullet con impacto y métrica", "section": "experience|projects"}],
-  "red_flags": ["errores a corregir: fechas, huecos, clichés"],
-  "role_fit_summary": "2-3 oraciones sobre encaje con el rol/vacante",
+  "ats_keywords": ["keywords presentes basadas en las skills REALES del usuario"],
+  "keywords_to_add": ["keywords adicionales recomendadas para su rol"],
+  "improvements": ["cambios clave realizados vs el borrador o perfil original"],
+  "format_tips": ["consejos de formato ATS"],
+  "bullet_upgrades": [{{"before": "bullet débil u original", "after": "bullet profesional con impacto", "section": "experience|projects"}}],
+  "red_flags": ["inconsistencias detectadas entre borrador y perfil real, si las hay"],
+  "role_fit_summary": "2-3 oraciones sobre cómo las skills REALES del usuario encajan con el rol objetivo",
   "source": "nvidia"
-}
+}}
 {$extra}
+{$cvBlock}
 {$this->userContext($user)}
 PROMPT;
     }
@@ -452,22 +489,29 @@ PROMPT;
 
     private function linkedinPrompt(User $user, ?string $cvText): string
     {
+        $user->loadMissing('skills');
+        $userSkills = $user->skills->pluck('name')->implode(', ') ?: 'sin skills';
+
         $cvBlock = $cvText
-            ? "\n\nCV generado (alinea headline, about y bullets con este contenido, sin contradecirlo):\n".mb_substr($cvText, 0, 7000)
+            ? "\n\nCV generado (usa como referencia de contenido, pero las SKILLS del perfil real tienen prioridad):\n".mb_substr($cvText, 0, 7000)
             : '';
 
         return <<<PROMPT
-Optimiza perfil LinkedIn (headline + about + bullets) alineado al CV y al mercado laboral tech LATAM.
+Eres un especialista en LinkedIn para profesionales tech en Latinoamérica. Optimiza el perfil del usuario.
+
+REGLA CLAVE: El headline, about y bullets DEBEN reflejar las skills REALES del usuario: {$userSkills}
+No uses skills que el usuario no tiene en su perfil. Si el CV menciona habilidades que no están en su perfil real, ignóralas.
+
 Sin markdown (#, **). Texto listo para pegar en LinkedIn.
-Responde SOLO JSON:
-{
-  "headline": "máx 220 caracteres, keywords del rol",
-  "about": "sección Acerca de 2-3 párrafos",
-  "experience_bullets": ["bullets para experiencia en LinkedIn"],
-  "featured_suggestions": ["qué destacar en proyectos o featured"],
-  "upload_tips": ["2-3 pasos para subir el PDF en LinkedIn y completar el perfil"],
+Responde SOLO JSON válido en español:
+{{
+  "headline": "máx 220 caracteres — incluir las skills principales del usuario y su rol, con keywords de búsqueda",
+  "about": "sección Acerca de 2-3 párrafos que destaquen sus skills REALES y propuesta de valor",
+  "experience_bullets": ["bullets de experiencia que demuestren uso de sus skills reales"],
+  "featured_suggestions": ["qué proyectos o demos destacar basado en sus skills"],
+  "upload_tips": ["2-3 pasos para completar el perfil en LinkedIn"],
   "source": "nvidia"
-}
+}}
 {$cvBlock}
 {$this->userContext($user)}
 PROMPT;
@@ -487,22 +531,30 @@ PROMPT;
 
     private function offerPrompt(User $user, string $offer): string
     {
+        $user->loadMissing('skills');
+        $userSkills = $user->skills->pluck('name')->implode(', ') ?: 'sin skills';
+
         return <<<PROMPT
-Analiza esta oferta laboral y compárala con el perfil del candidato.
-Responde SOLO JSON:
-{
-  "role_title": "",
-  "company": "",
-  "required_skills": [],
-  "nice_to_have": [],
-  "matched_skills": [],
-  "missing_skills": [],
+Eres un asesor de carrera tech que evalúa la compatibilidad entre un candidato y una oferta laboral.
+
+INSTRUCCIÓN CLAVE: Compara la oferta SOLO contra las skills REALES del usuario: {$userSkills}
+- "matched_skills": SOLO skills que el usuario REALMENTE tiene Y la oferta pide
+- "missing_skills": skills que la oferta pide Y el usuario NO tiene
+- NO inventes skills que el usuario no tiene. NO asumas conocimientos no declarados.
+
+Responde SOLO JSON válido en español:
+{{
+  "role_title": "título del puesto",
+  "company": "empresa si se menciona",
+  "required_skills": ["skills que pide la oferta"],
+  "nice_to_have": ["skills opcionales"],
+  "matched_skills": ["SOLO las que el usuario tiene Y la oferta pide"],
+  "missing_skills": ["las que la oferta pide Y el usuario NO tiene"],
   "compatibility_percent": 0,
-  "summary": "análisis en 3-4 oraciones",
+  "summary": "análisis honesto de 3-4 oraciones basado en sus skills REALES",
   "apply_recommendation": "aplicar ahora|prepararse primero|no recomendado",
   "source": "nvidia"
-}
-Perfil candidato:
+}}
 {$this->userContext($user)}
 Oferta:
 {$offer}
@@ -536,20 +588,33 @@ PROMPT;
 
     private function targetRolePrompt(User $user, string $role): string
     {
+        $user->loadMissing('skills');
+        $userSkills = $user->skills->pluck('name')->implode(', ') ?: 'sin skills';
+
         return <<<PROMPT
-El usuario aspira a este puesto: {$role}
-Genera ruta de preparación: cómo aplicar, qué estudiar, evaluación final sugerida.
-Responde SOLO JSON:
-{
+Eres un career coach tech en Latinoamérica. El usuario aspira al puesto: {$role}
+
+SUS SKILLS ACTUALES: {$userSkills}
+Genera una ruta de preparación PERSONALIZADA basada en lo que YA sabe vs lo que necesita para "{$role}".
+
+INSTRUCCIONES:
+- "current_gap_analysis": compara sus skills REALES ({$userSkills}) contra lo que pide el mercado para "{$role}". Sé específico: "Ya tienes React, te falta Node.js para backend"
+- "skills_to_learn": SOLO skills que NO tiene y que necesita. No repitas las que ya tiene.
+- "how_to_apply": consejos personalizados considerando sus fortalezas actuales
+- "roadmap": secuencia lógica partiendo de lo que YA sabe
+
+Responde SOLO JSON válido en español:
+{{
   "role": "{$role}",
-  "market_summary": "qué buscan empresas para este rol en LATAM",
-  "current_gap_analysis": ["gaps vs perfil actual"],
-  "how_to_apply": ["pasos para postular con éxito"],
-  "study_roadmap": [{"phase": "1", "title": "", "topics": [], "duration_days": 7}],
-  "portfolio_suggestions": ["proyectos demo recomendados"],
-  "evaluation_criteria": ["cómo saber si está listo"],
+  "market_summary": "qué buscan empresas para este rol en LATAM — datos específicos",
+  "current_gap_analysis": ["gaps específicos entre sus skills actuales y el rol"],
+  "skills_to_learn": ["skills que le FALTAN — no repetir las que ya tiene"],
+  "how_to_apply": ["pasos para postular aprovechando sus fortalezas"],
+  "roadmap": ["fases de estudio partiendo de lo que ya domina"],
+  "salary_range": "rango salarial estimado en LATAM",
+  "free_courses": [{{"title": "", "url": "", "provider": "", "skills": []}}],
   "source": "nvidia"
-}
+}}
 {$this->userContext($user)}
 PROMPT;
     }
