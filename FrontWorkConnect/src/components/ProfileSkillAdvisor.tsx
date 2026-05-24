@@ -13,6 +13,8 @@ import {
   learnSkillIntro,
   queryKeys,
 } from "@/lib/api";
+import { SKILL_MARKET_STEPS } from "@/lib/ai-loading-messages";
+import { AiLoadingPanel } from "@/components/AiLoadingPanel";
 import type { LearnSkillResult, SkillRecommendation } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -125,9 +127,11 @@ export function ProfileSkillAdvisor({
         </div>
 
         {isLoading && (
-          <div className={`flex items-center justify-center gap-2 text-sm text-muted-foreground ${inline ? "mt-4 py-4" : "mt-6 py-8"}`}>
-            <Loader2 className="h-4 w-4 animate-spin" /> Analizando qué piden los clientes…
-          </div>
+          <AiLoadingPanel
+            messages={SKILL_MARKET_STEPS}
+            active={isLoading}
+            className={inline ? "py-4" : "py-6"}
+          />
         )}
 
         {isError && (

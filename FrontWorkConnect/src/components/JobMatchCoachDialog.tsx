@@ -11,6 +11,8 @@ import {
   UserCog,
 } from "lucide-react";
 import { fetchJobMatchCoach, learnSkillIntro } from "@/lib/api";
+import { jobMatchCoachSteps } from "@/lib/ai-loading-messages";
+import { AiLoadingPanel } from "@/components/AiLoadingPanel";
 import type { Job, JobMatchCoachMissingSkill, LearnSkillResult } from "@/lib/types";
 import { SkillLearnDialog } from "@/components/SkillLearnDialog";
 import {
@@ -54,6 +56,7 @@ export function JobMatchCoachDialog({ job, open, onOpenChange }: Props) {
 
   const data = coachQuery.data;
   const isLow = (data?.current_match ?? job?.match ?? 0) < 50;
+  const loadingSteps = jobMatchCoachSteps(job?.title, job?.skills);
 
   function goToProfileSkills(skill?: string) {
     onOpenChange(false);
@@ -91,10 +94,7 @@ export function JobMatchCoachDialog({ job, open, onOpenChange }: Props) {
           </DialogHeader>
 
           {coachQuery.isLoading && (
-            <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Analizando con IA qué te falta…
-            </div>
+            <AiLoadingPanel messages={loadingSteps} active={coachQuery.isLoading} />
           )}
 
           {coachQuery.isError && (

@@ -4,12 +4,16 @@ import {
   BookOpen,
   CheckCircle2,
   ClipboardCheck,
+  Lightbulb,
   Loader2,
   PlusCircle,
   RotateCcw,
   XCircle,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { startSkillQuiz, submitSkillQuiz } from "@/lib/api";
+import { SKILL_LESSON_STEPS, SKILL_QUIZ_STEPS } from "@/lib/ai-loading-messages";
+import { AiLoadingPanel } from "@/components/AiLoadingPanel";
 import type { LearnSkillResult, SkillQuizQuestion, SkillQuizResult, SkillQuizStart } from "@/lib/types";
 import {
   Dialog,
@@ -125,13 +129,14 @@ export function SkillLearnDialog({
         </DialogHeader>
 
         {introLoading && !intro && (
-          <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            Preparando tu lección…
-          </div>
+          <AiLoadingPanel messages={SKILL_LESSON_STEPS} active={introLoading} showStepList />
         )}
 
-        {phase === "intro" && intro && (
+        {phase === "intro" && intro && startQuizMutation.isPending && (
+          <AiLoadingPanel messages={SKILL_QUIZ_STEPS} active showStepList />
+        )}
+
+        {phase === "intro" && intro && !startQuizMutation.isPending && (
           <div className="space-y-4 text-sm">
             <div className="rounded-lg border border-primary/25 bg-primary/5 p-3 text-xs text-muted-foreground">
               <ClipboardCheck className="mb-1 inline h-4 w-4 text-primary-glow" /> Para añadir{" "}
@@ -151,7 +156,13 @@ export function SkillLearnDialog({
                 {intro.basics.map((b) => (
                   <li key={b.concept} className="rounded-lg border border-border p-3">
                     <span className="font-medium">{b.concept}</span>
-                    <p className="mt-1 text-xs text-muted-foreground">{b.explanation}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{b.explanation}</p>
+                    {b.example && (
+                      <p className="mt-2 rounded-md bg-surface/50 px-2 py-1.5 text-xs text-foreground/90">
+                        <span className="font-medium text-primary-glow">Ejemplo: </span>
+                        {b.example}
+                      </p>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -186,7 +197,11 @@ export function SkillLearnDialog({
           </div>
         )}
 
-        {phase === "quiz" && quiz && (
+        {phase === "quiz" && quiz && submitQuizMutation.isPending && (
+          <AiLoadingPanel messages={SKILL_QUIZ_STEPS} active showStepList={false} />
+        )}
+
+        {phase === "quiz" && quiz && !submitQuizMutation.isPending && (
           <div className="space-y-4 text-sm">
             <p className="text-xs text-muted-foreground">
               Responde las {quiz.questions.length} preguntas. Necesitas al menos {quiz.passing_score}%
@@ -238,17 +253,13 @@ export function SkillLearnDialog({
 
             {!result.passed && result.review.length > 0 && (
               <div>
-                <h4 className="font-medium">Repasa esto</h4>
-                <ul className="mt-2 space-y-2">
+                <h4 className="flex items-center gap-2 font-medium">
+                  <Lightbulb className="h-4 w-4 text-warning" />
+                  Repasa con calma
+                </h4>
+                <ul className="mt-3 space-y-3">
                   {result.review.map((item, i) => (
-                    <li key={i} className="rounded-lg border border-border p-3 text-xs">
-                      <p className="font-medium">{item.question}</p>
-                      <p className="mt-1 text-destructive">Tu respuesta: {item.your_answer}</p>
-                      <p className="text-success">Correcta: {item.correct_answer}</p>
-                      {item.explanation && (
-                        <p className="mt-1 text-muted-foreground">{item.explanation}</p>
-                      )}
-                    </li>
+                    <QuizReviewCard key={i} item={item} index={i} />
                   ))}
                 </ul>
               </div>
@@ -283,6 +294,60 @@ export function SkillLearnDialog({
   );
 }
 
+function QuizReviewCard({ item, index }: { item: SkillQuizResult["review"][number]; index: number }) {
+  return (
+    <li className="overflow-hidden rounded-xl border border-border text-xs">
+      <div className="flex items-center justify-between gap-2 border-b border-border bg-surface/40 px-3 py-2">
+        <span className="font-medium text-foreground">Pregunta {index + 1}</span>
+        {item.concept && (
+          <Badge variant="outline" className="text-[10px]">
+            {item.concept}
+          </Badge>
+        )}
+      </div>
+      <div className="space-y-2.5 p-3">
+        <p className="text-sm font-medium leading-snug text-foreground">{item.question}</p>
+
+        <div className="grid gap-2 sm:grid-cols-2">
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-destructive">
+              Lo que elegiste
+            </p>
+            <p className="mt-1 text-sm text-foreground">{item.your_answer}</p>
+            {item.why_yours_was_wrong && (
+              <p className="mt-1.5 leading-relaxed text-muted-foreground">{item.why_yours_was_wrong}</p>
+            )}
+          </div>
+          <div className="rounded-lg border border-success/30 bg-success/5 p-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-success">
+              Respuesta correcta
+            </p>
+            <p className="mt-1 text-sm font-medium text-foreground">{item.correct_answer}</p>
+          </div>
+        </div>
+
+        {item.explanation && (
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-primary-glow">
+              Por qué es la correcta
+            </p>
+            <p className="mt-1 leading-relaxed text-muted-foreground">{item.explanation}</p>
+          </div>
+        )}
+
+        {item.example && (
+          <div className="rounded-lg border border-border bg-muted/30 p-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-foreground/80">
+              Ejemplo práctico
+            </p>
+            <p className="mt-1 leading-relaxed text-muted-foreground">{item.example}</p>
+          </div>
+        )}
+      </div>
+    </li>
+  );
+}
+
 function QuizForm({
   questions,
   answers,
@@ -296,9 +361,10 @@ function QuizForm({
     <div className="space-y-4">
       {questions.map((q, qi) => (
         <fieldset key={q.id} className="rounded-lg border border-border p-3">
-          <legend className="mb-2 text-sm font-medium">
+          <legend className="mb-2 text-sm font-medium leading-snug">
             {qi + 1}. {q.question}
           </legend>
+          <p className="mb-2 text-xs text-muted-foreground">Elige la opción que mejor encaja en un proyecto real.</p>
           <div className="space-y-2">
             {q.options.map((opt, oi) => (
               <label

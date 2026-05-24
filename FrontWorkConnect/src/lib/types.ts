@@ -211,10 +211,13 @@ export type SkillQuizStart = {
 };
 
 export type SkillQuizReviewItem = {
+  concept?: string;
   question: string;
   your_answer: string;
   correct_answer: string;
+  why_yours_was_wrong?: string;
   explanation: string;
+  example?: string;
 };
 
 export type SkillQuizResult = {
@@ -234,7 +237,7 @@ export type LearnSkillResult = {
   skill: string;
   overview: string;
   why_for_you: string;
-  basics: { concept: string; explanation: string }[];
+  basics: { concept: string; explanation: string; example?: string }[];
   first_steps: string[];
   practice_idea: string;
   add_to_profile_tip: string;
