@@ -17,6 +17,11 @@ dist-ssr
 .nitro
 *.local
 
+# Variables locales (usar .env.example como plantilla)
+.env
+.env.local
+.env.*.local
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

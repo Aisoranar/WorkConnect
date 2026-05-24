@@ -1,10 +1,11 @@
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AuthLayout } from "@/components/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { isAuthenticated, register } from "@/lib/auth";
+import { register } from "@/lib/auth";
+import { guardGuestOnly } from "@/lib/auth-guard";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/register")({
@@ -12,9 +13,7 @@ export const Route = createFileRoute("/register")({
     meta: [{ title: "Crear cuenta · WorkConnect" }],
   }),
   beforeLoad: () => {
-    if (isAuthenticated()) {
-      throw redirect({ to: "/dashboard" });
-    }
+    guardGuestOnly();
   },
   component: RegisterPage,
 });

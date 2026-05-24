@@ -53,6 +53,7 @@ export type JobApplicationDetail = {
 
 export type Application = {
   id: string;
+  jobId?: string;
   jobTitle: string;
   company: string;
   price: string;

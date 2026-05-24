@@ -7,7 +7,10 @@ use Illuminate\Notifications\Messages\MailMessage;
 
 class ResetPasswordNotification extends ResetPassword
 {
-    protected function resetUrl(object $notifiable): string
+    /**
+     * @param  mixed  $notifiable
+     */
+    protected function resetUrl($notifiable): string
     {
         $base = rtrim((string) config('workconnect.frontend_url'), '/');
 
@@ -17,7 +20,10 @@ class ResetPasswordNotification extends ResetPassword
         ]);
     }
 
-    public function toMail(object $notifiable): MailMessage
+    /**
+     * @param  mixed  $notifiable
+     */
+    public function toMail($notifiable): MailMessage
     {
         $url = $this->resetUrl($notifiable);
         $minutes = config('auth.passwords.'.config('auth.defaults.passwords').'.expire', 60);

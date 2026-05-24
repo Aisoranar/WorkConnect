@@ -30,17 +30,22 @@ return [
     ],
 
     'nvidia' => [
-        'key'   => env('NVIDIA_API_KEY'),
-        'url'   => env('NVIDIA_API_URL', 'https://integrate.api.nvidia.com/v1'),
-        'model' => env('NVIDIA_DEFAULT_MODEL', 'meta/llama-3.3-70b-instruct'),
+        'key'        => env('NVIDIA_API_KEY'),
+        'url'        => env('NVIDIA_API_URL', 'https://integrate.api.nvidia.com/v1'),
+        'model'      => env('NVIDIA_DEFAULT_MODEL', 'meta/llama-3.3-70b-instruct'),
+        'fast_model' => env('NVIDIA_FAST_MODEL', 'meta/llama-3.1-8b-instruct'),
     ],
 
     'gemini' => [
-        'key' => env('GEMINI_API_KEY'),
+        'key'   => env('GEMINI_API_KEY'),
+        'url'   => env('GEMINI_API_URL', 'https://generativelanguage.googleapis.com/v1beta'),
+        'model' => env('GEMINI_DEFAULT_MODEL', 'gemini-2.0-flash'),
     ],
 
     'openai' => [
-        'key' => env('OPENAI_API_KEY'),
+        'key'   => env('OPENAI_API_KEY'),
+        'url'   => env('OPENAI_API_URL', 'https://api.openai.com/v1'),
+        'model' => env('OPENAI_DEFAULT_MODEL', 'gpt-4o-mini'),
     ],
 
 ];

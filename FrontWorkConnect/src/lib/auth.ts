@@ -1,5 +1,12 @@
+import { getApiBaseUrl } from "@/lib/env";
+
 const TOKEN_KEY = "workconnect_token";
 const USER_KEY = "workconnect_user";
+const LAST_ACTIVITY_KEY = "workconnect_last_activity";
+
+/** 5 minutos sin actividad → aviso; otros 60 s para responder o cierre de sesión. */
+export const SESSION_IDLE_MS = 5 * 60 * 1000;
+export const SESSION_PROMPT_MS = 60 * 1000;
 
 export type AuthUser = {
   id: number;
@@ -16,17 +23,7 @@ type LoginResponse = {
 
 type RegisterResponse = LoginResponse & { message?: string };
 
-function resolveApiBase(): string {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL.replace(/\/$/, "");
-  }
-  if (typeof window !== "undefined" && window.location.hostname === "localhost") {
-    return "http://127.0.0.1:8000/api";
-  }
-  return "http://127.0.0.1:8000/api";
-}
-
-const API_BASE = resolveApiBase();
+const API_BASE = getApiBaseUrl();
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -48,14 +45,50 @@ export function isAuthenticated(): boolean {
   return Boolean(getToken());
 }
 
+export function touchSessionActivity(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  sessionStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
+}
+
+export function getLastSessionActivity(): number {
+  if (typeof window === "undefined") {
+    return Date.now();
+  }
+  const raw = sessionStorage.getItem(LAST_ACTIVITY_KEY);
+  const parsed = raw ? Number(raw) : NaN;
+  return Number.isFinite(parsed) ? parsed : Date.now();
+}
+
+export function clearSessionActivity(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  sessionStorage.removeItem(LAST_ACTIVITY_KEY);
+}
+
+export const SESSION_CHANGE_EVENT = "workconnect:session-change";
+
+function notifySessionChange(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.dispatchEvent(new Event(SESSION_CHANGE_EVENT));
+}
+
 export function setSession(token: string, user: AuthUser): void {
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(USER_KEY, JSON.stringify(user));
+  touchSessionActivity();
+  notifySessionChange();
 }
 
 export function clearSession(): void {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  clearSessionActivity();
+  notifySessionChange();
 }
 
 export function authHeaders(json = false): HeadersInit {
@@ -85,11 +118,18 @@ async function parseError(response: Response): Promise<string> {
 }
 
 export async function login(email: string, password: string): Promise<LoginResponse> {
-  const response = await fetch(`${API_BASE}/login`, {
-    method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}/login`, {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+  } catch {
+    throw new Error(
+      "No se pudo conectar con el servidor. Comprueba que Laravel esté activo y que VITE_API_URL coincida con php artisan serve.",
+    );
+  }
 
   if (!response.ok) {
     throw new Error(await parseError(response));

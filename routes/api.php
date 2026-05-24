@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AIController;
+use App\Http\Controllers\Api\CareerController;
 use App\Http\Controllers\Api\ApplicationController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GithubController;
@@ -86,4 +87,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ai/improve-proposal', [AIController::class, 'improveProposal']);
     Route::post('/ai/improve-bio', [AIController::class, 'improveBio']);
     Route::post('/ai/github-profile', [AIController::class, 'generateGithubProfile']);
+
+    // Asistente de carrera (talento joven)
+    Route::prefix('career')->group(function () {
+        Route::get('/external-jobs', [CareerController::class, 'externalJobs']);
+        Route::get('/history', [CareerController::class, 'history']);
+        Route::post('/analyze-profile', [CareerController::class, 'analyzeProfile']);
+        Route::post('/achievements', [CareerController::class, 'discoverAchievements']);
+        Route::post('/improve-cv', [CareerController::class, 'improveCv']);
+        Route::post('/improve-linkedin', [CareerController::class, 'improveLinkedin']);
+        Route::post('/analyze-offer', [CareerController::class, 'analyzeOffer']);
+        Route::post('/study-plan', [CareerController::class, 'studyPlan']);
+        Route::post('/target-role', [CareerController::class, 'targetRole']);
+        Route::post('/readiness', [CareerController::class, 'readiness']);
+        Route::post('/interview/start', [CareerController::class, 'interviewStart']);
+        Route::post('/interview/evaluate', [CareerController::class, 'interviewEvaluate']);
+        Route::post('/project-tips', [CareerController::class, 'projectTips']);
+    });
 });

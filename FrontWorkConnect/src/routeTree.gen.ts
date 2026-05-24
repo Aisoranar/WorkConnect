@@ -22,6 +22,7 @@ import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile
 import { Route as DashboardMyProjectsRouteImport } from './routes/dashboard.my-projects'
 import { Route as DashboardMessagesRouteImport } from './routes/dashboard.messages'
 import { Route as DashboardExploreRouteImport } from './routes/dashboard.explore'
+import { Route as DashboardCareerRouteImport } from './routes/dashboard.career'
 import { Route as DashboardApplicationsRouteImport } from './routes/dashboard.applications'
 import { Route as DashboardMyProjectsJobIdRouteImport } from './routes/dashboard.my-projects.$jobId'
 
@@ -90,6 +91,11 @@ const DashboardExploreRoute = DashboardExploreRouteImport.update({
   path: '/explore',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardCareerRoute = DashboardCareerRouteImport.update({
+  id: '/career',
+  path: '/career',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardApplicationsRoute = DashboardApplicationsRouteImport.update({
   id: '/applications',
   path: '/applications',
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard/applications': typeof DashboardApplicationsRoute
+  '/dashboard/career': typeof DashboardCareerRoute
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/messages': typeof DashboardMessagesRoute
   '/dashboard/my-projects': typeof DashboardMyProjectsRouteWithChildren
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard/applications': typeof DashboardApplicationsRoute
+  '/dashboard/career': typeof DashboardCareerRoute
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/messages': typeof DashboardMessagesRoute
   '/dashboard/my-projects': typeof DashboardMyProjectsRouteWithChildren
@@ -144,6 +152,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard/applications': typeof DashboardApplicationsRoute
+  '/dashboard/career': typeof DashboardCareerRoute
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/messages': typeof DashboardMessagesRoute
   '/dashboard/my-projects': typeof DashboardMyProjectsRouteWithChildren
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/dashboard/applications'
+    | '/dashboard/career'
     | '/dashboard/explore'
     | '/dashboard/messages'
     | '/dashboard/my-projects'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/dashboard/applications'
+    | '/dashboard/career'
     | '/dashboard/explore'
     | '/dashboard/messages'
     | '/dashboard/my-projects'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/dashboard/applications'
+    | '/dashboard/career'
     | '/dashboard/explore'
     | '/dashboard/messages'
     | '/dashboard/my-projects'
@@ -309,6 +321,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardExploreRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/career': {
+      id: '/dashboard/career'
+      path: '/career'
+      fullPath: '/dashboard/career'
+      preLoaderRoute: typeof DashboardCareerRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/applications': {
       id: '/dashboard/applications'
       path: '/applications'
@@ -339,6 +358,7 @@ const DashboardMyProjectsRouteWithChildren =
 
 interface DashboardRouteChildren {
   DashboardApplicationsRoute: typeof DashboardApplicationsRoute
+  DashboardCareerRoute: typeof DashboardCareerRoute
   DashboardExploreRoute: typeof DashboardExploreRoute
   DashboardMessagesRoute: typeof DashboardMessagesRoute
   DashboardMyProjectsRoute: typeof DashboardMyProjectsRouteWithChildren
@@ -349,6 +369,7 @@ interface DashboardRouteChildren {
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardApplicationsRoute: DashboardApplicationsRoute,
+  DashboardCareerRoute: DashboardCareerRoute,
   DashboardExploreRoute: DashboardExploreRoute,
   DashboardMessagesRoute: DashboardMessagesRoute,
   DashboardMyProjectsRoute: DashboardMyProjectsRouteWithChildren,

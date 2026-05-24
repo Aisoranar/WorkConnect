@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { LogoLink } from "@/components/Logo";
 import { MapPin, Star, Github, Linkedin, Briefcase, QrCode, Sparkles } from "lucide-react";
 import { fetchTalentProfile, queryKeys } from "@/lib/api";
+import { SITE_URL } from "@/lib/site";
 import { ApiState } from "@/components/ApiState";
 import { Button } from "@/components/ui/button";
 
@@ -15,10 +16,7 @@ export const Route = createFileRoute("/talento/$username")({
 
 function PublicTalentPage() {
   const { username } = Route.useParams();
-  const profileUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/talento/${username}`
-      : `/talento/${username}`;
+  const profileUrl = `${SITE_URL}/talento/${username}`;
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(profileUrl)}`;
 
   const query = useQuery({

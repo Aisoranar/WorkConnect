@@ -1,19 +1,25 @@
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { AuthLayout } from "@/components/AuthLayout";
+import { Loader2, Lock, Mail } from "lucide-react";
+import { AuthField, AuthLayout } from "@/components/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { isAuthenticated, login } from "@/lib/auth";
+import { login } from "@/lib/auth";
+import { guardGuestOnly } from "@/lib/auth-guard";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
-    meta: [{ title: "Iniciar sesión · WorkConnect" }],
+    meta: [
+      { title: "Iniciar sesión · WorkConnect" },
+      {
+        name: "description",
+        content:
+          "Accede a tu cuenta WorkConnect para gestionar proyectos, postulaciones y tu perfil profesional.",
+      },
+    ],
   }),
   beforeLoad: () => {
-    if (isAuthenticated()) {
-      throw redirect({ to: "/dashboard" });
-    }
+    guardGuestOnly();
   },
   component: LoginPage,
 });
@@ -30,10 +36,10 @@ function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email.trim(), password);
       await navigate({ to: "/dashboard" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo iniciar sesión");
+      setError(err instanceof Error ? err.message : "No se pudo iniciar sesión. Inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -41,64 +47,84 @@ function LoginPage() {
 
   return (
     <AuthLayout
-      title="Bienvenido de nuevo"
-      subtitle="Inicia sesión para acceder a tu dashboard y proyectos."
+      badge="Acceso a tu cuenta"
+      title="Inicia sesión en WorkConnect"
+      subtitle="Gestiona tus proyectos, postulaciones y herramientas de carrera desde un solo lugar."
       footer={
         <>
-          ¿No tienes cuenta?{" "}
+          ¿Aún no tienes cuenta?{" "}
           <Link to="/register" className="font-medium text-primary-glow hover:underline">
-            Regístrate gratis
+            Crear cuenta gratis
           </Link>
         </>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+        <AuthField id="email" label="Correo electrónico" icon={Mail}>
           <Input
             id="email"
             type="email"
             autoComplete="email"
-            placeholder="tu@email.com"
+            inputMode="email"
+            placeholder="nombre@empresa.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="border-border bg-surface/60"
+            disabled={loading}
+            className="border-border bg-surface/60 pl-10"
           />
-        </div>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">Contraseña</Label>
+        </AuthField>
+
+        <AuthField
+          id="password"
+          label="Contraseña"
+          icon={Lock}
+          labelExtra={
             <Link
               to="/forgot-password"
-              className="text-xs text-primary-glow hover:underline"
+              className="text-xs font-normal text-primary-glow hover:underline"
             >
               ¿Olvidaste tu contraseña?
             </Link>
-          </div>
+          }
+        >
           <Input
             id="password"
             type="password"
             autoComplete="current-password"
-            placeholder="••••••••"
+            placeholder="Introduce tu contraseña"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="border-border bg-surface/60"
+            disabled={loading}
+            className="border-border bg-surface/60 pl-10"
           />
-        </div>
+        </AuthField>
+
         {error && (
-          <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <p
+            role="alert"
+            className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
+          >
             {error}
           </p>
         )}
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Entrando…" : "Entrar"}
+
+        <Button
+          type="submit"
+          className="h-11 w-full bg-gradient-primary text-base font-medium"
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Iniciando sesión…
+            </>
+          ) : (
+            "Iniciar sesión"
+          )}
         </Button>
       </form>
-      <p className="mt-4 text-center text-xs text-muted-foreground">
-        Demo: maria@workconnect.test / password
-      </p>
     </AuthLayout>
   );
 }

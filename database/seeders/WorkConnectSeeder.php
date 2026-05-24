@@ -17,6 +17,7 @@ class WorkConnectSeeder extends Seeder
             FreelancerSeeder::class,
             ClientSeeder::class,
             DemoRelationsSeeder::class,
+            ExternalJobListingSeeder::class,
         ]);
     }
 }

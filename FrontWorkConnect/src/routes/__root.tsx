@@ -11,6 +11,7 @@ import {
 import "../styles.css";
 import { buildPageHead } from "@/lib/seo";
 import { Toaster } from "@/components/ui/sonner";
+import { SessionActivityManager } from "@/components/SessionActivityManager";
 
 function NotFoundComponent() {
   return (
@@ -94,11 +95,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" data-palette="enterprise">
+    <html lang="es" data-palette="enterprise" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
-      <body>
+      {/* suppressHydrationWarning: extensiones (p. ej. data-gptw) modifican <body> antes de hidratar */}
+      <body suppressHydrationWarning>
         {children}
         <Scripts />
       </body>
@@ -112,6 +114,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <SessionActivityManager />
       <Toaster richColors theme="system" position="top-center" />
     </QueryClientProvider>
   );

@@ -5,9 +5,9 @@ export const SITE_TITLE = `${SITE_NAME} — ${SITE_TAGLINE}`;
 export const SITE_DESCRIPTION =
   "Plataforma de empleo juvenil con matching por IA. Conecta tu talento con proyectos reales basados en reputación y habilidades.";
 
-export const SITE_URL = (
-  import.meta.env.VITE_SITE_URL?.replace(/\/$/, "") ?? "http://localhost:8080"
-).replace(/\/$/, "");
+import { getSiteUrl } from "@/lib/env";
+
+export const SITE_URL = getSiteUrl();
 
 export const OG_IMAGE_URL = `${SITE_URL}/og-workconnect.jpg`;
 

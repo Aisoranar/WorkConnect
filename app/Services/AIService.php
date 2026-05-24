@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\Http;
 
 class AIService
 {
-    // Llama 3.3-70B para tareas que requieren razonamiento y redacción de calidad
-    private const MODEL_POWERFUL = 'meta/llama-3.3-70b-instruct';
-    // Llama 3.1-8B para scoring rápido donde la latencia importa más que la profundidad
-    private const MODEL_FAST = 'meta/llama-3.1-8b-instruct';
+    /** Fallback si no hay variables en .env */
+    public const MODEL_POWERFUL = 'meta/llama-3.3-70b-instruct';
+
+    public const MODEL_FAST = 'meta/llama-3.1-8b-instruct';
 
     public function __construct(
         private readonly MatchingService $matchingService,
@@ -23,40 +23,41 @@ class AIService
     public function matchJob(User $user, WorkJob $job): array
     {
         $localScore = $this->matchingService->scoreJobForUser($user, $job);
-        $analysis   = $this->askNvidia($this->buildMatchPrompt($user, $job), self::MODEL_FAST);
+        $completion = $this->complete($this->buildMatchPrompt($user, $job), fast: true);
 
-        if (! $analysis) {
-            $analysis = $this->fallbackMatchAnalysis($user, $job, $localScore);
+        if ($completion) {
+            return [
+                'job_id'        => $job->id,
+                'compatibility' => $localScore,
+                'analysis'      => $completion['text'],
+                'source'        => $completion['source'],
+            ];
         }
 
         return [
             'job_id'        => $job->id,
             'compatibility' => $localScore,
-            'analysis'      => $analysis,
-            'source'        => $analysis ? 'nvidia' : 'local',
+            'analysis'      => $this->fallbackMatchAnalysis($user, $job, $localScore),
+            'source'        => 'local',
         ];
     }
 
     public function analyzeProfile(User $user): array
     {
-        $profile = $this->profileScoreService->analyze($user);
-        $summary = $this->askNvidia($this->buildProfilePrompt($user, $profile['score']), self::MODEL_POWERFUL);
-
-        if (! $summary) {
-            $summary = $this->fallbackProfileSummary($user, $profile['score']);
-        }
+        $profile    = $this->profileScoreService->analyze($user);
+        $completion = $this->complete($this->buildProfilePrompt($user, $profile['score']));
 
         return array_merge($profile, [
-            'ai_summary' => $summary,
-            'source'     => $summary ? 'nvidia' : 'local',
+            'ai_summary' => $completion['text'] ?? $this->fallbackProfileSummary($user, $profile['score']),
+            'source'     => $completion['source'] ?? 'local',
         ]);
     }
 
     public function improveProposal(User $user, WorkJob $job, string $message): string
     {
-        $improved = $this->askNvidia($this->buildProposalPrompt($user, $job, $message), self::MODEL_POWERFUL);
+        $completion = $this->complete($this->buildProposalPrompt($user, $job, $message));
 
-        return $improved ?: $this->fallbackProposal($user, $job, $message);
+        return $completion['text'] ?? $this->fallbackProposal($user, $job, $message);
     }
 
     /**
@@ -76,15 +77,17 @@ class AIService
             ? number_format($budgetAmount, 0, ',', '.').' COP'
             : '$'.number_format($budgetAmount, 2, '.', ',').' USD';
 
-        $raw = $this->askNvidiaJson(
+        $parsed = $this->completeJson(
             $this->buildBriefPrompt($rawNeed, $currency, $budgetLabel, $businessContext),
-            self::MODEL_POWERFUL,
-            2048,
+            maxTokens: 2048,
         );
 
-        if (! $raw) {
+        if (! $parsed) {
             return null;
         }
+
+        $raw    = $parsed['parsed'];
+        $source = $parsed['source'];
 
         return [
             'title'                    => (string) ($raw['title'] ?? 'Proyecto para empresa'),
@@ -99,7 +102,7 @@ class AIService
             'budget'                   => $budgetLabel,
             'remote'                   => (bool) ($raw['remote'] ?? true),
             'summary'                  => (string) ($raw['summary'] ?? 'Proyecto estructurado por IA.'),
-            'source'                   => 'nvidia',
+            'source'                   => $source,
         ];
     }
 
@@ -242,16 +245,81 @@ Devuelve ÚNICAMENTE las 3 oraciones mejoradas, sin etiquetas ni explicaciones a
 PROMPT;
     }
 
-    // ─── Llamada a NVIDIA ─────────────────────────────────────────────────────────
+    // ─── Modelos desde .env ───────────────────────────────────────────────────────
 
-    private function hasNvidiaKey(): bool
+    public function powerfulModel(): string
     {
-        return (bool) config('services.nvidia.key');
+        return (string) config('services.nvidia.model', self::MODEL_POWERFUL);
+    }
+
+    public function fastModel(): string
+    {
+        return (string) config('services.nvidia.fast_model', self::MODEL_FAST);
+    }
+
+    // ─── Cadena IA: nvidia → gemini → openai → (null = local en el caller) ─────
+
+    /**
+     * @return array{text: string, source: string}|null
+     */
+    private function complete(string $prompt, ?string $model = null, int $maxTokens = 512, bool $fast = false): ?array
+    {
+        $model = $model ?? ($fast ? $this->fastModel() : $this->powerfulModel());
+
+        if ($text = $this->askNvidia($prompt, $model, $maxTokens)) {
+            return ['text' => $text, 'source' => 'nvidia'];
+        }
+
+        if ($text = $this->askGemini($prompt, $maxTokens)) {
+            return ['text' => $text, 'source' => 'gemini'];
+        }
+
+        if ($text = $this->askOpenAi($prompt, $maxTokens)) {
+            return ['text' => $text, 'source' => 'openai'];
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array{parsed: array<string, mixed>, source: string}|null
+     */
+    private function completeJson(string $prompt, ?string $model = null, int $maxTokens = 2048, bool $fast = false): ?array
+    {
+        $completion = $this->complete($prompt, $model, $maxTokens, $fast);
+
+        if (! $completion) {
+            return null;
+        }
+
+        $parsed = $this->parseJsonFromText($completion['text']);
+
+        if (! $parsed) {
+            return null;
+        }
+
+        return ['parsed' => $parsed, 'source' => $completion['source']];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function parseJsonFromText(string $text): ?array
+    {
+        if (preg_match('/```(?:json)?\s*(\{[\s\S]*?\})\s*```/i', $text, $m)) {
+            $text = $m[1];
+        } elseif (preg_match('/\{[\s\S]*\}/s', $text, $m)) {
+            $text = $m[0];
+        }
+
+        $decoded = json_decode(trim($text), true);
+
+        return is_array($decoded) ? $decoded : null;
     }
 
     private function askNvidia(string $prompt, string $model, int $maxTokens = 512): ?string
     {
-        if (! $this->hasNvidiaKey()) {
+        if (! config('services.nvidia.key')) {
             return null;
         }
 
@@ -259,7 +327,7 @@ PROMPT;
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer '.config('services.nvidia.key'),
                 'Accept'        => 'application/json',
-            ])->timeout(30)->post(config('services.nvidia.url').'/chat/completions', [
+            ])->timeout(45)->post(rtrim((string) config('services.nvidia.url'), '/').'/chat/completions', [
                 'model'       => $model,
                 'messages'    => [['role' => 'user', 'content' => $prompt]],
                 'max_tokens'  => $maxTokens,
@@ -274,33 +342,74 @@ PROMPT;
                 return $text !== '' ? $text : null;
             }
         } catch (\Throwable) {
-            // cae al fallback local
+            // siguiente proveedor en la cadena
         }
 
         return null;
     }
 
-    /**
-     * @return array<string, mixed>|null
-     */
-    private function askNvidiaJson(string $prompt, string $model, int $maxTokens = 2048): ?array
+    private function askGemini(string $prompt, int $maxTokens = 2048): ?string
     {
-        $text = $this->askNvidia($prompt, $model, $maxTokens);
-
-        if (! $text) {
+        $key = config('services.gemini.key');
+        if (! $key) {
             return null;
         }
 
-        // Extrae el bloque JSON si el modelo añadió texto extra
-        if (preg_match('/```(?:json)?\s*(\{[\s\S]*?\})\s*```/i', $text, $m)) {
-            $text = $m[1];
-        } elseif (preg_match('/\{[\s\S]*\}/s', $text, $m)) {
-            $text = $m[0];
+        $model = (string) config('services.gemini.model', 'gemini-2.0-flash');
+        $url   = rtrim((string) config('services.gemini.url'), '/').'/models/'.$model.':generateContent';
+
+        try {
+            $response = Http::withHeaders(['Content-Type' => 'application/json'])
+                ->timeout(45)
+                ->post($url.'?key='.$key, [
+                    'contents' => [
+                        ['parts' => [['text' => $prompt]]],
+                    ],
+                    'generationConfig' => [
+                        'maxOutputTokens' => $maxTokens,
+                        'temperature'     => 0.65,
+                    ],
+                ]);
+
+            if ($response->successful()) {
+                $text = trim((string) $response->json('candidates.0.content.parts.0.text'));
+
+                return $text !== '' ? $text : null;
+            }
+        } catch (\Throwable) {
+            // siguiente proveedor
         }
 
-        $decoded = json_decode(trim($text), true);
+        return null;
+    }
 
-        return is_array($decoded) ? $decoded : null;
+    private function askOpenAi(string $prompt, int $maxTokens = 2048): ?string
+    {
+        if (! config('services.openai.key')) {
+            return null;
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer '.config('services.openai.key'),
+                'Accept'        => 'application/json',
+            ])->timeout(45)->post(rtrim((string) config('services.openai.url'), '/').'/chat/completions', [
+                'model'       => (string) config('services.openai.model', 'gpt-4o-mini'),
+                'messages'    => [['role' => 'user', 'content' => $prompt]],
+                'max_tokens'  => $maxTokens,
+                'temperature' => 0.65,
+            ]);
+
+            if ($response->successful()) {
+                $text = trim((string) $response->json('choices.0.message.content'));
+
+                return $text !== '' ? $text : null;
+            }
+        } catch (\Throwable) {
+            // fallback local en el caller
+        }
+
+        return null;
     }
 
     // ─── Bio e IA de GitHub ───────────────────────────────────────────────────────
@@ -310,12 +419,9 @@ PROMPT;
         $user->loadMissing('skills');
         $skills = $user->skills->pluck('name')->implode(', ') ?: 'desarrollo digital';
 
-        $improved = $this->askNvidia(
-            $this->buildImproveBioPrompt($user->name, $skills, $bio),
-            self::MODEL_POWERFUL,
-        );
+        $completion = $this->complete($this->buildImproveBioPrompt($user->name, $skills, $bio));
 
-        return $improved ?: $bio;
+        return $completion['text'] ?? $bio;
     }
 
     /**
@@ -324,21 +430,19 @@ PROMPT;
      */
     public function generateProfileFromGithub(array $repos, ?string $currentBio = null): array
     {
-        $raw = $this->askNvidiaJson(
-            $this->buildGithubProfilePrompt($repos, $currentBio),
-            self::MODEL_POWERFUL,
-            1500,
-        );
+        $parsed = $this->completeJson($this->buildGithubProfilePrompt($repos, $currentBio), maxTokens: 1500);
 
-        if (! $raw) {
+        if (! $parsed) {
             return $this->fallbackGithubProfile($repos);
         }
+
+        $raw = $parsed['parsed'];
 
         return [
             'bio'     => (string) ($raw['bio'] ?? ''),
             'skills'  => array_values(array_filter((array) ($raw['skills'] ?? []))),
             'summary' => (string) ($raw['summary'] ?? ''),
-            'source'  => 'nvidia',
+            'source'  => $parsed['source'],
         ];
     }
 
@@ -460,5 +564,34 @@ PROMPT;
         return "Entiendo que {$company} necesita {$job->title} y tengo experiencia directa en ese tipo de proyectos. ".
             "{$message} ".
             "Cuento con habilidades en {$skills} y me comprometo a entregar con comunicación continua y calidad verificable.";
+    }
+
+    /**
+     * Texto libre con cadena nvidia → gemini → openai.
+     *
+     * @return array{text: string, source: string}|null
+     */
+    public function promptText(string $prompt, ?string $model = null, int $maxTokens = 1024): ?array
+    {
+        return $this->complete($prompt, $model, $maxTokens);
+    }
+
+    /**
+     * JSON con cadena nvidia → gemini → openai.
+     * El array devuelto incluye `_ai_provider` con el proveedor real.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function promptJson(string $prompt, ?string $model = null, int $maxTokens = 2048): ?array
+    {
+        $result = $this->completeJson($prompt, $model, $maxTokens);
+
+        if (! $result) {
+            return null;
+        }
+
+        $result['parsed']['_ai_provider'] = $result['source'];
+
+        return $result['parsed'];
     }
 }

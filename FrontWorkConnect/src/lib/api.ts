@@ -13,19 +13,10 @@ import type {
   Stats,
   UserProfile,
 } from "./types";
-import { authHeaders, clearSession } from "./auth";
+import { authHeaders, clearSession, isAuthenticated, touchSessionActivity } from "./auth";
+import { getApiBaseUrl } from "./env";
 
-function resolveApiBase(): string {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL.replace(/\/$/, "");
-  }
-  if (typeof window !== "undefined" && window.location.hostname === "localhost") {
-    return "http://127.0.0.1:8000/api";
-  }
-  return "http://127.0.0.1:8000/api";
-}
-
-const API_BASE = resolveApiBase();
+const API_BASE = getApiBaseUrl();
 
 type ApiListResponse<T> = { data: T[] };
 type ApiItemResponse<T> = { data: T };
@@ -35,6 +26,12 @@ type ApiItemResponse<T> = { data: T };
 function handleUnauthorized(): void {
   clearSession();
   window.location.replace("/login");
+}
+
+function trackSessionActivity(): void {
+  if (isAuthenticated()) {
+    touchSessionActivity();
+  }
 }
 
 async function parseApiError(response: Response): Promise<string> {
@@ -52,6 +49,7 @@ async function parseApiError(response: Response): Promise<string> {
 }
 
 async function apiGet<T>(path: string): Promise<T> {
+  trackSessionActivity();
   const response = await fetch(`${API_BASE}${path}`, {
     headers: authHeaders(false),
   });
@@ -62,6 +60,7 @@ async function apiGet<T>(path: string): Promise<T> {
 }
 
 async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  trackSessionActivity();
   const response = await fetch(`${API_BASE}${path}`, {
     method: "POST",
     headers: authHeaders(true),
@@ -74,6 +73,7 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
 }
 
 async function apiPut<T>(path: string, body: unknown): Promise<T> {
+  trackSessionActivity();
   const response = await fetch(`${API_BASE}${path}`, {
     method: "PUT",
     headers: authHeaders(true),
@@ -84,6 +84,7 @@ async function apiPut<T>(path: string, body: unknown): Promise<T> {
 }
 
 async function apiDelete(path: string): Promise<void> {
+  trackSessionActivity();
   const response = await fetch(`${API_BASE}${path}`, {
     method: "DELETE",
     headers: authHeaders(false),
@@ -92,6 +93,7 @@ async function apiDelete(path: string): Promise<void> {
 }
 
 async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  trackSessionActivity();
   const response = await fetch(`${API_BASE}${path}`, {
     method: "PATCH",
     headers: authHeaders(true),
@@ -213,9 +215,7 @@ export function fetchStats(): Promise<Stats> {
   return apiGet<ApiItemResponse<Stats>>("/stats").then((r) => r.data);
 }
 
-export function getApiBaseUrl(): string {
-  return API_BASE;
-}
+export { getApiBaseUrl } from "./env";
 
 // ─── Perfil propio ────────────────────────────────────────────────────────────
 
@@ -380,4 +380,191 @@ export function submitApplication(
   payload: { proposal: string; price: string; delivery_time: string },
 ): Promise<void> {
   return apiPost<{ message: string }>(`/jobs/${jobId}/apply`, payload).then(() => undefined);
+}
+
+// ─── Asistente de carrera ─────────────────────────────────────────────────────
+
+export type ExternalJobListing = {
+  id: number;
+  title: string;
+  company: string;
+  location: string | null;
+  apply_url: string;
+  source: string;
+  skills: string[] | null;
+  summary: string | null;
+  posted_at: string | null;
+};
+
+export type CareerProfileAnalysis = {
+  score: number;
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  hidden_potential: string[];
+  ats_tips: string[];
+  linkedin_tips: string[];
+  priority_actions: string[];
+  tips: string[];
+  ai_summary?: string;
+  source: string;
+};
+
+export type CareerAchievements = {
+  achievements: { weak: string; strong: string; category: string }[];
+  tips: string[];
+  source: string;
+};
+
+export type CareerCvResult = {
+  cv_text: string;
+  sections: Record<string, string>;
+  ats_keywords: string[];
+  improvements: string[];
+  source: string;
+};
+
+export type CareerLinkedInResult = {
+  headline: string;
+  about: string;
+  experience_bullets: string[];
+  featured_suggestions: string[];
+  source: string;
+};
+
+export type CareerOfferAnalysis = {
+  role_title: string;
+  company: string;
+  required_skills: string[];
+  matched_skills: string[];
+  missing_skills: string[];
+  compatibility_percent: number;
+  summary: string;
+  apply_recommendation: string;
+  source: string;
+};
+
+export type CareerStudyPlan = {
+  weeks: { week: number; focus: string; tasks: string[]; resources: string[] }[];
+  milestones: string[];
+  practice_projects: string[];
+  interview_prep: string[];
+  free_courses: { title: string; url: string; provider: string; skills: string[] }[];
+  source: string;
+};
+
+export type CareerReadiness = {
+  ready: boolean;
+  confidence_percent: number;
+  verdict: string;
+  strengths_for_role: string[];
+  gaps_to_close: string[];
+  improve_before_apply: string[];
+  can_apply_now: boolean;
+  source: string;
+};
+
+export type CareerInterviewStart = {
+  question: string;
+  topic: string;
+  difficulty: string;
+  tips: string[];
+  source: string;
+};
+
+export type CareerInterviewEval = {
+  score: number;
+  feedback: string;
+  strengths: string[];
+  improvements: string[];
+  model_answer_hint: string;
+  follow_up_question: string;
+  source: string;
+};
+
+export type ProjectCoaching = {
+  match_percent: number;
+  strengths_to_leverage: string[];
+  delivery_tips: string[];
+  communication_tips: string[];
+  risk_warnings: string[];
+  source: string;
+};
+
+async function apiPostForm<T>(path: string, form: FormData): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: authHeaders(false),
+    body: form,
+  });
+  if (!response.ok) throw new Error(await parseApiError(response));
+  return response.json() as Promise<T>;
+}
+
+export function fetchExternalJobs(): Promise<ExternalJobListing[]> {
+  return apiGet<ApiListResponse<ExternalJobListing>>("/career/external-jobs").then((r) => r.data);
+}
+
+export function careerAnalyzeProfile(): Promise<CareerProfileAnalysis> {
+  return apiPost<ApiItemResponse<CareerProfileAnalysis>>("/career/analyze-profile", {}).then((r) => r.data);
+}
+
+export function careerDiscoverAchievements(notes?: string): Promise<CareerAchievements> {
+  return apiPost<ApiItemResponse<CareerAchievements>>("/career/achievements", { notes: notes ?? null }).then(
+    (r) => r.data,
+  );
+}
+
+export function careerImproveCv(): Promise<CareerCvResult> {
+  return apiPost<ApiItemResponse<CareerCvResult>>("/career/improve-cv", {}).then((r) => r.data);
+}
+
+export function careerImproveLinkedIn(): Promise<CareerLinkedInResult> {
+  return apiPost<ApiItemResponse<CareerLinkedInResult>>("/career/improve-linkedin", {}).then((r) => r.data);
+}
+
+export function careerAnalyzeOffer(offerText: string, file?: File): Promise<CareerOfferAnalysis> {
+  const form = new FormData();
+  if (offerText.trim()) form.append("offer_text", offerText.trim());
+  if (file) form.append("file", file);
+  return apiPostForm<ApiItemResponse<CareerOfferAnalysis>>("/career/analyze-offer", form).then((r) => r.data);
+}
+
+export function careerStudyPlan(offerText: string, targetRole?: string): Promise<CareerStudyPlan> {
+  return apiPost<ApiItemResponse<CareerStudyPlan>>("/career/study-plan", {
+    offer_text: offerText,
+    target_role: targetRole ?? null,
+  }).then((r) => r.data);
+}
+
+export function careerTargetRole(targetRole: string): Promise<Record<string, unknown>> {
+  return apiPost<ApiItemResponse<Record<string, unknown>>>("/career/target-role", { target_role: targetRole }).then(
+    (r) => r.data,
+  );
+}
+
+export function careerReadiness(offerText: string): Promise<CareerReadiness> {
+  return apiPost<ApiItemResponse<CareerReadiness>>("/career/readiness", { offer_text: offerText }).then((r) => r.data);
+}
+
+export function careerInterviewStart(context: string, mode = "offer"): Promise<CareerInterviewStart> {
+  return apiPost<ApiItemResponse<CareerInterviewStart>>("/career/interview/start", { context, mode }).then(
+    (r) => r.data,
+  );
+}
+
+export function careerInterviewEvaluate(
+  question: string,
+  answer: string,
+  context: string,
+): Promise<CareerInterviewEval> {
+  return apiPost<ApiItemResponse<CareerInterviewEval>>("/career/interview/evaluate", {
+    question,
+    answer,
+    context,
+  }).then((r) => r.data);
+}
+
+export function careerProjectTips(jobId: number): Promise<ProjectCoaching> {
+  return apiPost<ApiItemResponse<ProjectCoaching>>("/career/project-tips", { job_id: jobId }).then((r) => r.data);
 }

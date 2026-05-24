@@ -1,8 +1,8 @@
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Sparkles, Wand2, Loader2, Send, List, Cpu } from "lucide-react";
-import { getStoredUser } from "@/lib/auth";
+import { guardRole } from "@/lib/auth-guard";
 import {
   createJob,
   queryKeys,
@@ -20,13 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/dashboard/publish")({
   beforeLoad: () => {
-    const user = getStoredUser();
-    if (!user) {
-      throw redirect({ to: "/login" });
-    }
-    if (user.role !== "client" && user.role !== "admin") {
-      throw redirect({ to: "/dashboard/explore" });
-    }
+    guardRole("client", "admin");
   },
   component: PublishProjectPage,
 });

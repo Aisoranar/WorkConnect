@@ -44,6 +44,7 @@ class LegacyApiFormatter
 
         return [
             'id' => (string) $application->id,
+            'jobId' => (string) $application->job_id,
             'jobTitle' => $application->job->title,
             'company' => $application->job->company ?? $application->job->owner?->name ?? 'Cliente',
             'price' => $application->price,

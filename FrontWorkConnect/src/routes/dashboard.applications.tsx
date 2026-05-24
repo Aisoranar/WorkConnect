@@ -1,7 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { fetchApplications, queryKeys } from "@/lib/api";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Loader2, Sparkles } from "lucide-react";
+import { careerProjectTips, fetchApplications, queryKeys, type ProjectCoaching } from "@/lib/api";
 import { ApiState } from "@/components/ApiState";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export const Route = createFileRoute("/dashboard/applications")({
   component: Applications,
@@ -14,10 +18,34 @@ const statusColors: Record<string, string> = {
   rechazada: "chip border-destructive/40 bg-destructive/10 text-destructive",
 };
 
+function CoachingTips({ coaching }: { coaching: ProjectCoaching }) {
+  return (
+    <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs">
+      <p className="font-semibold text-primary-glow">Coaching IA · match {coaching.match_percent}%</p>
+      <ul className="mt-2 list-inside list-disc space-y-1 text-muted-foreground">
+        {coaching.strengths_to_leverage.map((t) => (
+          <li key={t}>{t}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function Applications() {
+  const [coachingByJob, setCoachingByJob] = useState<Record<string, ProjectCoaching>>({});
+
   const { data: applications = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: queryKeys.applications,
     queryFn: fetchApplications,
+  });
+
+  const tipsMut = useMutation({
+    mutationFn: (jobId: string) => careerProjectTips(Number(jobId)),
+    onSuccess: (data, jobId) => {
+      setCoachingByJob((prev) => ({ ...prev, [jobId]: data }));
+      toast.success("Consejos de entrega listos");
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   return (
@@ -54,6 +82,25 @@ function Applications() {
                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground">Enviado {a.sentAgo}</div>
+                  {a.status === "aceptada" && a.jobId && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full"
+                        disabled={tipsMut.isPending}
+                        onClick={() => tipsMut.mutate(a.jobId!)}
+                      >
+                        {tipsMut.isPending ? (
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        ) : (
+                          <Sparkles className="mr-1 h-3 w-3" />
+                        )}
+                        Consejos para este proyecto
+                      </Button>
+                      {coachingByJob[a.jobId] && <CoachingTips coaching={coachingByJob[a.jobId]} />}
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
