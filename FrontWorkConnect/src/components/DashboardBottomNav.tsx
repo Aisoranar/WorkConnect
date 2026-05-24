@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
-import { LogOut } from "lucide-react";
-import { getStoredUser, logout } from "@/lib/auth";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { LogOut, Settings } from "lucide-react";
+import { LogoutConfirmButton } from "@/components/LogoutConfirmButton";
+import { getStoredUser } from "@/lib/auth";
 import {
   getDashboardNav,
   isDashboardNavActive,
@@ -18,8 +18,6 @@ import {
 import { cn } from "@/lib/utils";
 
 export function DashboardBottomNav() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const role = getStoredUser()?.role ?? "freelancer";
   const config = getDashboardNav(role);
@@ -27,14 +25,9 @@ export function DashboardBottomNav() {
   const [moreOpen, setMoreOpen] = useState(false);
 
   const MoreIcon = moreNavIcon;
-  const moreActive = extraItems.some((item) => isDashboardNavActive(pathname, item.url));
-
-  async function handleLogout() {
-    setMoreOpen(false);
-    await logout();
-    queryClient.clear();
-    await navigate({ to: "/login", replace: true });
-  }
+  const moreActive =
+    extraItems.some((item) => isDashboardNavActive(pathname, item.url)) ||
+    isDashboardNavActive(pathname, "/dashboard/settings");
 
   return (
     <>
@@ -106,14 +99,30 @@ export function DashboardBottomNav() {
               );
             })}
             <li>
-              <button
-                type="button"
-                onClick={() => void handleLogout()}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-muted-foreground transition hover:bg-surface hover:text-foreground"
+              <Link
+                to="/dashboard/settings"
+                onClick={() => setMoreOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition",
+                  isDashboardNavActive(pathname, "/dashboard/settings")
+                    ? "bg-primary/15 text-primary-glow"
+                    : "text-foreground hover:bg-surface",
+                )}
               >
-                <LogOut className="h-5 w-5 shrink-0" />
-                Salir
-              </button>
+                <Settings className="h-5 w-5 shrink-0" />
+                Configuración
+              </Link>
+            </li>
+            <li>
+              <LogoutConfirmButton onBeforeLogout={() => setMoreOpen(false)}>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-muted-foreground transition hover:bg-surface hover:text-foreground"
+                >
+                  <LogOut className="h-5 w-5 shrink-0" />
+                  Salir
+                </button>
+              </LogoutConfirmButton>
             </li>
           </ul>
         </SheetContent>

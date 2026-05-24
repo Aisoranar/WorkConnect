@@ -1,9 +1,9 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
 import { SidebarBrandLogo } from "@/components/Logo";
+import { LogoutConfirmButton } from "@/components/LogoutConfirmButton";
 import { cn } from "@/lib/utils";
 import { Settings, LogOut } from "lucide-react";
-import { getStoredUser, logout } from "@/lib/auth";
+import { getStoredUser } from "@/lib/auth";
 import {
   allSidebarNavItems,
   getDashboardNav,
@@ -29,17 +29,11 @@ const sidebarBtnClass =
 export function DashboardSidebar() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const role = getStoredUser()?.role ?? "freelancer";
   const config = getDashboardNav(role);
   const items = allSidebarNavItems(config);
-
-  async function handleLogout() {
-    await logout();
-    queryClient.clear();
-    await navigate({ to: "/login", replace: true });
-  }
+  const settingsActive = isDashboardNavActive(pathname, "/dashboard/settings");
 
   if (isMobile) {
     return null;
@@ -84,28 +78,29 @@ export function DashboardSidebar() {
         <SidebarMenu className="gap-1.5 group-data-[collapsible=icon]:items-center">
           <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
+              type="button"
               size="lg"
               tooltip="Configuración"
+              isActive={settingsActive}
               className={sidebarBtnClass}
+              onClick={() => void navigate({ to: "/dashboard/settings" })}
             >
-              <Link to="/dashboard/profile" className="flex items-center gap-3">
-                <Settings className="shrink-0" />
-                <span>Configuración</span>
-              </Link>
+              <Settings className="shrink-0" />
+              <span>Configuración</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              type="button"
-              size="lg"
-              tooltip="Salir"
-              className={cn(sidebarBtnClass, "text-muted-foreground")}
-              onClick={() => void handleLogout()}
-            >
-              <LogOut className="shrink-0" />
-              <span>Salir</span>
-            </SidebarMenuButton>
+            <LogoutConfirmButton>
+              <SidebarMenuButton
+                type="button"
+                size="lg"
+                tooltip="Salir"
+                className={cn(sidebarBtnClass, "text-muted-foreground")}
+              >
+                <LogOut className="shrink-0" />
+                <span>Salir</span>
+              </SidebarMenuButton>
+            </LogoutConfirmButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

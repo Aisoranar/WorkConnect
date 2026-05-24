@@ -17,6 +17,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as TalentoUsernameRouteImport } from './routes/talento.$username'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardPublishRouteImport } from './routes/dashboard.publish'
 import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
 import { Route as DashboardMyProjectsRouteImport } from './routes/dashboard.my-projects'
@@ -65,6 +66,11 @@ const TalentoUsernameRoute = TalentoUsernameRouteImport.update({
   id: '/talento/$username',
   path: '/talento/$username',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardPublishRoute = DashboardPublishRouteImport.update({
   id: '/publish',
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/my-projects': typeof DashboardMyProjectsRouteWithChildren
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/publish': typeof DashboardPublishRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
   '/talento/$username': typeof TalentoUsernameRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/my-projects/$jobId': typeof DashboardMyProjectsJobIdRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/dashboard/my-projects': typeof DashboardMyProjectsRouteWithChildren
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/publish': typeof DashboardPublishRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
   '/talento/$username': typeof TalentoUsernameRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/my-projects/$jobId': typeof DashboardMyProjectsJobIdRoute
@@ -158,6 +166,7 @@ export interface FileRoutesById {
   '/dashboard/my-projects': typeof DashboardMyProjectsRouteWithChildren
   '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/publish': typeof DashboardPublishRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
   '/talento/$username': typeof TalentoUsernameRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/my-projects/$jobId': typeof DashboardMyProjectsJobIdRoute
@@ -178,6 +187,7 @@ export interface FileRouteTypes {
     | '/dashboard/my-projects'
     | '/dashboard/profile'
     | '/dashboard/publish'
+    | '/dashboard/settings'
     | '/talento/$username'
     | '/dashboard/'
     | '/dashboard/my-projects/$jobId'
@@ -195,6 +205,7 @@ export interface FileRouteTypes {
     | '/dashboard/my-projects'
     | '/dashboard/profile'
     | '/dashboard/publish'
+    | '/dashboard/settings'
     | '/talento/$username'
     | '/dashboard'
     | '/dashboard/my-projects/$jobId'
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
     | '/dashboard/my-projects'
     | '/dashboard/profile'
     | '/dashboard/publish'
+    | '/dashboard/settings'
     | '/talento/$username'
     | '/dashboard/'
     | '/dashboard/my-projects/$jobId'
@@ -285,6 +297,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/talento/$username'
       preLoaderRoute: typeof TalentoUsernameRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
     }
     '/dashboard/publish': {
       id: '/dashboard/publish'
@@ -364,6 +383,7 @@ interface DashboardRouteChildren {
   DashboardMyProjectsRoute: typeof DashboardMyProjectsRouteWithChildren
   DashboardProfileRoute: typeof DashboardProfileRoute
   DashboardPublishRoute: typeof DashboardPublishRoute
+  DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
@@ -375,6 +395,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardMyProjectsRoute: DashboardMyProjectsRouteWithChildren,
   DashboardProfileRoute: DashboardProfileRoute,
   DashboardPublishRoute: DashboardPublishRoute,
+  DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }
 
