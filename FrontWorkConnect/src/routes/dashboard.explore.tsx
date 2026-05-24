@@ -1,5 +1,6 @@
+import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Sparkles,
@@ -12,7 +13,7 @@ import {
   Briefcase,
   Star,
 } from "lucide-react";
-import { fetchFreelancers, fetchJobs, queryKeys, type ExploreJobsFilters } from "@/lib/api";
+import { fetchFreelancers, fetchJob, fetchJobs, queryKeys, type ExploreJobsFilters } from "@/lib/api";
 import { getStoredUser } from "@/lib/auth";
 import { ApiState } from "@/components/ApiState";
 import { ApplyJobSheet } from "@/components/ApplyJobSheet";
@@ -23,6 +24,9 @@ import { Input } from "@/components/ui/input";
 import type { Job } from "@/lib/types";
 
 export const Route = createFileRoute("/dashboard/explore")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    job: typeof search.job === "string" && search.job.trim() !== "" ? search.job.trim() : undefined,
+  }),
   component: Explore,
 });
 
@@ -38,6 +42,9 @@ function Explore() {
 }
 
 function ExploreProjects() {
+  const { job: highlightJobId } = Route.useSearch();
+  const highlightCardRef = useRef<HTMLElement | null>(null);
+
   const [category, setCategory] = useState("Todos");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -55,7 +62,34 @@ function ExploreProjects() {
     queryFn: () => fetchJobs(filters),
   });
 
+  const highlightJobQuery = useQuery({
+    queryKey: queryKeys.job(highlightJobId ?? ""),
+    queryFn: () => fetchJob(highlightJobId!),
+    enabled: Boolean(highlightJobId),
+  });
+
   const jobs = data?.data ?? [];
+
+  const displayJobs = useMemo(() => {
+    if (!highlightJobId) return jobs;
+
+    const highlighted = jobs.find((j) => j.id === highlightJobId) ?? highlightJobQuery.data;
+    if (!highlighted) return jobs;
+
+    const rest = jobs.filter((j) => j.id !== highlightJobId);
+    if (jobs.some((j) => j.id === highlightJobId)) {
+      return [highlighted, ...rest];
+    }
+    return [highlighted, ...jobs];
+  }, [jobs, highlightJobId, highlightJobQuery.data]);
+
+  useEffect(() => {
+    if (!highlightJobId || isLoading) return;
+    const timer = window.setTimeout(() => {
+      highlightCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [highlightJobId, isLoading, displayJobs.length]);
   const categories = useMemo(() => {
     const fromApi = data?.meta?.categories ?? [];
     return ["Todos", ...fromApi.filter((c) => c && c !== "Todos")];
@@ -103,6 +137,20 @@ function ExploreProjects() {
         </div>
       </form>
 
+      {highlightJobId && (highlightJobQuery.data || jobs.find((j) => j.id === highlightJobId)) && (
+        <div className="flex flex-col gap-2 rounded-xl border border-primary/30 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-primary-glow">Tu postulación · </span>
+            {(highlightJobQuery.data ?? jobs.find((j) => j.id === highlightJobId))?.title}
+          </p>
+          <Button asChild variant="ghost" size="sm" className="shrink-0 self-start sm:self-center">
+            <Link to="/dashboard/explore" search={{}} replace>
+              Ver todos los proyectos
+            </Link>
+          </Button>
+        </div>
+      )}
+
       <ApiState isLoading={isLoading} isError={isError} error={error} onRetry={() => refetch()}>
         <div className="scroll-chips">
           {categories.map((c) => (
@@ -127,7 +175,7 @@ function ExploreProjects() {
           </p>
         )}
 
-        {jobs.length === 0 ? (
+        {displayJobs.length === 0 && !highlightJobQuery.isLoading ? (
           <div className="card-inset p-12 text-center">
             <Briefcase className="mx-auto h-10 w-10 text-muted-foreground" />
             <p className="mt-4 text-muted-foreground">
@@ -136,10 +184,12 @@ function ExploreProjects() {
           </div>
         ) : (
           <div className="grid gap-4 lg:grid-cols-2 dashboard-stagger">
-            {jobs.map((job) => (
+            {displayJobs.map((job) => (
               <JobCard
                 key={job.id}
+                ref={job.id === highlightJobId ? highlightCardRef : undefined}
                 job={job}
+                highlighted={job.id === highlightJobId}
                 onApply={() => setApplyJob(job)}
                 onImproveMatch={() => setCoachJob(job)}
               />
@@ -163,21 +213,32 @@ function ExploreProjects() {
   );
 }
 
-function JobCard({
-  job,
-  onApply,
-  onImproveMatch,
-}: {
-  job: Job;
-  onApply: () => void;
-  onImproveMatch: () => void;
-}) {
+const JobCard = React.forwardRef<
+  HTMLElement,
+  {
+    job: Job;
+    highlighted?: boolean;
+    onApply: () => void;
+    onImproveMatch: () => void;
+  }
+>(function JobCard({ job, highlighted, onApply, onImproveMatch }, ref) {
   const applied = job.alreadyApplied;
   const status = job.applicationStatus;
   const isLowMatch = job.match < LOW_MATCH_THRESHOLD;
 
   return (
-    <article className="card-list group flex flex-col p-4 sm:p-6 transition-enterprise">
+    <article
+      ref={ref}
+      id={highlighted ? `explore-job-${job.id}` : undefined}
+      className={`card-list group flex flex-col p-4 sm:p-6 transition-enterprise ${
+        highlighted ? "ring-2 ring-primary/60 shadow-lg shadow-primary/10" : ""
+      }`}
+    >
+      {highlighted && (
+        <span className="mb-2 inline-flex w-fit items-center rounded-full bg-primary/15 px-2.5 py-0.5 text-[11px] font-medium text-primary-glow">
+          Proyecto de tu postulación
+        </span>
+      )}
       <div className="flex items-start justify-between gap-3 sm:gap-4">
         <div className="min-w-0">
           <div className="mb-1 flex flex-wrap items-center gap-2">
@@ -271,7 +332,7 @@ function JobCard({
       </div>
     </article>
   );
-}
+});
 
 function ExploreTalent() {
   const [search, setSearch] = useState("");

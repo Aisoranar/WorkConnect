@@ -242,9 +242,13 @@ export function ApplicationDetailSheet({
         <div className="shrink-0 space-y-2 border-t border-border bg-background p-4">
           {application.jobId && (
             <Button asChild variant="outline" className="w-full">
-              <Link to="/dashboard/explore" onClick={() => onOpenChange(false)}>
+              <Link
+                to="/dashboard/explore"
+                search={{ job: application.jobId }}
+                onClick={() => onOpenChange(false)}
+              >
                 <ExternalLink className="mr-2 h-4 w-4" />
-                Ver proyecto en explorar
+                Ver este proyecto en explorar
               </Link>
             </Button>
           )}
