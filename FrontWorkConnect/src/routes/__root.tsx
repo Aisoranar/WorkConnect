@@ -15,7 +15,7 @@ import { SessionActivityManager } from "@/components/SessionActivityManager";
 
 function NotFoundComponent() {
   return (
-    <div className="relative flex min-h-[100dvh] items-center justify-center bg-background px-4 py-8">
+    <div className="relative flex min-h-dvh items-center justify-center bg-background px-4 py-8">
       <div className="pointer-events-none absolute inset-0 bg-gradient-hero opacity-40" />
       <div className="card-gradient relative w-full max-w-md rounded-2xl border border-border p-6 text-center shadow-elegant sm:p-10">
         <h1 className="font-display text-5xl font-bold text-gradient sm:text-7xl">404</h1>
@@ -41,7 +41,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
 
   return (
-    <div className="relative flex min-h-[100dvh] items-center justify-center bg-background px-4 py-8">
+    <div className="relative flex min-h-dvh items-center justify-center bg-background px-4 py-8">
       <div className="pointer-events-none absolute inset-0 bg-gradient-hero opacity-40" />
       <div className="card-gradient relative w-full max-w-md rounded-2xl border border-border p-6 text-center shadow-elegant sm:p-10">
         <h1 className="font-display text-xl font-semibold tracking-tight text-foreground">
