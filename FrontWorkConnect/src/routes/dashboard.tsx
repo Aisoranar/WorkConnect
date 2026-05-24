@@ -1,7 +1,15 @@
 import { createFileRoute, isRedirect, redirect } from "@tanstack/react-router";
 import { DashboardPageTransition } from "@/components/DashboardPageTransition";
 import { ClientAuthGate } from "@/components/ClientAuthGate";
-import { authHeaders, clearSession, getStoredUser } from "@/lib/auth";
+import {
+  authHeaders,
+  bootstrapSessionOnPageLoad,
+  clearSession,
+  enableSessionRevokeOn401,
+  getStoredUser,
+  syncStoredUserFromProfile,
+  touchSessionActivity,
+} from "@/lib/auth";
 import { guardRequireAuth, isClient } from "@/lib/auth-guard";
 import { getApiBaseUrl, queryKeys } from "@/lib/api";
 import type { UserProfile } from "@/lib/types";
@@ -21,6 +29,8 @@ export const Route = createFileRoute("/dashboard")({
       return;
     }
 
+    bootstrapSessionOnPageLoad();
+
     // fetchQuery with staleTime: skips the network call if data was fetched recently.
     // On success it populates the queryKeys.me cache, so dashboard.profile.tsx's
     // useQuery(queryKeys.me) gets fresh data without a second request.
@@ -37,13 +47,17 @@ export const Route = createFileRoute("/dashboard")({
             throw redirect({ to: "/login" });
           }
           if (!res.ok) throw new Error(`Error ${res.status}`);
-          return ((await res.json()) as { data: UserProfile }).data;
+          const profile = ((await res.json()) as { data: UserProfile }).data;
+          syncStoredUserFromProfile(profile);
+          touchSessionActivity();
+          enableSessionRevokeOn401();
+          return profile;
         },
         staleTime: TOKEN_REVALIDATE_MS,
       });
     } catch (err) {
       if (isRedirect(err)) throw err;
-      // Network error: let the route render; queries will show the error state.
+      // Error de red: mantener token; no habilitar revoke hasta un /me exitoso.
     }
   },
   head: () => ({

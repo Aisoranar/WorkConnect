@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Sparkles, Wand2, Loader2, Send, List, Cpu } from "lucide-react";
 import { guardRole } from "@/lib/auth-guard";
+import { getStoredUser } from "@/lib/auth";
 import {
   createJob,
   queryKeys,

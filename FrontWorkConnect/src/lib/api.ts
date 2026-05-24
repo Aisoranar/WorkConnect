@@ -18,19 +18,22 @@ import type {
   SkillQuizStart,
   SkillQuizResult,
 } from "./types";
-import { authHeaders, clearSession, isAuthenticated, touchSessionActivity } from "./auth";
+import {
+  authHeaders,
+  isAuthenticated,
+  revokeSessionAndRedirectToLogin,
+  shouldRevokeSessionOn401,
+  touchSessionActivity,
+} from "./auth";
 import { getApiBaseUrl } from "./env";
-
-const API_BASE = getApiBaseUrl();
 
 type ApiListResponse<T> = { data: T[] };
 type ApiItemResponse<T> = { data: T };
 
-// Cuando el servidor devuelve 401, el token ya no es válido: limpia la sesión
-// y redirige a /login con replace para no dejar el estado roto en el historial.
 function handleUnauthorized(): void {
-  clearSession();
-  window.location.replace("/login");
+  if (shouldRevokeSessionOn401()) {
+    revokeSessionAndRedirectToLogin();
+  }
 }
 
 function trackSessionActivity(): void {
@@ -83,7 +86,7 @@ async function parseApiError(response: Response): Promise<string> {
 
 async function apiGet<T>(path: string): Promise<T> {
   trackSessionActivity();
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     headers: authHeaders(false),
   });
 
@@ -94,7 +97,7 @@ async function apiGet<T>(path: string): Promise<T> {
 
 async function apiPost<T>(path: string, body: unknown): Promise<T> {
   trackSessionActivity();
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method: "POST",
     headers: authHeaders(true),
     body: JSON.stringify(body),
@@ -107,7 +110,7 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
 
 async function apiPut<T>(path: string, body: unknown): Promise<T> {
   trackSessionActivity();
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method: "PUT",
     headers: authHeaders(true),
     body: JSON.stringify(body),
@@ -118,7 +121,7 @@ async function apiPut<T>(path: string, body: unknown): Promise<T> {
 
 async function apiDelete(path: string): Promise<void> {
   trackSessionActivity();
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method: "DELETE",
     headers: authHeaders(false),
   });
@@ -127,7 +130,7 @@ async function apiDelete(path: string): Promise<void> {
 
 async function apiPatch<T>(path: string, body: unknown): Promise<T> {
   trackSessionActivity();
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method: "PATCH",
     headers: authHeaders(true),
     body: JSON.stringify(body),
@@ -276,14 +279,13 @@ export function updateProfile(userId: number, data: UpdateProfilePayload): Promi
 export async function uploadAvatar(file: File): Promise<{ avatar: string }> {
   const formData = new FormData();
   formData.append("avatar", file);
-  const response = await fetch(`${API_BASE}/users/avatar`, {
+  const response = await fetch(`${getApiBaseUrl()}/users/avatar`, {
     method: "POST",
     headers: authHeaders(false),
     body: formData,
   });
   if (response.status === 401) {
-    clearSession();
-    window.location.replace("/login");
+    handleUnauthorized();
     return { avatar: "" };
   }
   if (!response.ok) throw new Error(await (response.json() as Promise<{ message?: string }>).then((b) => b.message ?? `Error ${response.status}`));
@@ -314,12 +316,15 @@ export function deletePortfolioProject(id: number): Promise<void> {
 export async function uploadPortfolioImage(projectId: number, file: File): Promise<string> {
   const formData = new FormData();
   formData.append("image", file);
-  const response = await fetch(`${API_BASE}/portfolio/${projectId}/image`, {
+  const response = await fetch(`${getApiBaseUrl()}/portfolio/${projectId}/image`, {
     method: "POST",
     headers: authHeaders(false),
     body: formData,
   });
-  if (response.status === 401) { clearSession(); window.location.replace("/login"); return ""; }
+  if (response.status === 401) {
+    handleUnauthorized();
+    return "";
+  }
   if (!response.ok) throw new Error(`Error ${response.status}`);
   return (response.json() as Promise<{ image: string }>).then((b) => b.image);
 }
@@ -522,11 +527,24 @@ export type CareerReadiness = {
   source: string;
 };
 
+export type CareerInterviewFileSummary = {
+  name: string;
+  type: string;
+  excerpt: string;
+};
+
 export type CareerInterviewStart = {
   question: string;
   topic: string;
   difficulty: string;
+  interview_type?: string;
   tips: string[];
+  prep_tips?: string[];
+  materials_summary?: string;
+  practice_focus?: string[];
+  likely_question_types?: string[];
+  files_received?: CareerInterviewFileSummary[];
+  context_used?: string;
   source: string;
 };
 
@@ -537,7 +555,26 @@ export type CareerInterviewEval = {
   improvements: string[];
   model_answer_hint: string;
   follow_up_question: string;
+  answer_tips?: string[];
   source: string;
+};
+
+export type CareerInterviewStartPayload = {
+  offerText?: string;
+  targetRole?: string;
+  notes?: string;
+  context?: string;
+  mode?: string;
+  files?: File[];
+};
+
+export type CareerInterviewEvaluatePayload = {
+  question: string;
+  answer: string;
+  context?: string;
+  offerText?: string;
+  targetRole?: string;
+  notes?: string;
 };
 
 export type ProjectCoaching = {
@@ -550,7 +587,7 @@ export type ProjectCoaching = {
 };
 
 async function apiPostForm<T>(path: string, form: FormData): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method: "POST",
     headers: authHeaders(false),
     body: form,
@@ -614,21 +651,37 @@ export function careerReadiness(offerText: string): Promise<CareerReadiness> {
   return apiPost<ApiItemResponse<CareerReadiness>>("/career/readiness", { offer_text: offerText }).then((r) => r.data);
 }
 
-export function careerInterviewStart(context: string, mode = "offer"): Promise<CareerInterviewStart> {
-  return apiPost<ApiItemResponse<CareerInterviewStart>>("/career/interview/start", { context, mode }).then(
+export function careerInterviewStart(payload: CareerInterviewStartPayload): Promise<CareerInterviewStart> {
+  const form = new FormData();
+  const offer = payload.offerText?.trim() ?? "";
+  const role = payload.targetRole?.trim() ?? "";
+  const notes = payload.notes?.trim() ?? "";
+
+  if (offer) form.append("offer_text", offer);
+  if (role) form.append("target_role", role);
+  if (notes) form.append("notes", notes);
+  if (payload.context?.trim()) form.append("context", payload.context.trim());
+  form.append("mode", payload.mode ?? (offer ? "offer" : role ? "target_role" : "general"));
+
+  (payload.files ?? []).forEach((file, index) => {
+    form.append(`files[${index}]`, file);
+  });
+
+  return apiPostForm<ApiItemResponse<CareerInterviewStart>>("/career/interview/start", form).then(
     (r) => r.data,
   );
 }
 
 export function careerInterviewEvaluate(
-  question: string,
-  answer: string,
-  context: string,
+  payload: CareerInterviewEvaluatePayload,
 ): Promise<CareerInterviewEval> {
   return apiPost<ApiItemResponse<CareerInterviewEval>>("/career/interview/evaluate", {
-    question,
-    answer,
-    context,
+    question: payload.question,
+    answer: payload.answer,
+    context: payload.context?.trim() || null,
+    offer_text: payload.offerText?.trim() || null,
+    target_role: payload.targetRole?.trim() || null,
+    notes: payload.notes?.trim() || null,
   }).then((r) => r.data);
 }
 
