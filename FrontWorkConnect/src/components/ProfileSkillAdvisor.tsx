@@ -237,16 +237,13 @@ export function ProfileSkillAdvisor({
       </section>
 
       <Dialog open={learnOpen} onOpenChange={setLearnOpen}>
-        <DialogContent
-          className="max-h-[85vh] max-w-lg overflow-y-auto"
-          aria-describedby="learn-skill-description"
-        >
+        <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-primary-glow" />
               Aprende: {learnData?.skill ?? learningSkill ?? "habilidad"}
             </DialogTitle>
-            <DialogDescription id="learn-skill-description">
+            <DialogDescription>
               Mini guía con IA — conceptos básicos para empezar hoy
             </DialogDescription>
           </DialogHeader>

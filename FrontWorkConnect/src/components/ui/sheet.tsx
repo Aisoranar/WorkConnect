@@ -54,21 +54,51 @@ interface SheetContentProps
     React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
     VariantProps<typeof sheetVariants> {}
 
+function hasSheetDescriptionInTree(node: React.ReactNode): boolean {
+  let found = false;
+  React.Children.forEach(node, (child) => {
+    if (found || !React.isValidElement(child)) return;
+    const type = child.type as { displayName?: string };
+    if (child.type === SheetPrimitive.Description || type?.displayName === "SheetDescription") {
+      found = true;
+      return;
+    }
+    if (child.props?.children) {
+      found = hasSheetDescriptionInTree(child.props.children);
+    }
+  });
+  return found;
+}
+
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, ...props }, ref) => (
-  <SheetPortal>
-    <SheetOverlay />
-    <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
-      <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background cursor-pointer transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </SheetPrimitive.Close>
-      {children}
-    </SheetPrimitive.Content>
-  </SheetPortal>
-));
+>(({ side = "right", className, children, ...props }, ref) => {
+  const hasDescription = hasSheetDescriptionInTree(children);
+  const suppressDescription = props["aria-describedby"] === undefined && !hasDescription;
+
+  return (
+    <SheetPortal>
+      <SheetOverlay />
+      <SheetPrimitive.Content
+        ref={ref}
+        className={cn(sheetVariants({ side }), className)}
+        {...(suppressDescription ? { ...props, "aria-describedby": undefined } : props)}
+      >
+        <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background cursor-pointer transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </SheetPrimitive.Close>
+        {children}
+        {suppressDescription ? (
+          <SheetPrimitive.Description className="sr-only">
+            Panel lateral
+          </SheetPrimitive.Description>
+        ) : null}
+      </SheetPrimitive.Content>
+    </SheetPortal>
+  );
+});
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
 const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
