@@ -1,19 +1,18 @@
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AuthLayout } from "@/components/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { isAuthenticated, login } from "@/lib/auth";
+import { login } from "@/lib/auth";
+import { guardGuestOnly } from "@/lib/auth-guard";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [{ title: "Iniciar sesión · WorkConnect" }],
   }),
   beforeLoad: () => {
-    if (isAuthenticated()) {
-      throw redirect({ to: "/dashboard" });
-    }
+    guardGuestOnly();
   },
   component: LoginPage,
 });

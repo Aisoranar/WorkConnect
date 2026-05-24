@@ -1,18 +1,14 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Briefcase, ChevronRight, PlusCircle, Users } from "lucide-react";
-import { getStoredUser } from "@/lib/auth";
+import { guardRole } from "@/lib/auth-guard";
 import { fetchMyJobs, queryKeys } from "@/lib/api";
 import { ApiState } from "@/components/ApiState";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/dashboard/my-projects")({
   beforeLoad: () => {
-    const user = getStoredUser();
-    if (!user) throw redirect({ to: "/login" });
-    if (user.role !== "client" && user.role !== "admin") {
-      throw redirect({ to: "/dashboard/explore" });
-    }
+    guardRole("client", "admin");
   },
   component: MyProjectsPage,
 });

@@ -1,7 +1,7 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check, Loader2, MapPin, X } from "lucide-react";
-import { getStoredUser } from "@/lib/auth";
+import { guardRole } from "@/lib/auth-guard";
 import {
   fetchJob,
   fetchJobApplications,
@@ -14,11 +14,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard/my-projects/$jobId")({
   beforeLoad: () => {
-    const user = getStoredUser();
-    if (!user) throw redirect({ to: "/login" });
-    if (user.role !== "client" && user.role !== "admin") {
-      throw redirect({ to: "/dashboard/explore" });
-    }
+    guardRole("client", "admin");
   },
   component: MyProjectDetailPage,
 });

@@ -1,19 +1,18 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AuthLayout } from "@/components/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { forgotPassword, isAuthenticated } from "@/lib/auth";
+import { forgotPassword } from "@/lib/auth";
+import { guardGuestOnly } from "@/lib/auth-guard";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({
     meta: [{ title: "Recuperar contraseña · WorkConnect" }],
   }),
   beforeLoad: () => {
-    if (isAuthenticated()) {
-      throw redirect({ to: "/dashboard" });
-    }
+    guardGuestOnly();
   },
   component: ForgotPasswordPage,
 });

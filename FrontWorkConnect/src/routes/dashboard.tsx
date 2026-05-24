@@ -1,5 +1,7 @@
 import { createFileRoute, isRedirect, Outlet, redirect } from "@tanstack/react-router";
-import { authHeaders, clearSession, getStoredUser, isAuthenticated } from "@/lib/auth";
+import { ClientAuthGate } from "@/components/ClientAuthGate";
+import { authHeaders, clearSession, getStoredUser } from "@/lib/auth";
+import { guardRequireAuth, isClient } from "@/lib/auth-guard";
 import { getApiBaseUrl, queryKeys } from "@/lib/api";
 import type { UserProfile } from "@/lib/types";
 import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
@@ -13,8 +15,9 @@ const TOKEN_REVALIDATE_MS = 10 * 60 * 1000;
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async ({ context }) => {
-    if (!isAuthenticated()) {
-      throw redirect({ to: "/login" });
+    guardRequireAuth();
+    if (!isClient()) {
+      return;
     }
 
     // fetchQuery with staleTime: skips the network call if data was fetched recently.
@@ -53,6 +56,7 @@ export const Route = createFileRoute("/dashboard")({
 
 function DashboardLayout() {
   return (
+    <ClientAuthGate>
     <SidebarProvider
       style={
         {
@@ -64,6 +68,7 @@ function DashboardLayout() {
     >
       <DashboardShell />
     </SidebarProvider>
+    </ClientAuthGate>
   );
 }
 

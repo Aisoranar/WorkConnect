@@ -1,11 +1,12 @@
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { AuthLayout } from "@/components/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { isAuthenticated, resetPassword } from "@/lib/auth";
+import { resetPassword } from "@/lib/auth";
+import { guardGuestOnly } from "@/lib/auth-guard";
 import { toast } from "sonner";
 
 const searchSchema = z.object({
@@ -19,9 +20,7 @@ export const Route = createFileRoute("/reset-password")({
     meta: [{ title: "Nueva contraseña · WorkConnect" }],
   }),
   beforeLoad: () => {
-    if (isAuthenticated()) {
-      throw redirect({ to: "/dashboard" });
-    }
+    guardGuestOnly();
   },
   component: ResetPasswordPage,
 });

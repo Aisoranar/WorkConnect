@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CareerAiLoadingModal } from "@/components/career/CareerAiLoadingModal";
@@ -18,7 +18,7 @@ import {
   Trophy,
   CheckCircle2,
 } from "lucide-react";
-import { getStoredUser } from "@/lib/auth";
+import { guardRole } from "@/lib/auth-guard";
 import {
   careerAnalyzeOffer,
   careerAnalyzeProfile,
@@ -47,11 +47,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard/career")({
   beforeLoad: () => {
-    const user = getStoredUser();
-    if (!user) throw redirect({ to: "/login" });
-    if (user.role !== "freelancer" && user.role !== "admin") {
-      throw redirect({ to: "/dashboard" });
-    }
+    guardRole("freelancer", "admin");
   },
   component: CareerAssistantPage,
 });

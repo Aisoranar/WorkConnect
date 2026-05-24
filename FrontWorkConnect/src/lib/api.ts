@@ -13,7 +13,7 @@ import type {
   Stats,
   UserProfile,
 } from "./types";
-import { authHeaders, clearSession } from "./auth";
+import { authHeaders, clearSession, isAuthenticated, touchSessionActivity } from "./auth";
 import { getApiBaseUrl } from "./env";
 
 const API_BASE = getApiBaseUrl();
@@ -26,6 +26,12 @@ type ApiItemResponse<T> = { data: T };
 function handleUnauthorized(): void {
   clearSession();
   window.location.replace("/login");
+}
+
+function trackSessionActivity(): void {
+  if (isAuthenticated()) {
+    touchSessionActivity();
+  }
 }
 
 async function parseApiError(response: Response): Promise<string> {
@@ -43,6 +49,7 @@ async function parseApiError(response: Response): Promise<string> {
 }
 
 async function apiGet<T>(path: string): Promise<T> {
+  trackSessionActivity();
   const response = await fetch(`${API_BASE}${path}`, {
     headers: authHeaders(false),
   });
@@ -53,6 +60,7 @@ async function apiGet<T>(path: string): Promise<T> {
 }
 
 async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  trackSessionActivity();
   const response = await fetch(`${API_BASE}${path}`, {
     method: "POST",
     headers: authHeaders(true),
@@ -65,6 +73,7 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
 }
 
 async function apiPut<T>(path: string, body: unknown): Promise<T> {
+  trackSessionActivity();
   const response = await fetch(`${API_BASE}${path}`, {
     method: "PUT",
     headers: authHeaders(true),
@@ -75,6 +84,7 @@ async function apiPut<T>(path: string, body: unknown): Promise<T> {
 }
 
 async function apiDelete(path: string): Promise<void> {
+  trackSessionActivity();
   const response = await fetch(`${API_BASE}${path}`, {
     method: "DELETE",
     headers: authHeaders(false),
@@ -83,6 +93,7 @@ async function apiDelete(path: string): Promise<void> {
 }
 
 async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  trackSessionActivity();
   const response = await fetch(`${API_BASE}${path}`, {
     method: "PATCH",
     headers: authHeaders(true),

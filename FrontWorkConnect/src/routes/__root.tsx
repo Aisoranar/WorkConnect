@@ -11,6 +11,7 @@ import {
 import "../styles.css";
 import { buildPageHead } from "@/lib/seo";
 import { Toaster } from "@/components/ui/sonner";
+import { SessionActivityManager } from "@/components/SessionActivityManager";
 
 function NotFoundComponent() {
   return (
@@ -113,6 +114,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <SessionActivityManager />
       <Toaster richColors theme="system" position="top-center" />
     </QueryClientProvider>
   );
