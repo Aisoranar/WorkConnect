@@ -114,6 +114,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/learn-skill', [ProfileAdvisorController::class, 'learnSkill']);
         Route::post('/skill-quiz/start', [ProfileAdvisorController::class, 'startSkillQuiz']);
         Route::post('/skill-quiz/submit', [ProfileAdvisorController::class, 'submitSkillQuiz']);
+        Route::get('/skill-certifications', [ProfileAdvisorController::class, 'listSkillCertifications']);
     });
 
     // Asistente de carrera (talento joven, throttle: 20 requests / minuto)

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Sparkles,
@@ -49,6 +49,7 @@ export function ProfileSkillAdvisor({
   const [learnOpen, setLearnOpen] = useState(false);
   const [learnData, setLearnData] = useState<LearnSkillResult | null>(null);
   const [learningSkill, setLearningSkill] = useState<string | null>(null);
+  const learnCache = useRef<Map<string, LearnSkillResult>>(new Map());
 
   const inline = variant === "inline";
 
@@ -68,7 +69,8 @@ export function ProfileSkillAdvisor({
 
   const learnMutation = useMutation({
     mutationFn: (skill: string) => learnSkillIntro(skill),
-    onSuccess: (result) => {
+    onSuccess: (result, skill) => {
+      learnCache.current.set(skill, result);
       setLearnData(result);
       setLearnOpen(true);
     },
@@ -77,10 +79,18 @@ export function ProfileSkillAdvisor({
 
   function handleWantLearn(rec: SkillRecommendation) {
     const name = rec.display_name || rec.skill;
+    const key = rec.skill || rec.display_name;
     setLearningSkill(name);
-    setLearnData(null);
     setLearnOpen(true);
-    learnMutation.mutate(rec.skill || rec.display_name);
+
+    const cached = learnCache.current.get(key);
+    if (cached) {
+      setLearnData(cached);
+      return;
+    }
+
+    setLearnData(null);
+    learnMutation.mutate(key);
   }
 
   function handleAddSkill(name: string) {

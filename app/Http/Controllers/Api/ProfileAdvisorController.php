@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\SkillCertification;
 use App\Models\WorkJob;
 use App\Services\ProfileAdvisorService;
 use Illuminate\Http\JsonResponse;
@@ -88,6 +89,18 @@ class ProfileAdvisorController extends Controller
                 $request->input('answers'),
             ),
         ]);
+    }
+
+    public function listSkillCertifications(Request $request): JsonResponse
+    {
+        $this->ensureTalent($request);
+
+        $records = SkillCertification::query()
+            ->where('user_id', $request->user()->id)
+            ->orderByDesc('attempted_at')
+            ->get(['id', 'skill_name', 'score', 'passed', 'correct_count', 'total', 'certificate_id', 'attempted_at']);
+
+        return response()->json(['data' => $records]);
     }
 
     private function ensureTalent(Request $request): void

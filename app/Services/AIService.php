@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Models\WorkJob;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class AIService
@@ -283,22 +285,50 @@ PROMPT;
     private function complete(string $prompt, ?string $model = null, int $maxTokens = 512, bool $fast = false): ?array
     {
         $model = $model ?? ($fast ? $this->fastModel() : $this->powerfulModel());
+        $timeout = $fast ? 10 : 18;
 
-        $timeout = $fast ? 28 : 45;
-
-        if ($text = $this->askNvidia($prompt, $model, $maxTokens, $timeout)) {
-            return ['text' => $text, 'source' => 'nvidia'];
+        // Circuit breaker: proveedores que fallaron recientemente se saltan en lugar de esperar el timeout completo
+        if (! $this->circuitOpen('nvidia')) {
+            try {
+                if ($text = $this->askNvidia($prompt, $model, $maxTokens, $timeout)) {
+                    return ['text' => $text, 'source' => 'nvidia'];
+                }
+            } catch (ConnectionException) {
+                $this->tripCircuit('nvidia');
+            }
         }
 
-        if ($text = $this->askGemini($prompt, $maxTokens, $fast ? 22 : 45)) {
-            return ['text' => $text, 'source' => 'gemini'];
+        if (! $this->circuitOpen('gemini')) {
+            try {
+                if ($text = $this->askGemini($prompt, $maxTokens, $timeout)) {
+                    return ['text' => $text, 'source' => 'gemini'];
+                }
+            } catch (ConnectionException) {
+                $this->tripCircuit('gemini');
+            }
         }
 
-        if ($text = $this->askOpenAi($prompt, $maxTokens, $fast ? 22 : 45)) {
-            return ['text' => $text, 'source' => 'openai'];
+        if (! $this->circuitOpen('openai')) {
+            try {
+                if ($text = $this->askOpenAi($prompt, $maxTokens, $timeout)) {
+                    return ['text' => $text, 'source' => 'openai'];
+                }
+            } catch (ConnectionException) {
+                $this->tripCircuit('openai');
+            }
         }
 
         return null;
+    }
+
+    private function circuitOpen(string $provider): bool
+    {
+        return (bool) Cache::get("ai_cb:{$provider}");
+    }
+
+    private function tripCircuit(string $provider): void
+    {
+        Cache::put("ai_cb:{$provider}", 1, now()->addSeconds(90));
     }
 
     /**
@@ -337,12 +367,17 @@ PROMPT;
         return is_array($decoded) ? $decoded : null;
     }
 
+    /**
+     * @throws ConnectionException cuando hay timeout o error de red (activa el circuit breaker)
+     */
     private function askNvidia(string $prompt, string $model, int $maxTokens = 512, int $timeout = 45): ?string
     {
         if (! config('services.nvidia.key')) {
             return null;
         }
 
+        // ConnectionException (timeout/red) se propaga para activar el circuit breaker.
+        // Otros errores (4xx/5xx) se suprimen: no hay razón para abrir el circuito.
         try {
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer '.config('services.nvidia.key'),
@@ -361,13 +396,18 @@ PROMPT;
 
                 return $text !== '' ? $text : null;
             }
+        } catch (ConnectionException $e) {
+            throw $e;
         } catch (\Throwable) {
-            // siguiente proveedor en la cadena
+            // errores no-red: no abrir circuito
         }
 
         return null;
     }
 
+    /**
+     * @throws ConnectionException cuando hay timeout o error de red
+     */
     private function askGemini(string $prompt, int $maxTokens = 2048, int $timeout = 45): ?string
     {
         $key = config('services.gemini.key');
@@ -396,8 +436,10 @@ PROMPT;
 
                 return $text !== '' ? $text : null;
             }
+        } catch (ConnectionException $e) {
+            throw $e;
         } catch (\Throwable) {
-            // siguiente proveedor
+            // errores no-red
         }
 
         return null;
@@ -453,6 +495,9 @@ PROMPT;
         return null;
     }
 
+    /**
+     * @throws ConnectionException cuando hay timeout o error de red
+     */
     private function askOpenAi(string $prompt, int $maxTokens = 2048, int $timeout = 45): ?string
     {
         if (! config('services.openai.key')) {
@@ -475,8 +520,10 @@ PROMPT;
 
                 return $text !== '' ? $text : null;
             }
+        } catch (ConnectionException $e) {
+            throw $e;
         } catch (\Throwable) {
-            // fallback local en el caller
+            // errores no-red
         }
 
         return null;

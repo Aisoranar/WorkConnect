@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CareerSession;
 use App\Models\User;
 use App\Models\WorkJob;
+use Illuminate\Support\Facades\Cache;
 
 class CareerAssistantService
 {
@@ -31,14 +32,24 @@ class CareerAssistantService
     public function analyzeProfileDeep(User $user): array
     {
         $user->loadMissing(['skills', 'portfolioProjects']);
+
+        $cacheKey = "career_profile_deep:{$user->id}";
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached) && ! empty($cached['summary'])) {
+            return $cached;
+        }
+
         $base = $this->profileScore->analyze($user);
 
         // Una sola llamada IA (modelo rápido) en lugar de analyzeProfile + promptJson.
         $raw = $this->careerPromptJson($this->profileDeepPrompt($user, $base), 1100);
 
         $result = $raw ? $this->normalizeProfileDeep($raw, $base) : $this->fallbackProfileDeep($user, $base);
+        $result = $this->persist($user, 'profile_analysis', [], $result);
 
-        return $this->persist($user, 'profile_analysis', [], $result);
+        Cache::put($cacheKey, $result, now()->addMinutes(15));
+
+        return $result;
     }
 
     public function discoverAchievements(User $user, ?string $rawNotes = null): array
@@ -238,12 +249,22 @@ class CareerAssistantService
     public function projectCoachingTips(User $user, WorkJob $job): array
     {
         $user->loadMissing('skills');
+
+        $cacheKey = "career_project_tips:{$user->id}:{$job->id}";
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached) && ! empty($cached['delivery_tips'])) {
+            return $cached;
+        }
+
         $match = $this->matching->scoreJobForUser($user, $job);
         $raw = $this->careerPromptJson($this->projectTipsPrompt($user, $job, $match), 700);
 
         $result = $raw ?: $this->fallbackProjectTips($user, $job, $match);
+        $result = $this->persist($user, 'project_coaching', ['job_id' => $job->id], $result);
 
-        return $this->persist($user, 'project_coaching', ['job_id' => $job->id], $result);
+        Cache::put($cacheKey, $result, now()->addMinutes(15));
+
+        return $result;
     }
 
     /**

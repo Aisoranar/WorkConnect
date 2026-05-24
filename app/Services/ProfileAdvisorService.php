@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\SkillCertification;
 use App\Models\User;
 use App\Models\WorkJob;
 use Illuminate\Support\Facades\Cache;
@@ -25,6 +26,13 @@ class ProfileAdvisorService
     public function recommendSkills(User $user): array
     {
         $user->loadMissing('skills');
+
+        $cacheKey = "skill_recommendations:{$user->id}";
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached) && ! empty($cached['recommendations'])) {
+            return $cached;
+        }
+
         $profile = $this->profileScore->analyze($user);
 
         $demand = $this->aggregateMarketDemand();
@@ -58,7 +66,7 @@ class ProfileAdvisorService
 
         $enriched = $this->enrichWithAi($user, $topGaps, $topDemanded, $profile);
 
-        return [
+        $result = [
             'profile_score' => $profile['score'],
             'profile_tips' => $profile['tips'],
             'your_skills' => $user->skills->pluck('name')->values()->all(),
@@ -67,6 +75,10 @@ class ProfileAdvisorService
             'recommendations' => $enriched['recommendations'] ?? $this->fallbackRecommendations($topGaps),
             'source' => $enriched['source'] ?? 'local',
         ];
+
+        Cache::put($cacheKey, $result, now()->addMinutes(15));
+
+        return $result;
     }
 
     /**
@@ -173,6 +185,12 @@ PROMPT;
         $skill = trim($skill);
         $display = $this->displayName($this->normalizeSkill($skill));
 
+        $fullCacheKey = "skill_intro_full:{$user->id}:".$this->normalizeSkill($skill);
+        $cached = Cache::get($fullCacheKey);
+        if (is_array($cached) && ! empty($cached['overview'])) {
+            return $cached;
+        }
+
         $demand = $this->aggregateMarketDemand();
         $key = $this->normalizeSkill($skill);
         $jobsCount = $demand[$key] ?? 0;
@@ -221,12 +239,14 @@ PROMPT;
         if (is_array($raw) && ! empty($raw['overview'])) {
             $raw['skill'] = $display;
             $this->cacheLessonContext($user->id, $skill, $raw);
+            Cache::put($fullCacheKey, $raw, now()->addMinutes(30));
 
             return $raw;
         }
 
         $fallback = $this->fallbackLearnIntro($display, $jobsCount);
         $this->cacheLessonContext($user->id, $skill, $fallback);
+        Cache::put($fullCacheKey, $fallback, now()->addMinutes(30));
 
         return $fallback;
     }
@@ -238,64 +258,140 @@ PROMPT;
     {
         $display = $this->displayName($this->normalizeSkill(trim($skill)));
         $quizId = Str::uuid()->toString();
-        $ctx = $this->userContext($user);
-        $lessonCtx = $this->lessonContextForQuiz($user->id, $skill);
 
-        $prompt = <<<PROMPT
+        // Preguntas cacheadas por usuario+skill (20 min): evita llamadas repetidas a la IA.
+        // El set de subtemas se elige aleatoriamente al generar, así cada caducidad produce preguntas distintas.
+        $qCacheKey = "skill_quiz_qs:{$user->id}:".$this->normalizeSkill($skill);
+        $cachedQuestions = Cache::get($qCacheKey);
+        $source = 'cache';
+
+        if (! is_array($cachedQuestions) || count($cachedQuestions) < self::SKILL_QUIZ_QUESTIONS) {
+            $lessonCtx = $this->lessonContextForQuiz($user->id, $skill);
+            $focusAreas = $this->randomQuizFocusAreas($display);
+
+            $prompt = <<<PROMPT
 Eres un evaluador técnico senior especializado en "{$display}" con experiencia contratando freelancers en Latinoamérica.
 
-OBJETIVO: Crear una evaluación profesional de 5 preguntas que determine si un candidato tiene el conocimiento PRÁCTICO mínimo para trabajar con "{$display}" en un proyecto freelance real (no académico).
+OBJETIVO: Crear una evaluación de 5 preguntas que determine si un candidato tiene conocimiento PRÁCTICO para trabajar con "{$display}" en proyectos freelance reales.
 
-PRINCIPIOS DE DISEÑO DE LA EVALUACIÓN:
-1. Cada pregunta debe plantear un ESCENARIO LABORAL CONCRETO: un cliente pide algo, surge un problema técnico, hay que tomar una decisión de arquitectura/diseño, o hay que entregar un resultado específico.
-2. Las 4 opciones deben ser TÉCNICAMENTE PLAUSIBLES dentro del dominio de "{$display}". Un junior podría confundirse entre ellas. PROHIBIDO incluir opciones absurdas, de otros dominios, o que se descarten por sentido común.
-3. La respuesta correcta debe reflejar la MEJOR PRÁCTICA PROFESIONAL, no solo "la que funciona".
-4. Cubrir 5 conceptos DISTINTOS y representativos de "{$display}" en el día a día de un freelancer.
-5. Dificultad: nivel junior-intermedio. No preguntar definiciones de Wikipedia ni trivia — preguntar criterio profesional.
+SUBTEMAS A EVALUAR EN ESTA SESIÓN (genera exactamente una pregunta por subtema, en este orden):
+{$focusAreas}
 
-FORMATO DE CADA PREGUNTA:
-- "concept": nombre corto del subtema evaluado (ej: "Gestión de estado", "Responsive design", "Naming conventions")
-- "question": escenario + pregunta. Mínimo 2 oraciones. Ejemplo: "Un cliente te pide [situación]. Al revisar el proyecto notas [detalle]. ¿Cuál es el enfoque correcto?"
-- "options": 4 opciones del MISMO nivel de sofisticación. Todas deben sonar como algo que un profesional podría decir. Redacta en tono técnico pero claro.
-- "correct_index": índice (0-3) de la mejor respuesta.
-- "explanation": 2-3 oraciones técnicas explicando POR QUÉ esa es la mejor práctica y qué problema resuelve.
-- "example": caso concreto de un proyecto real donde aplicarías esta decisión (menciona entregables, herramientas o flujos específicos de "{$display}").
-- "option_feedback": array de 4 strings. Índice correcto = "". Cada incorrecto = 1 oración técnica explicando la limitación o riesgo de esa opción (sin condescendencia, como feedback de code review).
+REGLAS ESTRICTAS:
+1. Cada pregunta plantea un ESCENARIO LABORAL CONCRETO del subtema asignado (cliente pide algo, surge problema, hay que decidir).
+2. Las 4 opciones son TÉCNICAMENTE PLAUSIBLES — un junior podría dudar entre ellas. PROHIBIDAS: opciones de otro dominio, respuestas absurdas o trivialmente incorrectas.
+3. La correcta refleja la MEJOR PRÁCTICA, no solo "lo que funciona".
+4. Dificultad: nivel junior-intermedio. Criterio profesional, no definiciones de Wikipedia.
 
-RESPONDE SOLO JSON válido en español, sin markdown ni comentarios:
+CAMPOS OBLIGATORIOS POR PREGUNTA:
+- "id": "q1"…"q5"
+- "concept": nombre corto del subtema (exactamente el que se te asignó)
+- "question": escenario + pregunta (mín. 2 oraciones con contexto real)
+- "options": 4 strings del mismo nivel técnico
+- "correct_index": 0-3
+- "explanation": 2-3 oraciones — POR QUÉ esa práctica y qué problema evita
+- "example": escenario concreto de proyecto freelance real donde aplicarías esta decisión
+- "option_feedback": 4 strings; el índice correcto = ""; cada incorrecto = 1 oración técnica sobre su limitación
+
+RESPONDE SOLO JSON válido en español, sin markdown:
 {
   "questions": [
     {
       "id": "q1",
-      "concept": "subtema",
-      "question": "escenario laboral + pregunta",
-      "options": ["opción técnica A", "opción técnica B", "opción técnica C", "opción técnica D"],
+      "concept": "subtema exacto",
+      "question": "escenario + pregunta",
+      "options": ["A técnico", "B técnico", "C técnico", "D técnico"],
       "correct_index": 0,
-      "explanation": "justificación profesional",
-      "example": "caso real de proyecto",
-      "option_feedback": ["", "limitación de B", "limitación de C", "limitación de D"]
+      "explanation": "por qué es mejor práctica",
+      "example": "caso real freelance",
+      "option_feedback": ["", "limitación B", "limitación C", "limitación D"]
     }
   ]
 }
 {$lessonCtx}
-{$ctx}
 PROMPT;
 
-        $raw = $this->ai->promptJson($prompt, $this->ai->fastModel(), 2000, fast: true);
-        $questions = $this->normalizeQuizQuestions($raw['questions'] ?? [], $display);
+            $raw = $this->ai->promptJson($prompt, $this->ai->fastModel(), 1600, fast: true);
+            $cachedQuestions = $this->normalizeQuizQuestions($raw['questions'] ?? [], $display);
+
+            if (count($cachedQuestions) >= self::SKILL_QUIZ_QUESTIONS) {
+                Cache::put($qCacheKey, $cachedQuestions, now()->addMinutes(20));
+            }
+
+            $source = is_array($raw) ? ($raw['source'] ?? 'nvidia') : 'local';
+        }
 
         Cache::put($this->quizCacheKey($user->id, $quizId), [
             'skill' => $display,
-            'questions' => $questions,
+            'questions' => $cachedQuestions,
         ], now()->addHours(2));
 
         return [
             'quiz_id' => $quizId,
             'skill' => $display,
             'passing_score' => self::SKILL_QUIZ_PASSING_SCORE,
-            'questions' => $this->publicQuizQuestions($questions),
-            'source' => is_array($raw) ? ($raw['source'] ?? 'nvidia') : 'local',
+            'questions' => $this->publicQuizQuestions($cachedQuestions),
+            'source' => $source,
         ];
+    }
+
+    /**
+     * Devuelve 5 subtemas aleatorios para variar las preguntas de la evaluación entre sesiones.
+     */
+    private function randomQuizFocusAreas(string $display): string
+    {
+        $key = $this->normalizeSkill($display);
+
+        $pools = match ($key) {
+            'figma' => [
+                ['Frames y auto-layout', 'Componentes maestros', 'Variantes de componentes', 'Design tokens y estilos', 'Handoff al desarrollador'],
+                ['Grids y guías', 'Prototipado e interacciones', 'Librería de componentes', 'Inspection mode', 'Exportación de assets'],
+                ['Auto-layout avanzado', 'Gestión de capas', 'Design system', 'Flujos de usuario', 'Colaboración en equipo'],
+            ],
+            'react' => [
+                ['useState y re-render', 'Props y comunicación entre componentes', 'useEffect y efectos secundarios', 'Renderizado de listas y keys', 'Manejo de formularios controlados'],
+                ['Elevación de estado', 'useCallback y useMemo', 'Context API', 'Renderizado condicional', 'Composición de componentes'],
+                ['Ciclo de vida con hooks', 'useRef y acceso al DOM', 'Lazy loading y Suspense', 'Error boundaries', 'Patrones de custom hooks'],
+            ],
+            'typescript' => [
+                ['Tipos primitivos y union types', 'Interfaces y type aliases', 'Genéricos básicos', 'Type guards y narrowing', 'Tipos en funciones'],
+                ['Utility types (Partial, Pick, Omit)', 'Tipos en React (FC, eventos)', 'Enums vs const objects', 'Mapped types', 'Template literal types'],
+                ['Tipos de retorno explícitos', 'Readonly y mutabilidad', 'Intersection types', 'Módulos y namespaces', 'Strict mode y sus implicaciones'],
+            ],
+            'laravel' => [
+                ['Routing y middleware', 'Eloquent básico y relaciones', 'Migraciones y seeders', 'Validación de requests', 'Autenticación con Sanctum'],
+                ['API Resources y transformaciones', 'Colas y jobs', 'Policies y gates', 'Cache con Redis', 'Testing con PHPUnit'],
+                ['Service container e inyección', 'Observer y eventos', 'Scopes en Eloquent', 'Rate limiting', 'Gestión de archivos con Storage'],
+            ],
+            'tailwind', 'tailwind css' => [
+                ['Clases de espaciado y sizing', 'Flexbox y Grid con Tailwind', 'Responsive design y breakpoints', 'Hover y focus states', 'Dark mode'],
+                ['Customización en tailwind.config', 'Componentes con @apply', 'Tipografía y colores', 'Animaciones y transiciones', 'Formularios y inputs'],
+                ['JIT mode y arbitrary values', 'Variantes de estado avanzadas', 'Container queries', 'Composición de clases', 'Purge y optimización'],
+            ],
+            'vue', 'vue.js' => [
+                ['Options API vs Composition API', 'Props y emits', 'Reactive y ref', 'Computed properties', 'Watchers'],
+                ['Directivas (v-if, v-for, v-model)', 'Ciclo de vida del componente', 'Provide/inject', 'Slots y scoped slots', 'Pinia para estado global'],
+                ['Transiciones y animaciones', 'Vue Router básico', 'Composables', 'Async components', 'SSR con Nuxt'],
+            ],
+            'php' => [
+                ['Variables y tipos', 'Funciones y scope', 'Arrays y funciones de array', 'OOP básico: clases y objetos', 'Manejo de errores y excepciones'],
+                ['Traits y interfaces', 'Namespaces y autoload', 'PDO y bases de datos', 'Sesiones y cookies', 'Composer y dependencias'],
+                ['PSR-4 y buenas prácticas', 'Closures y callbacks', 'Generators', 'Tipos de retorno y tipado estricto', 'Testing con PHPUnit'],
+            ],
+            default => [
+                ['Configuración inicial y entorno de trabajo', 'Flujo de trabajo profesional básico', 'Mejores prácticas de la industria', 'Resolución de problemas comunes', 'Entrega y documentación de resultados'],
+                ['Principios fundamentales del dominio', 'Integración con herramientas del ecosistema', 'Optimización y rendimiento', 'Patrones de diseño aplicados', 'Debugging y troubleshooting'],
+                ['Casos de uso frecuentes en proyectos LATAM', 'Control de calidad y testing', 'Mantenibilidad y refactorización', 'Seguridad aplicada al dominio', 'Colaboración y entrega continua'],
+            ],
+        };
+
+        $set = $pools[array_rand($pools)];
+
+        return implode("\n", array_map(
+            fn (int $i, string $area) => ($i + 1).'. '.$area,
+            array_keys($set),
+            $set,
+        ));
     }
 
     /**
@@ -344,6 +440,19 @@ PROMPT;
             Cache::forget($this->quizCacheKey($user->id, $quizId));
         }
 
+        $certificateId = $passed ? 'WC-'.strtoupper(Str::random(10)) : null;
+
+        SkillCertification::create([
+            'user_id' => $user->id,
+            'skill_name' => $skill,
+            'score' => $score,
+            'passed' => $passed,
+            'correct_count' => $correct,
+            'total' => $total,
+            'certificate_id' => $certificateId,
+            'attempted_at' => now(),
+        ]);
+
         $needed = self::SKILL_QUIZ_PASSING_SCORE - $score;
 
         return [
@@ -358,6 +467,7 @@ PROMPT;
                 : "Obtuviste {$score}% ({$correct}/{$total}). Te faltan ".max(1, (int) ceil($needed / 20))." acierto(s) más para llegar al ".self::SKILL_QUIZ_PASSING_SCORE.'% y certificar la skill.',
             'review' => $review,
             'can_add_to_profile' => $passed,
+            'certificate_id' => $certificateId,
             'study_tip' => $passed
                 ? null
                 : 'Lee otra vez los conceptos con su ejemplo, repasa «Primeros pasos» y vuelve a la evaluación cuando puedas explicar cada respuesta con tus palabras.',

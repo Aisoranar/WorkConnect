@@ -250,7 +250,19 @@ export type SkillQuizResult = {
   message: string;
   review: SkillQuizReviewItem[];
   can_add_to_profile: boolean;
+  certificate_id: string | null;
   study_tip: string | null;
+};
+
+export type SkillCertificationRecord = {
+  id: number;
+  skill_name: string;
+  score: number;
+  passed: boolean;
+  correct_count: number;
+  total: number;
+  certificate_id: string | null;
+  attempted_at: string;
 };
 
 export type LearnSkillResult = {

@@ -248,8 +248,11 @@ function Landing() {
       {/* ── STATS STRIP ── */}
       <section className="landing-stat-strip" aria-label="Métricas clave">
         <div className="container mx-auto grid grid-cols-2 px-4 sm:px-6 md:grid-cols-4">
-          {stripStats.map(({ value, label, icon: Icon }) => (
-            <div key={label} className="landing-stat-item">
+          {stripStats.map(({ value, label, icon: Icon }, i) => (
+            <div
+              key={label}
+              className={`landing-stat-item${i >= 2 ? " border-t border-border md:border-t-0" : ""}`}
+            >
               <Icon className="mx-auto mb-2 h-5 w-5 text-primary" aria-hidden />
               <div className="font-display text-2xl font-bold sm:text-3xl">
                 {value}
@@ -338,7 +341,7 @@ function Landing() {
       {/* ── HOW ── */}
       <section
         id="how"
-        className="scroll-mt-14 border-y border-border bg-gradient-to-b from-primary/[0.06] to-primary/[0.02] py-16 sm:scroll-mt-16 sm:py-24"
+        className="scroll-mt-14 border-y border-border bg-muted py-16 sm:scroll-mt-16 sm:py-24"
       >
         <div className="container mx-auto px-4 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
@@ -406,7 +409,7 @@ function Landing() {
             </p>
           </div>
 
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
             {[
               {
                 icon: Wand2,
@@ -448,7 +451,7 @@ function Landing() {
       </section>
 
       {/* ── SOCIAL PROOF ── */}
-      <section className="py-16 sm:py-20">
+      <section className="border-y border-border bg-card py-16 sm:py-20">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="landing-testimonial mx-auto max-w-3xl p-8 sm:p-10">
             <span className="landing-testimonial__quote" aria-hidden>
@@ -480,10 +483,11 @@ function Landing() {
       </section>
 
       {/* ── DUAL CTA ── */}
-      <section className="pb-16 sm:pb-24">
+      <section className="py-16 sm:py-24">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="section-heading">¿Por dónde entras tú?</h2>
+            <p className="landing-section-label">Únete</p>
+            <h2 className="section-heading mt-3">¿Por dónde entras tú?</h2>
             <p className="mt-3 text-muted-foreground">
               Elige tu camino. Registro gratis en menos de un minuto.
             </p>
@@ -532,7 +536,7 @@ function Landing() {
       </section>
 
       {/* ── FINAL CTA ── */}
-      <section className="pb-20 sm:pb-28">
+      <section className="pt-8 pb-20 sm:pt-12 sm:pb-28">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="landing-cta-final relative overflow-hidden px-6 py-12 text-center sm:px-12 sm:py-16">
             <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />

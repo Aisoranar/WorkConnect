@@ -4,15 +4,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   MapPin, Star, Github, Linkedin, Sparkles, PlusCircle,
   Pencil, ExternalLink, Upload, CheckCircle2, AlertCircle,
+  Award, XCircle, ClipboardCheck,
 } from "lucide-react";
-import { fetchMe, fetchStats, queryKeys, uploadAvatar } from "@/lib/api";
+import { fetchMe, fetchSkillCertifications, fetchStats, queryKeys, uploadAvatar } from "@/lib/api";
 import { ApiState } from "@/components/ApiState";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { EditProfileSheet } from "@/components/EditProfileSheet";
 import { ProfileSkillAdvisor } from "@/components/ProfileSkillAdvisor";
-import type { UserProfile } from "@/lib/types";
+import type { SkillCertificationRecord, UserProfile } from "@/lib/types";
 
 export const Route = createFileRoute("/dashboard/profile")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -51,6 +52,12 @@ function ProfilePage() {
     queryKey: queryKeys.stats,
     queryFn: fetchStats,
     enabled: !!profile,
+  });
+
+  const { data: certifications = [] } = useQuery({
+    queryKey: ["skill-certifications"],
+    queryFn: fetchSkillCertifications,
+    enabled: profile?.role === "freelancer" || profile?.role === "admin",
   });
 
   const avatarMutation = useMutation({
@@ -275,6 +282,11 @@ function ProfilePage() {
               </div>
             )}
           </section>
+
+          {/* Historial de evaluaciones */}
+          {(profile?.role === "freelancer" || profile?.role === "admin") && (
+            <EvaluationsHistory records={certifications} />
+          )}
         </div>
 
         {/* Sidebar */}
@@ -392,4 +404,132 @@ function buildTips(profile: UserProfile | undefined): string[] {
   if (profile.portfolio.length < 2) tips.push("Sube proyectos a tu portfolio.");
   if (!profile.github) tips.push("Conecta tu GitHub para importar proyectos.");
   return tips;
+}
+
+function EvaluationsHistory({ records }: { records: SkillCertificationRecord[] }) {
+  function downloadCertificate(r: SkillCertificationRecord) {
+    const certWindow = window.open("", "_blank");
+    if (!certWindow) {
+      return;
+    }
+    const date = new Intl.DateTimeFormat("es", { dateStyle: "long" }).format(
+      new Date(r.attempted_at),
+    );
+    certWindow.document.write(`<!DOCTYPE html>
+<html><head><title>Certificado - ${r.skill_name}</title>
+<style>
+  @page { size: landscape; margin: 0; }
+  body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #0f172a, #1e293b); font-family: 'Segoe UI', system-ui, sans-serif; color: #e2e8f0; }
+  .cert { width: 900px; padding: 60px; border: 3px solid rgba(99,102,241,0.5); border-radius: 24px; text-align: center; background: rgba(15,23,42,0.9); }
+  .logo { font-size: 14px; letter-spacing: 4px; text-transform: uppercase; color: #818cf8; }
+  h1 { font-size: 40px; margin: 20px 0 8px; background: linear-gradient(90deg, #818cf8, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { font-size: 16px; color: #94a3b8; }
+  .skill { font-size: 28px; margin: 30px 0; color: #e2e8f0; }
+  .score { font-size: 18px; color: #818cf8; margin-bottom: 30px; }
+  .date { font-size: 13px; color: #64748b; margin-top: 40px; }
+  .id { font-size: 10px; color: #475569; margin-top: 8px; }
+  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style></head><body>
+<div class="cert">
+  <div class="logo">WorkConnect</div>
+  <h1>Certificado de competencia</h1>
+  <p class="subtitle">Otorgado por aprobar la evaluacion de habilidad</p>
+  <div class="skill">${r.skill_name}</div>
+  <div class="score">Puntuacion: ${r.score}% (${r.correct_count}/${r.total} correctas)</div>
+  <p class="date">${date}</p>
+  <p class="id">ID: ${r.certificate_id ?? "N/A"}</p>
+</div>
+</body></html>`);
+    certWindow.document.close();
+    certWindow.focus();
+    certWindow.print();
+  }
+
+  return (
+    <section className="card-gradient rounded-2xl border border-border p-6 shadow-card">
+      <div className="flex items-center gap-2">
+        <ClipboardCheck className="h-5 w-5 text-primary-glow" />
+        <h2 className="font-display text-lg font-semibold">Historial de evaluaciones</h2>
+      </div>
+
+      {records.length === 0 ? (
+        <p className="mt-4 text-sm text-muted-foreground">
+          Aún no has hecho ninguna evaluación. Usa el asesor de skills para aprender y certificar
+          habilidades.
+        </p>
+      ) : (
+        <div className="mt-4 space-y-3">
+          {records.map((r) => (
+            <div
+              key={r.id}
+              className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between ${
+                r.passed
+                  ? "border-success/30 bg-success/5"
+                  : "border-border bg-muted/30"
+              }`}
+            >
+              {/* Left: skill + meta */}
+              <div className="flex items-start gap-3">
+                <div
+                  className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                    r.passed
+                      ? "bg-success/15 text-success"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {r.passed ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : (
+                    <XCircle className="h-4 w-4" />
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium leading-tight">{r.skill_name}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {new Intl.DateTimeFormat("es", { dateStyle: "medium" }).format(
+                      new Date(r.attempted_at),
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Right: score + badge + action */}
+              <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums ${
+                    r.passed
+                      ? "bg-success/15 text-success"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {r.score}% · {r.correct_count}/{r.total}
+                </span>
+                <Badge
+                  variant="outline"
+                  className={`text-[10px] uppercase tracking-wide ${
+                    r.passed
+                      ? "border-success/40 text-success"
+                      : "border-border text-muted-foreground"
+                  }`}
+                >
+                  {r.passed ? "Aprobado" : "No aprobado"}
+                </Badge>
+                {r.passed && r.certificate_id && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 gap-1.5 px-2.5 text-xs"
+                    onClick={() => downloadCertificate(r)}
+                  >
+                    <Award className="h-3.5 w-3.5" />
+                    Certificado
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
 }

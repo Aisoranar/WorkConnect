@@ -15,6 +15,7 @@ import type {
   SkillRecommendationsResult,
   LearnSkillResult,
   JobMatchCoach,
+  SkillCertificationRecord,
   SkillQuizStart,
   SkillQuizResult,
 } from "./types";
@@ -733,6 +734,12 @@ export function submitSkillQuiz(
     quiz_id: quizId,
     answers,
   }).then((r) => r.data);
+}
+
+export function fetchSkillCertifications(): Promise<SkillCertificationRecord[]> {
+  return apiGet<{ data: SkillCertificationRecord[] }>("/profile/skill-certifications").then(
+    (r) => r.data,
+  );
 }
 
 // ─── Reseñas ────────────────────────────────────────────────────────────────

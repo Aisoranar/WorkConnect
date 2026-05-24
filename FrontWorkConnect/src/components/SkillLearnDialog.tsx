@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Award,
   BookOpen,
@@ -49,6 +49,7 @@ export function SkillLearnDialog({
   onAddSkillPassed,
   onGoProfile,
 }: Props) {
+  const queryClient = useQueryClient();
   const [phase, setPhase] = useState<Phase>("intro");
   const [quiz, setQuiz] = useState<SkillQuizStart | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -86,6 +87,7 @@ export function SkillLearnDialog({
     onSuccess: (data) => {
       setResult(data);
       setPhase("result");
+      void queryClient.invalidateQueries({ queryKey: ["skill-certifications"] });
       if (data.passed) {
         toast.success(`¡Aprobaste ${data.skill}! Ya puedes añadirla a tu perfil.`);
       } else {
