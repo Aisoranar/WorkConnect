@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CareerAiLoadingModal } from "@/components/career/CareerAiLoadingModal";
 import { CAREER_LOADING_TASKS, type CareerLoadingTask } from "@/components/career/career-loading-tasks";
-import { useSimulatedAiProgress } from "@/hooks/use-simulated-ai-progress";
+import { useCareerAiLoading } from "@/hooks/use-career-ai-loading";
 import {
   Sparkles,
   Loader2,
@@ -257,17 +257,19 @@ function CareerAssistantPage() {
 
   const activeTask = resolveActiveLoadingTask(loadingFlags);
   const isAiBusy = activeTask !== null;
-  const { progress, stepIndex } = useSimulatedAiProgress(isAiBusy, activeTask?.steps.length ?? 1);
-  const showLoadingModal = isAiBusy || progress > 0;
+  const aiLoading = useCareerAiLoading(activeTask);
+  const uiLocked = aiLoading.open;
 
   return (
-    <div className="relative mx-auto max-w-4xl space-y-6 pb-10" aria-busy={isAiBusy}>
+    <div className="relative mx-auto max-w-4xl space-y-6 pb-10" aria-busy={isAiBusy || aiLoading.open}>
       <CareerAiLoadingModal
-        open={showLoadingModal}
-        title={activeTask?.title ?? "Procesando con IA"}
-        steps={activeTask?.steps ?? ["Procesando…"]}
-        progress={progress}
-        currentStepIndex={stepIndex}
+        open={aiLoading.open}
+        phase={aiLoading.phase}
+        title={aiLoading.task?.title ?? "Procesando con IA"}
+        subtitle={aiLoading.task?.subtitle}
+        steps={aiLoading.task?.steps ?? []}
+        progress={aiLoading.progress}
+        currentStepIndex={aiLoading.stepIndex}
       />
       <div>
         <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary-glow">
@@ -283,7 +285,10 @@ function CareerAssistantPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="profile" className={isAiBusy ? "pointer-events-none w-full opacity-60" : "w-full"}>
+      <Tabs
+        defaultValue="profile"
+        className={aiLoading.open ? "pointer-events-none w-full opacity-60" : "w-full"}
+      >
         <TabsList className="flex h-auto w-full flex-wrap gap-1 bg-surface/60 p-1">
           <TabsTrigger value="profile" className="text-xs sm:text-sm">
             Perfil
@@ -316,7 +321,7 @@ function CareerAssistantPage() {
             </p>
             <Button
               className="mt-4 bg-gradient-primary"
-              disabled={isAiBusy}
+              disabled={uiLocked}
               onClick={() => profileMut.mutate()}
             >
               {profileMut.isPending ? (
@@ -354,12 +359,12 @@ function CareerAssistantPage() {
               value={achievementNotes}
               onChange={(e) => setAchievementNotes(e.target.value)}
               rows={3}
-              disabled={isAiBusy}
+              disabled={uiLocked}
             />
             <Button
               className="mt-3"
               variant="outline"
-              disabled={isAiBusy}
+              disabled={uiLocked}
               onClick={() => achievementsMut.mutate()}
             >
               {achievementsMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -391,28 +396,28 @@ function CareerAssistantPage() {
               placeholder="Requisitos, responsabilidades, stack..."
               value={offerText}
               onChange={(e) => setOfferText(e.target.value)}
-              disabled={isAiBusy}
+              disabled={uiLocked}
             />
             <Label className="mt-3">O adjunta TXT / PDF / imagen</Label>
             <Input
               className="mt-2"
               type="file"
               accept=".txt,.pdf,.png,.jpg,.jpeg,.webp"
-              disabled={isAiBusy}
+              disabled={uiLocked}
               onChange={(e) => setOfferFile(e.target.files?.[0] ?? null)}
             />
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button disabled={isAiBusy} onClick={() => offerMut.mutate()}>
+              <Button disabled={uiLocked} onClick={() => offerMut.mutate()}>
                 {offerMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {offerMut.isPending ? "Analizando…" : "Analizar oferta"}
               </Button>
-              <Button variant="outline" disabled={isAiBusy || !offerText.trim()} onClick={() => planMut.mutate()}>
+              <Button variant="outline" disabled={uiLocked || !offerText.trim()} onClick={() => planMut.mutate()}>
                 {planMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {planMut.isPending ? "Generando plan…" : "Plan de estudio"}
               </Button>
               <Button
                 variant="outline"
-                disabled={isAiBusy || !offerText.trim()}
+                disabled={uiLocked || !offerText.trim()}
                 onClick={() => readinessMut.mutate()}
               >
                 {readinessMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -480,11 +485,11 @@ function CareerAssistantPage() {
               placeholder="Ej: Desarrollador Full Stack Junior"
               value={targetRole}
               onChange={(e) => setTargetRole(e.target.value)}
-              disabled={isAiBusy}
+              disabled={uiLocked}
             />
             <Button
               className="mt-4"
-              disabled={!targetRole.trim() || isAiBusy}
+              disabled={!targetRole.trim() || uiLocked}
               onClick={() => roleMut.mutate()}
             >
               {roleMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -502,7 +507,7 @@ function CareerAssistantPage() {
 
         <TabsContent value="cv" className="mt-4 space-y-4">
           <div className="card-paper flex flex-wrap gap-3 p-4 sm:p-6">
-            <Button disabled={isAiBusy} onClick={() => cvMut.mutate()}>
+            <Button disabled={uiLocked} onClick={() => cvMut.mutate()}>
               {cvMut.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -510,7 +515,7 @@ function CareerAssistantPage() {
               )}
               {cvMut.isPending ? "Generando CV…" : "CV ATS-Friendly"}
             </Button>
-            <Button variant="outline" disabled={isAiBusy} onClick={() => linkedinMut.mutate()}>
+            <Button variant="outline" disabled={uiLocked} onClick={() => linkedinMut.mutate()}>
               {linkedinMut.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -599,7 +604,7 @@ function CareerAssistantPage() {
             <p className="mt-1 text-sm text-muted-foreground">
               Usa una oferta o puesto en las otras pestañas como contexto, luego inicia la entrevista.
             </p>
-            <Button className="mt-4" disabled={isAiBusy} onClick={() => interviewStartMut.mutate()}>
+            <Button className="mt-4" disabled={uiLocked} onClick={() => interviewStartMut.mutate()}>
               {interviewStartMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {interviewStartMut.isPending ? "Preparando…" : "Iniciar simulación"}
             </Button>
@@ -612,11 +617,11 @@ function CareerAssistantPage() {
                   placeholder="Tu respuesta..."
                   value={interviewAnswer}
                   onChange={(e) => setInterviewAnswer(e.target.value)}
-                  disabled={isAiBusy}
+                  disabled={uiLocked}
                 />
                 <Button
                   className="mt-3"
-                  disabled={isAiBusy || !interviewAnswer.trim()}
+                  disabled={uiLocked || !interviewAnswer.trim()}
                   onClick={() => interviewEvalMut.mutate()}
                 >
                   {interviewEvalMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
