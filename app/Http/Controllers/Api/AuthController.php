@@ -50,6 +50,9 @@ class AuthController extends Controller
             return response()->json(['message' => 'Credenciales inválidas.'], 401);
         }
 
+        // Elimina tokens antiguos de esta misma app (evita acumulación) y crea uno nuevo.
+        // Se eliminan solo los tokens con nombre 'api' para no invalidar otros clientes.
+        $user->tokens()->where('name', 'api')->delete();
         $token = $user->createToken('api')->plainTextToken;
 
         return response()->json([

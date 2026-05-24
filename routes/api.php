@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\AIController;
 use App\Http\Controllers\Api\ApplicationController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\GithubController;
+use App\Http\Controllers\Api\PortfolioController;
 use App\Http\Controllers\Api\JobApplicationContextController;
 use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\Api\MessageController;
@@ -67,9 +69,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
 
+    // Portfolio CRUD
+    Route::post('/portfolio', [PortfolioController::class, 'store']);
+    Route::put('/portfolio/{project}', [PortfolioController::class, 'update']);
+    Route::delete('/portfolio/{project}', [PortfolioController::class, 'destroy']);
+    Route::post('/portfolio/{project}/image', [PortfolioController::class, 'uploadImage']);
+
+    // GitHub proxy
+    Route::get('/github/repos', [GithubController::class, 'repos']);
+
+    // IA
     Route::post('/ai/structure-project', [AIController::class, 'structureProject']);
     Route::post('/ai/match-job', [AIController::class, 'matchJob']);
     Route::post('/ai/analyze-profile', [AIController::class, 'analyzeProfile']);
     Route::post('/ai/recommend-jobs', [AIController::class, 'recommendJobs']);
     Route::post('/ai/improve-proposal', [AIController::class, 'improveProposal']);
+    Route::post('/ai/improve-bio', [AIController::class, 'improveBio']);
+    Route::post('/ai/github-profile', [AIController::class, 'generateGithubProfile']);
 });

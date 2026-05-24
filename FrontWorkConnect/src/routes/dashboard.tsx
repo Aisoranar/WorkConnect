@@ -1,14 +1,43 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { getStoredUser, isAuthenticated } from "@/lib/auth";
+import { createFileRoute, isRedirect, Outlet, redirect } from "@tanstack/react-router";
+import { authHeaders, clearSession, getStoredUser, isAuthenticated } from "@/lib/auth";
+import { getApiBaseUrl, queryKeys } from "@/lib/api";
+import type { UserProfile } from "@/lib/types";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { DashboardBottomNav } from "@/components/DashboardBottomNav";
 import { Bell, Search } from "lucide-react";
 
+const TOKEN_REVALIDATE_MS = 10 * 60 * 1000;
+
 export const Route = createFileRoute("/dashboard")({
-  beforeLoad: () => {
+  beforeLoad: async ({ context }) => {
     if (!isAuthenticated()) {
       throw redirect({ to: "/login" });
+    }
+
+    // fetchQuery with staleTime: skips the network call if data was fetched recently.
+    // On success it populates the queryKeys.me cache, so dashboard.profile.tsx's
+    // useQuery(queryKeys.me) gets fresh data without a second request.
+    // On 401 it throws a router redirect (no window.location.replace race condition).
+    try {
+      await context.queryClient.fetchQuery<UserProfile>({
+        queryKey: queryKeys.me,
+        queryFn: async () => {
+          const res = await fetch(`${getApiBaseUrl()}/me`, {
+            headers: authHeaders(false),
+          });
+          if (res.status === 401) {
+            clearSession();
+            throw redirect({ to: "/login" });
+          }
+          if (!res.ok) throw new Error(`Error ${res.status}`);
+          return ((await res.json()) as { data: UserProfile }).data;
+        },
+        staleTime: TOKEN_REVALIDATE_MS,
+      });
+    } catch (err) {
+      if (isRedirect(err)) throw err;
+      // Network error: let the route render; queries will show the error state.
     }
   },
   head: () => ({

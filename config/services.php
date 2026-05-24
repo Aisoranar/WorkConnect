@@ -29,6 +29,12 @@ return [
         ],
     ],
 
+    'nvidia' => [
+        'key'   => env('NVIDIA_API_KEY'),
+        'url'   => env('NVIDIA_API_URL', 'https://integrate.api.nvidia.com/v1'),
+        'model' => env('NVIDIA_DEFAULT_MODEL', 'meta/llama-3.3-70b-instruct'),
+    ],
+
     'gemini' => [
         'key' => env('GEMINI_API_KEY'),
     ],

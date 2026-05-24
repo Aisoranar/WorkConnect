@@ -71,7 +71,18 @@ class UserController extends Controller
             'name', 'username', 'city', 'bio', 'github', 'linkedin', 'experience',
         ]));
 
-        if ($request->has('skill_ids')) {
+        if ($request->has('skill_names')) {
+            // Crea skills que no existen y sincroniza por nombre
+            $sync = collect($request->input('skill_names', []))
+                ->filter()
+                ->map(fn (string $name) => \App\Models\Skill::firstOrCreate(
+                    ['name' => trim($name)],
+                    ['category' => null],
+                )->id)
+                ->mapWithKeys(fn ($id) => [$id => ['level' => 'intermedio']])
+                ->all();
+            $user->skills()->sync($sync);
+        } elseif ($request->has('skill_ids')) {
             $sync = collect($request->input('skill_ids', []))
                 ->mapWithKeys(fn ($id) => [$id => ['level' => 'intermedio']])
                 ->all();

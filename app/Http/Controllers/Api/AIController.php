@@ -56,6 +56,39 @@ class AIController extends Controller
         return response()->json(['data' => $data]);
     }
 
+    public function improveBio(Request $request): JsonResponse
+    {
+        $request->validate([
+            'bio' => ['required', 'string', 'min:10', 'max:2000'],
+        ]);
+
+        $user = $request->user();
+        $user->loadMissing('skills');
+        $improved = $this->ai->improveBio($user, $request->string('bio')->toString());
+
+        return response()->json(['data' => ['bio' => $improved]]);
+    }
+
+    public function generateGithubProfile(Request $request): JsonResponse
+    {
+        $request->validate([
+            'repos'               => ['required', 'array', 'min:1', 'max:15'],
+            'repos.*.name'        => ['required', 'string', 'max:100'],
+            'repos.*.language'    => ['nullable', 'string', 'max:50'],
+            'repos.*.topics'      => ['nullable', 'array'],
+            'repos.*.topics.*'    => ['string', 'max:50'],
+            'repos.*.description' => ['nullable', 'string', 'max:500'],
+            'current_bio'         => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $result = $this->ai->generateProfileFromGithub(
+            $request->input('repos'),
+            $request->input('current_bio'),
+        );
+
+        return response()->json(['data' => $result]);
+    }
+
     public function improveProposal(Request $request): JsonResponse
     {
         $request->validate([

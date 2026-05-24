@@ -25,8 +25,10 @@ class UpdateUserRequest extends FormRequest
             'github' => ['nullable', 'url', 'max:255'],
             'linkedin' => ['nullable', 'url', 'max:255'],
             'experience' => ['nullable', 'string', 'max:5000'],
-            'skill_ids' => ['nullable', 'array'],
-            'skill_ids.*' => ['exists:skills,id'],
+            'skill_ids'    => ['nullable', 'array'],
+            'skill_ids.*'  => ['exists:skills,id'],
+            'skill_names'   => ['nullable', 'array'],
+            'skill_names.*' => ['string', 'max:100'],
         ];
     }
 }

@@ -2,13 +2,18 @@ import type {
   Application,
   ApplyContext,
   FreelancerCard,
+  GitHubGeneratedProfile,
+  GitHubRepo,
   Job,
   JobApplicationDetail,
   JobsListMeta,
   Message,
+  PortfolioItem,
+  ProfileSkill,
   Stats,
+  UserProfile,
 } from "./types";
-import { authHeaders } from "./auth";
+import { authHeaders, clearSession } from "./auth";
 
 function resolveApiBase(): string {
   if (import.meta.env.VITE_API_URL) {
@@ -25,7 +30,18 @@ const API_BASE = resolveApiBase();
 type ApiListResponse<T> = { data: T[] };
 type ApiItemResponse<T> = { data: T };
 
+// Cuando el servidor devuelve 401, el token ya no es válido: limpia la sesión
+// y redirige a /login con replace para no dejar el estado roto en el historial.
+function handleUnauthorized(): void {
+  clearSession();
+  window.location.replace("/login");
+}
+
 async function parseApiError(response: Response): Promise<string> {
+  if (response.status === 401) {
+    handleUnauthorized();
+    return "Sesión expirada. Redirigiendo a inicio de sesión…";
+  }
   try {
     const body = (await response.json()) as { message?: string; errors?: Record<string, string[]> };
     if (body.errors) return Object.values(body.errors).flat().join(" ");
@@ -57,6 +73,24 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function apiPut<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: "PUT",
+    headers: authHeaders(true),
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(await parseApiError(response));
+  return response.json() as Promise<T>;
+}
+
+async function apiDelete(path: string): Promise<void> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: "DELETE",
+    headers: authHeaders(false),
+  });
+  if (!response.ok) throw new Error(await parseApiError(response));
+}
+
 async function apiPatch<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     method: "PATCH",
@@ -70,6 +104,7 @@ async function apiPatch<T>(path: string, body: unknown): Promise<T> {
 }
 
 export const queryKeys = {
+  me: ["me"] as const,
   jobs: ["jobs"] as const,
   myJobs: ["my-jobs"] as const,
   applications: ["applications"] as const,
@@ -79,6 +114,7 @@ export const queryKeys = {
   jobApplications: (jobId: string) => ["job-applications", jobId] as const,
   job: (jobId: string) => ["job", jobId] as const,
   freelancers: (filters: string) => ["freelancers", filters] as const,
+  githubRepos: (username: string) => ["github-repos", username] as const,
 };
 
 type JobsListResponse = { data: Job[]; meta?: JobsListMeta };
@@ -179,6 +215,106 @@ export function fetchStats(): Promise<Stats> {
 
 export function getApiBaseUrl(): string {
   return API_BASE;
+}
+
+// ─── Perfil propio ────────────────────────────────────────────────────────────
+
+export function fetchMe(): Promise<UserProfile> {
+  return apiGet<{ data: UserProfile }>("/me").then((r) => r.data);
+}
+
+export type UpdateProfilePayload = {
+  name?: string;
+  username?: string | null;
+  city?: string | null;
+  bio?: string | null;
+  github?: string | null;
+  linkedin?: string | null;
+  experience?: string | null;
+  skill_ids?: number[];
+  skill_names?: string[];
+};
+
+export function updateProfile(userId: number, data: UpdateProfilePayload): Promise<UserProfile> {
+  return apiPut<{ data: UserProfile }>(`/users/${userId}`, data).then((r) => r.data);
+}
+
+export async function uploadAvatar(file: File): Promise<{ avatar: string }> {
+  const formData = new FormData();
+  formData.append("avatar", file);
+  const response = await fetch(`${API_BASE}/users/avatar`, {
+    method: "POST",
+    headers: authHeaders(false),
+    body: formData,
+  });
+  if (response.status === 401) {
+    clearSession();
+    window.location.replace("/login");
+    return { avatar: "" };
+  }
+  if (!response.ok) throw new Error(await (response.json() as Promise<{ message?: string }>).then((b) => b.message ?? `Error ${response.status}`));
+  return response.json() as Promise<{ message: string; avatar: string }>;
+}
+
+// ─── Portfolio ────────────────────────────────────────────────────────────────
+
+export type PortfolioPayload = {
+  title: string;
+  description?: string | null;
+  url?: string | null;
+  technologies?: string[];
+};
+
+export function createPortfolioProject(data: PortfolioPayload): Promise<PortfolioItem> {
+  return apiPost<{ data: PortfolioItem }>("/portfolio", data).then((r) => r.data);
+}
+
+export function updatePortfolioProject(id: number, data: Partial<PortfolioPayload>): Promise<PortfolioItem> {
+  return apiPut<{ data: PortfolioItem }>(`/portfolio/${id}`, data).then((r) => r.data);
+}
+
+export function deletePortfolioProject(id: number): Promise<void> {
+  return apiDelete(`/portfolio/${id}`);
+}
+
+export async function uploadPortfolioImage(projectId: number, file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("image", file);
+  const response = await fetch(`${API_BASE}/portfolio/${projectId}/image`, {
+    method: "POST",
+    headers: authHeaders(false),
+    body: formData,
+  });
+  if (response.status === 401) { clearSession(); window.location.replace("/login"); return ""; }
+  if (!response.ok) throw new Error(`Error ${response.status}`);
+  return (response.json() as Promise<{ image: string }>).then((b) => b.image);
+}
+
+// ─── GitHub ───────────────────────────────────────────────────────────────────
+
+export function fetchGithubRepos(username: string): Promise<GitHubRepo[]> {
+  const params = new URLSearchParams({ username });
+  return apiGet<{ data: GitHubRepo[] }>(`/github/repos?${params}`).then((r) => r.data);
+}
+
+// ─── IA — perfil ─────────────────────────────────────────────────────────────
+
+export function improveBio(bio: string): Promise<string> {
+  return apiPost<{ data: { bio: string } }>("/ai/improve-bio", { bio }).then((r) => r.data.bio);
+}
+
+export function generateProfileFromGithub(
+  repos: Pick<GitHubRepo, "name" | "description" | "language" | "topics">[],
+  currentBio?: string | null,
+): Promise<GitHubGeneratedProfile> {
+  return apiPost<{ data: GitHubGeneratedProfile }>("/ai/github-profile", {
+    repos,
+    current_bio: currentBio ?? null,
+  }).then((r) => r.data);
+}
+
+export function fetchAllSkills(): Promise<ProfileSkill[]> {
+  return apiGet<{ data: ProfileSkill[] }>("/skills").then((r) => r.data);
 }
 
 export function fetchApplyContext(jobId: string | number): Promise<ApplyContext> {

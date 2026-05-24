@@ -241,8 +241,8 @@ class ProjectBriefService
 
         $list = implode("\n- ", $technologies);
 
-        return $description."\n\nTecnologías recomendadas (según el alcance del proyecto):\n- {$list}\n\n".
-            'El talento puede proponer alternativas equivalentes si justifica el enfoque.';
+        return $description."\n\nStack tecnológico recomendado para este proyecto:\n- {$list}\n\n".
+            'El talento puede proponer tecnologías equivalentes siempre que justifique el enfoque y cumpla los entregables.';
     }
 
     public function formatBudgetFromCurrency(float $amount, string $currency): string
@@ -298,11 +298,11 @@ class ProjectBriefService
     private function buildDescription(string $rawNeed, ?string $context, array $deliverables): string
     {
         $list = implode("\n- ", $deliverables);
+        $biz  = $context ?: 'negocio local';
 
-        return "Contexto del negocio: ".($context ?: 'Empresa local que necesita apoyo digital con presupuesto acotado.')."\n\n".
-            "Necesidad expresada por el cliente:\n{$rawNeed}\n\n".
-            "Entregables esperados:\n- {$list}\n\n".
-            'Ideal para talento joven que busca ganar experiencia con proyectos acotados y reales.';
+        return "Me dedico a {$biz} y necesito apoyo para: {$rawNeed}\n\n".
+            "Lo que espero recibir:\n- {$list}\n\n".
+            'Busco talento joven con ganas de aprender y entregar resultados reales. Trabajamos 100 % remoto y con comunicación abierta.';
     }
 
     private function inferSolutionType(string $rawNeed, string $category): string

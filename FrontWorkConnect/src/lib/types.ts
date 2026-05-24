@@ -76,6 +76,58 @@ export type Stats = {
   responseRate: number;
 };
 
+export type ProfileSkill = {
+  id: number;
+  name: string;
+  category?: string | null;
+  level?: string | null;
+};
+
+export type PortfolioItem = {
+  id: number;
+  title: string;
+  description: string | null;
+  image: string | null;
+  url: string | null;
+  technologies: string[];
+};
+
+export type UserProfile = {
+  id: number;
+  name: string;
+  username: string | null;
+  email?: string;
+  role: string;
+  city: string | null;
+  avatar: string | null;
+  bio: string | null;
+  rating: number;
+  verified: boolean;
+  github: string | null;
+  linkedin: string | null;
+  experience: string | null;
+  skills: ProfileSkill[];
+  portfolio: PortfolioItem[];
+  created_at: string;
+};
+
+export type GitHubRepo = {
+  name: string;
+  description: string | null;
+  language: string | null;
+  topics: string[];
+  html_url: string;
+  stars: number;
+  updated_at: string;
+};
+
+export type GitHubGeneratedProfile = {
+  bio: string;
+  skills: string[];
+  summary: string;
+  source: string;
+};
+
 export type ApplyContextSkill = {
   name: string;
   level: number;
