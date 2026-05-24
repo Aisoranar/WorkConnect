@@ -40,16 +40,36 @@ class LegacyApiFormatter
 
     public function application(JobApplication $application): array
     {
-        $application->loadMissing('job.owner');
+        $application->loadMissing(['job.owner', 'user']);
+        $job = $application->job;
+        $applicant = $application->user;
+        $match = $applicant ? $this->matching->scoreJobForUser($applicant, $job) : null;
 
         return [
             'id' => (string) $application->id,
             'jobId' => (string) $application->job_id,
-            'jobTitle' => $application->job->title,
-            'company' => $application->job->company ?? $application->job->owner?->name ?? 'Cliente',
+            'jobTitle' => $job->title,
+            'company' => $job->company ?? $job->owner?->name ?? 'Cliente',
             'price' => $application->price,
+            'deliveryTime' => $application->delivery_time,
+            'proposal' => $application->proposal,
             'status' => $application->status,
             'sentAgo' => $application->created_at?->locale('es')->diffForHumans(short: true) ?? 'reciente',
+            'sentAt' => $application->created_at?->toIso8601String(),
+            'match' => $match,
+            'job' => [
+                'id' => (string) $job->id,
+                'title' => $job->title,
+                'company' => $job->company ?? $job->owner?->name ?? 'Cliente',
+                'budget' => $job->budget,
+                'category' => $job->category ?? 'General',
+                'description' => $job->description,
+                'skills' => $job->skills ?? [],
+                'location' => $job->location ?? 'Remoto',
+                'remote' => (bool) $job->remote,
+                'status' => $job->status,
+                'postedAgo' => $job->created_at?->locale('es')->diffForHumans(short: true) ?? 'reciente',
+            ],
         ];
     }
 

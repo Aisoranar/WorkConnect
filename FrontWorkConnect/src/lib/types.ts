@@ -51,14 +51,33 @@ export type JobApplicationDetail = {
   };
 };
 
+export type ApplicationJobSummary = {
+  id: string;
+  title: string;
+  company: string;
+  budget: string;
+  category: string;
+  description: string;
+  skills: string[];
+  location: string;
+  remote: boolean;
+  status: string;
+  postedAgo: string;
+};
+
 export type Application = {
   id: string;
   jobId?: string;
   jobTitle: string;
   company: string;
   price: string;
+  deliveryTime?: string;
+  proposal?: string;
   status: "pendiente" | "aceptada" | "rechazada" | "en revisión";
   sentAgo: string;
+  sentAt?: string;
+  match?: number;
+  job?: ApplicationJobSummary;
 };
 
 export type Message = {
