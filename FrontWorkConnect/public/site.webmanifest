@@ -4,10 +4,16 @@
   "description": "Talento joven, oportunidades reales. Matching por IA para freelancers.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1a1033",
-  "theme_color": "#1a1033",
+  "background_color": "#f0f2f5",
+  "theme_color": "#6366f1",
   "lang": "es",
   "icons": [
+    {
+      "src": "/isoLogoBlack.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/isoLogo.png",
       "sizes": "512x512",

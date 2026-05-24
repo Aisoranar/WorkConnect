@@ -46,9 +46,6 @@ function Messages() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="page-heading">
-          <span className="text-gradient">Mensajes</span>
-        </h1>
         <p className="mt-1 text-muted-foreground">Conversaciones con clientes y colaboradores.</p>
       </div>
 

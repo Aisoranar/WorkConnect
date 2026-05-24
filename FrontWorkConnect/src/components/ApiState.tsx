@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { Loader2 } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { DashboardLoader } from "@/components/DashboardLoader";
 
 type ApiStateProps = {
   isLoading: boolean;
@@ -13,12 +13,7 @@ type ApiStateProps = {
 
 export function ApiState({ isLoading, isError, error, onRetry, children }: ApiStateProps) {
   if (isLoading) {
-    return (
-      <div className="flex min-h-[200px] flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
-        <Loader2 className="h-6 w-6 animate-spin text-primary-glow" />
-        Cargando datos…
-      </div>
-    );
+    return <DashboardLoader />;
   }
 
   if (isError) {

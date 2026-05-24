@@ -2,8 +2,18 @@ import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
 
-export const LOGO_SRC = "/Logo.png";
-export const ISO_LOGO_SRC = "/isoLogo.png";
+/** Wordmark e iso según fondo: claro → *Black · oscuro → default */
+export const BRAND_LOGO = {
+  wordmark: { light: "/LogoBlack.png", dark: "/Logo.png" },
+  iso: { light: "/isoLogoBlack.png", dark: "/isoLogo.png" },
+} as const;
+
+/** @deprecated Usar BRAND_LOGO */
+export const LOGO_SRC = BRAND_LOGO.wordmark.dark;
+/** @deprecated Usar BRAND_LOGO */
+export const ISO_LOGO_SRC = BRAND_LOGO.iso.dark;
+
+export type BrandTheme = "auto" | "light" | "dark";
 
 /** Alturas alineadas sidebar ↔ header principal (logo 3.25rem · iso 2.25rem) */
 export const DASHBOARD_BRAND = {
@@ -18,8 +28,46 @@ export const dashboardHeaderCssVars = {
   "--dashboard-header-h-collapsed": DASHBOARD_BRAND.headerCollapsed,
 } as React.CSSProperties;
 
+type BrandImageProps = Omit<React.ComponentProps<"img">, "src" | "alt"> & {
+  variant: "wordmark" | "iso";
+  theme?: BrandTheme;
+  alt?: string;
+};
+
+export function BrandImage({
+  variant,
+  theme = "auto",
+  className,
+  alt = "WorkConnect",
+  ...props
+}: BrandImageProps) {
+  const { light, dark } = BRAND_LOGO[variant];
+
+  if (theme === "light") {
+    return <img src={light} alt={alt} className={className} draggable={false} {...props} />;
+  }
+
+  if (theme === "dark") {
+    return <img src={dark} alt={alt} className={className} draggable={false} {...props} />;
+  }
+
+  return (
+    <picture className={cn("contents", className?.includes("size-full") && "block size-full")}>
+      <source media="(prefers-color-scheme: dark)" srcSet={dark} />
+      <img
+        src={light}
+        alt={alt}
+        draggable={false}
+        className={className}
+        {...props}
+      />
+    </picture>
+  );
+}
+
 type LogoProps = Omit<React.ComponentProps<"img">, "src" | "alt"> & {
   size?: "sm" | "md" | "lg";
+  theme?: BrandTheme;
   /** Fondo claro para que el wordmark se lea sobre sidebar oscuro */
   surface?: boolean;
   alt?: string;
@@ -37,7 +85,14 @@ const isoSizeMap = {
   lg: DASHBOARD_BRAND.iso,
 };
 
-export function Logo({ size = "md", surface = false, className, alt = "WorkConnect", ...props }: LogoProps) {
+export function Logo({
+  size = "md",
+  theme = "auto",
+  surface = false,
+  className,
+  alt = "WorkConnect",
+  ...props
+}: LogoProps) {
   return (
     <span
       className={cn(
@@ -46,10 +101,10 @@ export function Logo({ size = "md", surface = false, className, alt = "WorkConne
         surface && "rounded-lg bg-white px-2.5 py-1 shadow-sm",
       )}
     >
-      <img
-        src={LOGO_SRC}
+      <BrandImage
+        variant="wordmark"
+        theme={theme}
         alt={alt}
-        draggable={false}
         loading="eager"
         decoding="async"
         className={cn("block h-full w-auto max-w-none object-contain object-left", className)}
@@ -62,6 +117,7 @@ export function Logo({ size = "md", surface = false, className, alt = "WorkConne
 type LogoLinkProps = {
   to?: "/" | string;
   size?: LogoProps["size"];
+  theme?: BrandTheme;
   surface?: boolean;
   className?: string;
   logoClassName?: string;
@@ -70,13 +126,14 @@ type LogoLinkProps = {
 export function LogoLink({
   to = "/",
   size = "md",
+  theme = "auto",
   surface = false,
   className,
   logoClassName,
 }: LogoLinkProps) {
   return (
     <Link to={to} className={cn("inline-flex shrink-0 items-center", className)}>
-      <Logo size={size} surface={surface} className={logoClassName} />
+      <Logo size={size} theme={theme} surface={surface} className={logoClassName} />
     </Link>
   );
 }
@@ -87,7 +144,7 @@ type SidebarBrandLogoProps = {
   className?: string;
 };
 
-/** Wordmark expandido · iso cuadrado al colapsar el sidebar */
+/** Wordmark expandido · iso cuadrado al colapsar — sidebar siempre oscuro */
 export function SidebarBrandLogo({ to = "/", size = "lg", className }: SidebarBrandLogoProps) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
@@ -108,18 +165,37 @@ export function SidebarBrandLogo({ to = "/", size = "lg", className }: SidebarBr
             isoSizeMap[size],
           )}
         >
-          <img
-            src={ISO_LOGO_SRC}
+          <BrandImage
+            variant="iso"
+            theme="dark"
             alt="WorkConnect"
-            draggable={false}
             loading="eager"
             decoding="async"
             className="size-full object-contain"
           />
         </span>
       ) : (
-        <Logo size={size} />
+        <Logo size={size} theme="dark" />
       )}
     </Link>
+  );
+}
+
+type IsoLogoProps = {
+  theme?: BrandTheme;
+  className?: string;
+  alt?: string;
+};
+
+export function IsoLogo({ theme = "auto", className, alt = "WorkConnect" }: IsoLogoProps) {
+  return (
+    <BrandImage
+      variant="iso"
+      theme={theme}
+      alt={alt}
+      loading="eager"
+      decoding="async"
+      className={className}
+    />
   );
 }
