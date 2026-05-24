@@ -12,11 +12,13 @@ import {
   CheckCircle2,
   Briefcase,
   Star,
+  Eye,
 } from "lucide-react";
 import { fetchFreelancers, fetchJob, fetchJobs, queryKeys, type ExploreJobsFilters } from "@/lib/api";
 import { getStoredUser } from "@/lib/auth";
 import { ApiState } from "@/components/ApiState";
 import { ApplyJobSheet } from "@/components/ApplyJobSheet";
+import { JobDetailDialog } from "@/components/JobDetailDialog";
 import { JobMatchCoachDialog } from "@/components/JobMatchCoachDialog";
 import { LOW_MATCH_THRESHOLD } from "@/components/JobMatchCard";
 import { Button } from "@/components/ui/button";
@@ -51,6 +53,9 @@ function ExploreProjects() {
   const [sort, setSort] = useState<ExploreJobsFilters["sort"]>("match");
   const [applyJob, setApplyJob] = useState<Job | null>(null);
   const [coachJob, setCoachJob] = useState<Job | null>(null);
+  const [detailJob, setDetailJob] = useState<Job | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const autoOpenedJobRef = useRef<string | null>(null);
 
   const filters: ExploreJobsFilters = useMemo(
     () => ({ category, q: debouncedSearch, sort }),
@@ -90,6 +95,24 @@ function ExploreProjects() {
     }, 350);
     return () => window.clearTimeout(timer);
   }, [highlightJobId, isLoading, displayJobs.length]);
+
+  useEffect(() => {
+    if (!highlightJobId) {
+      autoOpenedJobRef.current = null;
+      return;
+    }
+    const job = jobs.find((j) => j.id === highlightJobId) ?? highlightJobQuery.data;
+    if (job && autoOpenedJobRef.current !== highlightJobId) {
+      autoOpenedJobRef.current = highlightJobId;
+      setDetailJob(job);
+      setDetailOpen(true);
+    }
+  }, [highlightJobId, highlightJobQuery.data, jobs]);
+
+  function openJobDetail(job: Job) {
+    setDetailJob(job);
+    setDetailOpen(true);
+  }
   const categories = useMemo(() => {
     const fromApi = data?.meta?.categories ?? [];
     return ["Todos", ...fromApi.filter((c) => c && c !== "Todos")];
@@ -190,6 +213,7 @@ function ExploreProjects() {
                 ref={job.id === highlightJobId ? highlightCardRef : undefined}
                 job={job}
                 highlighted={job.id === highlightJobId}
+                onViewDetail={() => openJobDetail(job)}
                 onApply={() => setApplyJob(job)}
                 onImproveMatch={() => setCoachJob(job)}
               />
@@ -197,6 +221,14 @@ function ExploreProjects() {
           </div>
         )}
       </ApiState>
+
+      <JobDetailDialog
+        job={detailJob}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onApply={(job) => setApplyJob(job)}
+        onImproveMatch={(job) => setCoachJob(job)}
+      />
 
       <ApplyJobSheet
         job={applyJob}
@@ -218,10 +250,11 @@ const JobCard = React.forwardRef<
   {
     job: Job;
     highlighted?: boolean;
+    onViewDetail: () => void;
     onApply: () => void;
     onImproveMatch: () => void;
   }
->(function JobCard({ job, highlighted, onApply, onImproveMatch }, ref) {
+>(function JobCard({ job, highlighted, onViewDetail, onApply, onImproveMatch }, ref) {
   const applied = job.alreadyApplied;
   const status = job.applicationStatus;
   const isLowMatch = job.match < LOW_MATCH_THRESHOLD;
@@ -248,7 +281,13 @@ const JobCard = React.forwardRef<
               <span className="chip chip-primary">Alta compatibilidad</span>
             )}
           </div>
-          <h3 className="font-display text-lg font-semibold leading-snug">{job.title}</h3>
+          <button
+            type="button"
+            onClick={onViewDetail}
+            className="text-left font-display text-lg font-semibold leading-snug hover:text-primary-glow"
+          >
+            {job.title}
+          </button>
           <span className="mt-1 inline-block text-xs text-muted-foreground">{job.category}</span>
         </div>
         {isLowMatch ? (
@@ -307,28 +346,40 @@ const JobCard = React.forwardRef<
         </span>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4 sm:mt-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="font-display text-lg font-bold sm:text-xl">{job.budget}</div>
-          <div className="text-xs text-muted-foreground">{job.remote ? "Remoto" : "Presencial"}</div>
-        </div>
-        {applied ? (
-          <div className="flex items-center gap-2 text-sm text-primary-glow">
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
-            <span className="text-pretty">Postulaste · {status}</span>
+      <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4 sm:mt-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="font-display text-lg font-bold sm:text-xl">{job.budget}</div>
+            <div className="text-xs text-muted-foreground">{job.remote ? "Remoto" : "Presencial"}</div>
           </div>
-        ) : (
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            {isLowMatch && (
-              <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={onImproveMatch}>
-                Mejorar match
+          {applied ? (
+            <div className="flex items-center gap-2 text-sm text-primary-glow">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <span className="text-pretty">Postulaste · {status}</span>
+            </div>
+          ) : (
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              {isLowMatch && (
+                <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={onImproveMatch}>
+                  Mejorar match
+                </Button>
+              )}
+              <Button size="sm" className="w-full sm:w-auto" onClick={onApply}>
+                Postular
               </Button>
-            )}
-            <Button size="sm" className="w-full sm:w-auto" onClick={onApply}>
-              Postular
-            </Button>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="w-full text-primary-glow sm:w-auto"
+          onClick={onViewDetail}
+        >
+          <Eye className="mr-1.5 h-4 w-4" />
+          Ver detalle del proyecto
+        </Button>
       </div>
     </article>
   );

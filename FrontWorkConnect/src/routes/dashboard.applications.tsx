@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ChevronRight, Eye } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { careerProjectTips, fetchApplications, queryKeys, type ProjectCoaching } from "@/lib/api";
 import type { Application } from "@/lib/types";
 import { ApiState } from "@/components/ApiState";
@@ -11,6 +11,9 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard/applications")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    job: typeof search.job === "string" && search.job.trim() !== "" ? search.job.trim() : undefined,
+  }),
   component: Applications,
 });
 
@@ -44,6 +47,9 @@ function CoachingTips({ coaching }: { coaching: ProjectCoaching }) {
 }
 
 function Applications() {
+  const { job: highlightJobId } = Route.useSearch();
+  const autoOpenedRef = useRef<string | null>(null);
+
   const [coachingByJob, setCoachingByJob] = useState<Record<string, ProjectCoaching>>({});
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [selected, setSelected] = useState<Application | null>(null);
@@ -80,6 +86,18 @@ function Applications() {
     setSelected(app);
     setDetailOpen(true);
   }
+
+  useEffect(() => {
+    if (!highlightJobId || applications.length === 0) {
+      if (!highlightJobId) autoOpenedRef.current = null;
+      return;
+    }
+    const app = applications.find((a) => a.jobId === highlightJobId);
+    if (app && autoOpenedRef.current !== highlightJobId) {
+      autoOpenedRef.current = highlightJobId;
+      openDetail(app);
+    }
+  }, [highlightJobId, applications]);
 
   function requestCoachingForSelected() {
     if (!selected?.jobId) return;

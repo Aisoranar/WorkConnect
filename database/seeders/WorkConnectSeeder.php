@@ -2,13 +2,16 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Concerns\SeedsDemoAccounts;
 use Illuminate\Database\Seeder;
 
 /**
- * Orquestador principal de datos demo WorkConnect.
+ * Orquestador principal — orden importa por dependencias entre modelos.
  */
 class WorkConnectSeeder extends Seeder
 {
+    use SeedsDemoAccounts;
+
     public function run(): void
     {
         $this->call([
@@ -19,5 +22,7 @@ class WorkConnectSeeder extends Seeder
             DemoRelationsSeeder::class,
             ExternalJobListingSeeder::class,
         ]);
+
+        $this->printSeedBanner();
     }
 }

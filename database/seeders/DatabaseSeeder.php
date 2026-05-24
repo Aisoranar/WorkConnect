@@ -10,7 +10,9 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
+     * Datos demo WorkConnect (usuarios, proyectos, postulaciones, carrera).
+     *
+     * @see WorkConnectSeeder
      */
     public function run(): void
     {

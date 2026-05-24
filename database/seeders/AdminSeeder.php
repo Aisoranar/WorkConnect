@@ -3,45 +3,75 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\WorkJob;
+use Database\Seeders\Concerns\SeedsDemoAccounts;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 /**
- * Super administrador con acceso total a la plataforma (rol: admin).
+ * Administradores y un proyecto piloto publicado por la plataforma (PYME demo).
  */
 class AdminSeeder extends Seeder
 {
-    public const DEFAULT_PASSWORD = 'password';
+    use SeedsDemoAccounts;
 
     public function run(): void
     {
-        User::query()->updateOrCreate(
+        $admin = User::query()->updateOrCreate(
             ['email' => 'admin@workconnect.test'],
             [
                 'name' => 'Admin WorkConnect',
                 'username' => 'superadmin',
-                'password' => Hash::make(self::DEFAULT_PASSWORD),
+                'password' => $this->demoPassword(),
                 'role' => 'admin',
                 'city' => 'Lima, Perú',
-                'bio' => 'Cuenta de administración de la plataforma. Acceso a gestión global, usuarios y proyectos.',
+                'bio' => 'Cuenta de administración. Gestión global, moderación y proyectos piloto para talento joven.',
                 'rating' => 5.0,
                 'verified' => true,
-                'experience' => 'Superadmin · Operaciones WorkConnect',
+                'experience' => 'Operaciones · Onboarding PYMEs · Programa piloto LATAM',
             ],
         );
 
-        // Admin secundario (soporte)
         User::query()->updateOrCreate(
             ['email' => 'soporte@workconnect.test'],
             [
                 'name' => 'Equipo Soporte',
                 'username' => 'soporte-wc',
-                'password' => Hash::make(self::DEFAULT_PASSWORD),
+                'password' => $this->demoPassword(),
                 'role' => 'admin',
                 'city' => 'Remoto',
-                'bio' => 'Moderación y soporte a usuarios.',
+                'bio' => 'Moderación, reportes y ayuda a freelancers y clientes.',
                 'rating' => 5.0,
                 'verified' => true,
+            ],
+        );
+
+        WorkJob::query()->updateOrCreate(
+            [
+                'user_id' => $admin->id,
+                'title' => 'Landing page para Alimentos',
+            ],
+            [
+                'company' => 'PYME Piloto · WorkConnect',
+                'budget' => '$800',
+                'location' => 'Remoto',
+                'remote' => true,
+                'status' => 'open',
+                'category' => 'Desarrollo',
+                'description' => <<<'DESC'
+Contexto del negocio: «Alimentos del Barrio» vende víveres y menús del día en Lima. Necesitan presencia web sencilla.
+
+Necesidad del cliente:
+- Que la gente los encuentre en Google y los contacte por WhatsApp.
+- Mostrar productos destacados, horario y zona de reparto.
+
+Entregables esperados:
+- Sitio responsive (móvil primero) o landing de una sección.
+- Código en repositorio Git con README de despliegue.
+- Botón/flujo claro a WhatsApp Business.
+
+Ideal para talento joven con React o stack similar. Proyecto acotado, mentoría disponible vía WorkConnect.
+DESC,
+                'skills' => ['React', 'Laravel', 'Tailwind CSS', 'JavaScript'],
             ],
         );
     }

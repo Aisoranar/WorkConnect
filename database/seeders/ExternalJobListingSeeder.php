@@ -5,6 +5,9 @@ namespace Database\Seeders;
 use App\Models\ExternalJobListing;
 use Illuminate\Database\Seeder;
 
+/**
+ * Ofertas externas para el módulo Carrera (scraping semanal simulado).
+ */
 class ExternalJobListingSeeder extends Seeder
 {
     public function run(): void
@@ -16,9 +19,9 @@ class ExternalJobListingSeeder extends Seeder
                 'title' => 'Desarrollador Frontend Junior',
                 'company' => 'TechStart LATAM',
                 'location' => 'Remoto · Colombia',
-                'apply_url' => 'https://www.linkedin.com/jobs/search/?keywords=frontend%20junior',
-                'skills' => ['React', 'JavaScript', 'CSS', 'Git'],
-                'summary' => 'Construye interfaces para producto SaaS B2B. Equipo remoto, mentoría incluida.',
+                'apply_url' => 'https://www.linkedin.com/jobs/search/?keywords=frontend%20junior%20remoto',
+                'skills' => ['React', 'JavaScript', 'Tailwind CSS', 'Git'],
+                'summary' => 'Interfaces para SaaS B2B. Mentoría y código en inglés/español.',
             ],
             [
                 'title' => 'Practicante Desarrollo Web',
@@ -26,31 +29,39 @@ class ExternalJobListingSeeder extends Seeder
                 'location' => 'Barranquilla · Híbrido',
                 'apply_url' => 'https://www.computrabajo.com.co/trabajo-de-desarrollador-junior',
                 'skills' => ['PHP', 'Laravel', 'HTML', 'MySQL'],
-                'summary' => 'Apoyo en landing pages y mantenimiento WordPress para clientes PYME.',
+                'summary' => 'Landings y mantenimiento para PYMEs de la costa Caribe.',
             ],
             [
                 'title' => 'Diseñador UI Junior',
                 'company' => 'Studio Creativo',
-                'location' => 'Remoto',
+                'location' => 'Remoto · Perú',
                 'apply_url' => 'https://www.behance.net/joblist',
-                'skills' => ['Figma', 'UI', 'Design systems'],
-                'summary' => 'Diseño de pantallas mobile-first para startups en etapa temprana.',
+                'skills' => ['Figma', 'UI Design', 'Design systems'],
+                'summary' => 'Pantallas mobile-first para startups en pre-seed.',
             ],
             [
-                'title' => 'Soporte N1 / Monitoreo Linux',
-                'company' => 'InfraCloud',
-                'location' => 'Medellín',
-                'apply_url' => 'https://www.linkedin.com/jobs/search/?keywords=linux%20junior',
-                'skills' => ['Linux', 'monitoreo', 'tickets', 'bash'],
-                'summary' => 'Gestión de alertas, documentación de incidentes y escalamiento L2.',
+                'title' => 'Analista QA Manual',
+                'company' => 'Product Labs',
+                'location' => 'Lima · Híbrido',
+                'apply_url' => 'https://www.linkedin.com/jobs/search/?keywords=qa%20junior%20lima',
+                'skills' => ['JavaScript', 'React', 'Git'],
+                'summary' => 'Pruebas funcionales en apps web. Documentación de bugs en Notion.',
             ],
             [
-                'title' => 'Marketing Digital Junior',
+                'title' => 'Community Manager Junior',
                 'company' => 'Growth PYME',
                 'location' => 'Remoto · LATAM',
-                'apply_url' => 'https://www.google.com/search?q=empleo+marketing+digital+junior',
-                'skills' => ['SEO', 'redes sociales', 'copy', 'métricas'],
-                'summary' => 'Campañas para ecommerce locales. Reportes semanales y A/B tests básicos.',
+                'apply_url' => 'https://www.google.com/search?q=community+manager+junior+remoto',
+                'skills' => ['Copywriting', 'Meta Ads', 'SEO'],
+                'summary' => 'Redes para ecommerce locales. Reportes semanales y calendario editorial.',
+            ],
+            [
+                'title' => 'Editor de video redes sociales',
+                'company' => 'Contenido Co.',
+                'location' => 'Remoto',
+                'apply_url' => 'https://www.linkedin.com/jobs/search/?keywords=editor%20video%20reels',
+                'skills' => ['Premiere', 'After Effects'],
+                'summary' => 'Reels verticales para marcas de consumo. 15–30 seg, subtítulos incluidos.',
             ],
         ];
 

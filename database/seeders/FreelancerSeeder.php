@@ -3,49 +3,61 @@
 namespace Database\Seeders;
 
 use App\Models\PortfolioProject;
-use App\Models\Skill;
 use App\Models\User;
+use Database\Seeders\Concerns\SeedsDemoAccounts;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 /**
- * Estudiantes y profesionales que postulan a proyectos (rol: freelancer).
+ * Talentos demo: perfiles variados para probar match, coach IA, evaluaciones y postulaciones.
  */
 class FreelancerSeeder extends Seeder
 {
-    public const DEFAULT_PASSWORD = 'password';
+    use SeedsDemoAccounts;
 
     public function run(): void
     {
         $freelancers = [
             [
+                'email' => 'demo@workconnect.test',
+                'name' => 'Usuario Demo',
+                'username' => 'usuario-demo',
+                'city' => 'Lima, Perú',
+                'bio' => 'Cuenta vacía a propósito: prueba el coach de match, recomendaciones de skills y el flujo de certificación con IA.',
+                'rating' => 0,
+                'verified' => false,
+                'experience' => 'Perfil nuevo · Completa skills y postula',
+                'skills' => [],
+                'portfolio' => [],
+            ],
+            [
                 'email' => 'maria@workconnect.test',
                 'name' => 'María Álvarez',
                 'username' => 'maria-alvarez',
                 'city' => 'Lima, Perú',
-                'bio' => 'Diseñadora UI y frontend. Especialista en SaaS y productos digitales con foco en conversión.',
+                'bio' => 'Diseñadora UI y frontend. Especialista en SaaS, fintech y landings de conversión con Figma + React.',
                 'rating' => 4.9,
-                'experience' => 'Diseñadora UI · Frontend Developer · 3 años en startups.',
+                'experience' => 'UI/UX · Frontend · 3 años en startups peruanas y remotas.',
                 'github' => 'https://github.com/maria-alvarez',
                 'linkedin' => 'https://linkedin.com/in/maria-alvarez',
                 'skills' => [
-                    'React' => 'avanzado',
                     'Figma' => 'avanzado',
-                    'Tailwind CSS' => 'avanzado',
                     'UI Design' => 'avanzado',
+                    'React' => 'avanzado',
+                    'Tailwind CSS' => 'avanzado',
                     'TypeScript' => 'intermedio',
-                    'Laravel' => 'intermedio',
+                    'Framer Motion' => 'intermedio',
+                    'Design systems' => 'intermedio',
                 ],
                 'portfolio' => [
                     [
                         'title' => 'Landing fintech Nimbus',
-                        'description' => 'Landing SaaS con glassmorphism y alta conversión.',
-                        'technologies' => ['Figma', 'React'],
+                        'description' => 'Landing SaaS glassmorphism, +22% conversión en registro.',
+                        'technologies' => ['Figma', 'React', 'Tailwind CSS'],
                     ],
                     [
-                        'title' => 'Dashboard Flux Labs',
-                        'description' => 'Panel analítico con dark mode.',
-                        'technologies' => ['React', 'Tailwind CSS'],
+                        'title' => 'Design system Flux',
+                        'description' => 'Biblioteca de componentes y tokens para dashboard analytics.',
+                        'technologies' => ['Figma', 'UI Design'],
                     ],
                 ],
             ],
@@ -54,46 +66,26 @@ class FreelancerSeeder extends Seeder
                 'name' => 'Alex Romero',
                 'username' => 'alex-romero',
                 'city' => 'Lima, Perú',
-                'bio' => 'Construyo productos con React, Laravel y modelos de lenguaje. Apasionado por la IA aplicada.',
+                'bio' => 'Fullstack React + Laravel. Integro IA en productos (propuestas, matching, automatización).',
                 'rating' => 4.8,
-                'experience' => 'Fullstack Developer · IA & Producto',
+                'experience' => 'Fullstack Developer · APIs REST · OpenAI',
                 'github' => 'https://github.com/alexromero',
                 'linkedin' => 'https://linkedin.com/in/alexromero',
                 'skills' => [
                     'React' => 'avanzado',
                     'Laravel' => 'avanzado',
                     'TypeScript' => 'avanzado',
+                    'Tailwind CSS' => 'avanzado',
                     'OpenAI API' => 'avanzado',
+                    'MySQL' => 'avanzado',
                     'PostgreSQL' => 'intermedio',
-                    'MySQL' => 'intermedio',
+                    'Framer Motion' => 'intermedio',
                 ],
                 'portfolio' => [
                     [
                         'title' => 'API WorkConnect MVP',
-                        'description' => 'Backend Laravel + matching IA.',
+                        'description' => 'Backend Laravel 13, Sanctum, matching por skills y asesor IA.',
                         'technologies' => ['Laravel', 'OpenAI API'],
-                    ],
-                ],
-            ],
-            [
-                'email' => 'sofia@workconnect.test',
-                'name' => 'Sofía Mendoza',
-                'username' => 'sofia-mendoza',
-                'city' => 'Arequipa, Perú',
-                'bio' => 'Estudiante de diseño multimedia. Reels, branding y piezas para redes sociales.',
-                'rating' => 4.2,
-                'experience' => 'Estudiante · Editora de video & diseño',
-                'skills' => [
-                    'Premiere' => 'intermedio',
-                    'Figma' => 'intermedio',
-                    'Illustrator' => 'basico',
-                    'Copywriting' => 'intermedio',
-                ],
-                'portfolio' => [
-                    [
-                        'title' => 'Reels marca local',
-                        'description' => 'Serie de 8 reels para cafetería.',
-                        'technologies' => ['Premiere'],
                     ],
                 ],
             ],
@@ -102,16 +94,46 @@ class FreelancerSeeder extends Seeder
                 'name' => 'Carlos Vega',
                 'username' => 'carlos-vega',
                 'city' => 'Trujillo, Perú',
-                'bio' => 'Desarrollador junior enfocado en React y APIs. Busco mis primeros proyectos pagados.',
+                'bio' => 'Estudiante de ingeniería. Busco primeros proyectos pagados en front y APIs.',
                 'rating' => 3.9,
-                'experience' => 'Estudiante de ingeniería · Desarrollo web',
+                'experience' => 'Estudiante · Prácticas universitarias en web',
                 'skills' => [
                     'React' => 'intermedio',
                     'Laravel' => 'intermedio',
                     'Tailwind CSS' => 'intermedio',
                     'MySQL' => 'intermedio',
+                    'JavaScript' => 'intermedio',
                 ],
-                'portfolio' => [],
+                'portfolio' => [
+                    [
+                        'title' => 'CRUD académico inventario',
+                        'description' => 'App Laravel + React para curso de ingeniería.',
+                        'technologies' => ['Laravel', 'React'],
+                    ],
+                ],
+            ],
+            [
+                'email' => 'sofia@workconnect.test',
+                'name' => 'Sofía Mendoza',
+                'username' => 'sofia-mendoza',
+                'city' => 'Arequipa, Perú',
+                'bio' => 'Editora y diseñadora multimedia. Reels, branding y piezas para Instagram/TikTok.',
+                'rating' => 4.2,
+                'experience' => 'Estudiante diseño · Freelance video & social',
+                'skills' => [
+                    'Premiere' => 'avanzado',
+                    'After Effects' => 'intermedio',
+                    'Figma' => 'intermedio',
+                    'Copywriting' => 'intermedio',
+                    'Illustrator' => 'basico',
+                ],
+                'portfolio' => [
+                    [
+                        'title' => 'Campaña reels cafetería',
+                        'description' => '8 reels + 4 stories; +40% engagement en 30 días.',
+                        'technologies' => ['Premiere', 'After Effects'],
+                    ],
+                ],
             ],
         ];
 
@@ -124,19 +146,13 @@ class FreelancerSeeder extends Seeder
                 ['email' => $data['email']],
                 [
                     ...$data,
-                    'password' => Hash::make(self::DEFAULT_PASSWORD),
+                    'password' => $this->demoPassword(),
                     'role' => 'freelancer',
-                    'verified' => true,
+                    'verified' => (bool) ($data['verified'] ?? true),
                 ],
             );
 
-            $sync = collect($skills)->mapWithKeys(function ($level, $name) {
-                $skill = Skill::query()->where('name', $name)->first();
-
-                return $skill ? [$skill->id => ['level' => $level]] : [];
-            })->all();
-
-            $user->skills()->sync($sync);
+            $this->syncUserSkills($user, $skills);
 
             foreach ($portfolio as $project) {
                 PortfolioProject::query()->updateOrCreate(

@@ -4,15 +4,15 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use App\Models\WorkJob;
+use Database\Seeders\Concerns\SeedsDemoAccounts;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 /**
- * Empresas y emprendedores que publican proyectos (rol: client).
+ * Clientes (empresas / PYMEs) y proyectos abiertos realistas para explorar y postular.
  */
 class ClientSeeder extends Seeder
 {
-    public const DEFAULT_PASSWORD = 'password';
+    use SeedsDemoAccounts;
 
     public function run(): void
     {
@@ -22,7 +22,7 @@ class ClientSeeder extends Seeder
                 'name' => 'Nimbus Studio',
                 'username' => 'nimbus-studio',
                 'city' => 'Lima, Perú',
-                'bio' => 'Agencia digital especializada en productos SaaS y fintech.',
+                'bio' => 'Agencia boutique de producto digital. SaaS, fintech y landings de alto impacto.',
                 'company' => 'Nimbus Studio',
                 'jobs' => [
                     [
@@ -31,8 +31,17 @@ class ClientSeeder extends Seeder
                         'location' => 'Lima, PE',
                         'remote' => true,
                         'category' => 'Diseño',
-                        'description' => 'Buscamos diseñador con Figma para landing moderna estilo glassmorphism.',
-                        'skills' => ['Figma', 'UI', 'Glassmorphism'],
+                        'description' => <<<'DESC'
+Buscamos diseñador/a con Figma para una landing B2B estilo glassmorphism.
+
+Entregables:
+- Desktop + mobile (frame 1440 y 390).
+- Componentes reutilizables (botón, input, card).
+- Handoff con medidas y export SVG de iconos.
+
+Duración estimada: 1–2 semanas. 2 rondas de revisión incluidas.
+DESC,
+                        'skills' => ['Figma', 'UI Design', 'Design systems'],
                     ],
                     [
                         'title' => 'Landing page para SaaS de finanzas',
@@ -40,8 +49,15 @@ class ClientSeeder extends Seeder
                         'location' => 'Remoto',
                         'remote' => true,
                         'category' => 'Desarrollo',
-                        'description' => 'Landing de conversión para producto fintech. React, animaciones y responsive.',
-                        'skills' => ['React', 'Tailwind CSS', 'Framer Motion'],
+                        'description' => <<<'DESC'
+Landing de conversión para producto fintech en etapa seed.
+
+Stack deseado: React, Tailwind, animaciones suaves (Framer Motion o CSS).
+Secciones: hero, features, pricing, FAQ, CTA demo.
+
+Publicamos diseño en Figma; necesitamos implementación pixel-perfect y responsive.
+DESC,
+                        'skills' => ['React', 'Tailwind CSS', 'Framer Motion', 'TypeScript'],
                     ],
                 ],
             ],
@@ -50,7 +66,7 @@ class ClientSeeder extends Seeder
                 'name' => 'Flux Labs',
                 'username' => 'flux-labs',
                 'city' => 'Remoto',
-                'bio' => 'Startup de analytics que necesita talento frontend y producto.',
+                'bio' => 'Startup de analytics B2B. Dashboards en tiempo real para equipos de ventas.',
                 'company' => 'Flux Labs',
                 'jobs' => [
                     [
@@ -59,7 +75,16 @@ class ClientSeeder extends Seeder
                         'location' => 'Remoto',
                         'remote' => true,
                         'category' => 'Desarrollo',
-                        'description' => 'Dashboard interactivo con animaciones suaves y dark mode.',
+                        'description' => <<<'DESC'
+Dashboard interactivo: gráficos, tablas filtrables y dark mode.
+
+Requisitos:
+- React 18+ y TypeScript.
+- Tailwind para estilos; preferible experiencia con charts (Recharts o similar).
+- Buenas prácticas de accesibilidad y estados de carga.
+
+Plazo: 2–3 semanas. Sync semanal por videollamada.
+DESC,
                         'skills' => ['React', 'Tailwind CSS', 'TypeScript'],
                     ],
                 ],
@@ -69,7 +94,7 @@ class ClientSeeder extends Seeder
                 'name' => 'Fintech Co.',
                 'username' => 'fintech-co',
                 'city' => 'Ciudad de México, MX',
-                'bio' => 'Empresa fintech buscando desarrollo de producto digital.',
+                'bio' => 'Fintech regional. APIs, cumplimiento y producto digital.',
                 'company' => 'Fintech Co.',
                 'jobs' => [
                     [
@@ -78,8 +103,15 @@ class ClientSeeder extends Seeder
                         'location' => 'CDMX, MX',
                         'remote' => false,
                         'category' => 'Desarrollo',
-                        'description' => 'API de e-commerce con Laravel, Sanctum y documentación OpenAPI.',
-                        'skills' => ['Laravel', 'MySQL', 'PostgreSQL'],
+                        'description' => <<<'DESC'
+API de e-commerce B2B: catálogo, carrito, órdenes y roles.
+
+Stack: Laravel 11+, Sanctum, MySQL o PostgreSQL, documentación OpenAPI.
+Tests básicos en endpoints críticos.
+
+Modalidad híbrida: 1 día/semana en oficina CDMX opcional.
+DESC,
+                        'skills' => ['Laravel', 'MySQL', 'PostgreSQL', 'PHP'],
                     ],
                 ],
             ],
@@ -88,26 +120,17 @@ class ClientSeeder extends Seeder
                 'name' => 'Brava Co.',
                 'username' => 'brava-co',
                 'city' => 'Bogotá, CO',
-                'bio' => 'Marca de lifestyle que contrata creativos para contenido digital.',
+                'bio' => 'Marca lifestyle. Contenido para Instagram y campañas locales.',
                 'company' => 'Brava Co.',
                 'jobs' => [
                     [
                         'title' => 'Editor de video para reels de marca',
-                        'budget' => '$300 USD',
+                        'budget' => '$300',
                         'location' => 'Bogotá, CO',
                         'remote' => true,
                         'category' => 'Video',
-                        'description' => '10 reels mensuales para Instagram, estilo cinematográfico.',
+                        'description' => '10 reels/mes estilo cinematográfico. Material bruto en Drive. Música libre de derechos.',
                         'skills' => ['Premiere', 'After Effects'],
-                    ],
-                    [
-                        'title' => 'Web sencilla con WhatsApp para distribución local',
-                        'budget' => '800.000 COP',
-                        'location' => 'Barranquilla, CO',
-                        'remote' => true,
-                        'category' => 'Desarrollo',
-                        'description' => 'PYME de alimentos necesita página clara: productos, zona de entrega y botón a WhatsApp. Sin e-commerce complejo.',
-                        'skills' => ['HTML', 'CSS', 'JavaScript'],
                     ],
                 ],
             ],
@@ -116,7 +139,7 @@ class ClientSeeder extends Seeder
                 'name' => 'Distribuidora La Canasta',
                 'username' => 'la-canasta',
                 'city' => 'Barranquilla, CO',
-                'bio' => 'Distribución de víveres a barrios. Buscamos apoyo digital con presupuesto acotado.',
+                'bio' => 'Distribución de víveres a barrios. Presupuesto acotado, proyectos claros para talento junior.',
                 'company' => 'La Canasta',
                 'jobs' => [
                     [
@@ -125,17 +148,22 @@ class ClientSeeder extends Seeder
                         'location' => 'Barranquilla, CO',
                         'remote' => true,
                         'category' => 'Desarrollo',
-                        'description' => 'Necesitamos que los clientes vean qué vendemos y nos escriban por WhatsApp. Ideal para estudiante o junior.',
-                        'skills' => ['React', 'Tailwind CSS'],
+                        'description' => <<<'DESC'
+Página sencilla: lista de productos, precios referenciales y botón a WhatsApp.
+Sin pasarela de pago. Hosting compartido o Vercel.
+
+Ideal estudiante o junior con React o HTML/CSS.
+DESC,
+                        'skills' => ['React', 'Tailwind CSS', 'JavaScript'],
                     ],
                     [
-                        'title' => 'Logo y tarjetas para negocio de barrio',
+                        'title' => 'Logo y piezas para redes (PYME barrio)',
                         'budget' => '350.000 COP',
                         'location' => 'Barranquilla, CO',
                         'remote' => true,
                         'category' => 'Diseño',
-                        'description' => 'Marca sencilla para bolsas y redes. Entregables: logo, paleta y 3 piezas para Instagram.',
-                        'skills' => ['Figma', 'UI Design'],
+                        'description' => 'Logo, paleta de 3 colores y 3 plantillas Instagram (1080×1080). Archivos editables en Figma.',
+                        'skills' => ['Figma', 'UI Design', 'Illustrator'],
                     ],
                 ],
             ],
@@ -144,7 +172,7 @@ class ClientSeeder extends Seeder
                 'name' => 'Orbit Agency',
                 'username' => 'orbit-agency',
                 'city' => 'Remoto',
-                'bio' => 'Agencia de marketing digital para clientes B2B.',
+                'bio' => 'Agencia B2B: contenido, paid media y community para fintechs.',
                 'company' => 'Orbit Agency',
                 'jobs' => [
                     [
@@ -153,8 +181,8 @@ class ClientSeeder extends Seeder
                         'location' => 'Remoto',
                         'remote' => true,
                         'category' => 'Marketing',
-                        'description' => 'Manejo de redes para cliente fintech, inglés avanzado.',
-                        'skills' => ['Copywriting', 'Meta Ads'],
+                        'description' => 'LinkedIn + X en inglés y español. 12 posts/mes, reporte de métricas y respuesta a comentarios.',
+                        'skills' => ['Copywriting', 'Meta Ads', 'SEO'],
                     ],
                 ],
             ],
@@ -169,7 +197,7 @@ class ClientSeeder extends Seeder
                 ['email' => $data['email']],
                 [
                     ...$data,
-                    'password' => Hash::make(self::DEFAULT_PASSWORD),
+                    'password' => $this->demoPassword(),
                     'role' => 'client',
                     'verified' => true,
                     'rating' => 4.6,
