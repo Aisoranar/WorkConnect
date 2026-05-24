@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   MapPin, Star, Github, Linkedin, Sparkles, PlusCircle,
@@ -15,15 +15,32 @@ import { ProfileSkillAdvisor } from "@/components/ProfileSkillAdvisor";
 import type { UserProfile } from "@/lib/types";
 
 export const Route = createFileRoute("/dashboard/profile")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    edit: typeof search.edit === "string" ? search.edit : undefined,
+    skill: typeof search.skill === "string" ? search.skill : undefined,
+  }),
   component: ProfilePage,
 });
 
 function ProfilePage() {
+  const { edit, skill: skillFromUrl } = Route.useSearch();
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editTab, setEditTab] = useState("perfil");
   const [pendingSkill, setPendingSkill] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (edit === "skills") {
+      setEditTab("habilidades");
+      setEditOpen(true);
+    }
+    if (skillFromUrl) {
+      setPendingSkill(skillFromUrl);
+      setEditTab("habilidades");
+      setEditOpen(true);
+    }
+  }, [edit, skillFromUrl]);
 
   const { data: profile, isLoading, isError, error, refetch } = useQuery({
     queryKey: queryKeys.me,

@@ -14,6 +14,9 @@ import type {
   UserProfile,
   SkillRecommendationsResult,
   LearnSkillResult,
+  JobMatchCoach,
+  SkillQuizStart,
+  SkillQuizResult,
 } from "./types";
 import { authHeaders, clearSession, isAuthenticated, touchSessionActivity } from "./auth";
 import { getApiBaseUrl } from "./env";
@@ -641,4 +644,26 @@ export function fetchSkillRecommendations(): Promise<SkillRecommendationsResult>
 
 export function learnSkillIntro(skill: string): Promise<LearnSkillResult> {
   return apiPost<ApiItemResponse<LearnSkillResult>>("/profile/learn-skill", { skill }).then((r) => r.data);
+}
+
+export function fetchJobMatchCoach(jobId: string | number): Promise<JobMatchCoach> {
+  return apiPost<ApiItemResponse<JobMatchCoach>>("/profile/job-match-coach", {
+    job_id: Number(jobId),
+  }).then((r) => r.data);
+}
+
+export function startSkillQuiz(skill: string): Promise<SkillQuizStart> {
+  return apiPost<ApiItemResponse<SkillQuizStart>>("/profile/skill-quiz/start", { skill }).then(
+    (r) => r.data,
+  );
+}
+
+export function submitSkillQuiz(
+  quizId: string,
+  answers: { question_id: string; option_index: number }[],
+): Promise<SkillQuizResult> {
+  return apiPost<ApiItemResponse<SkillQuizResult>>("/profile/skill-quiz/submit", {
+    quiz_id: quizId,
+    answers,
+  }).then((r) => r.data);
 }

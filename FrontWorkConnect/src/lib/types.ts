@@ -171,6 +171,65 @@ export type SkillRecommendationsResult = {
   source: string;
 };
 
+export type JobMatchCoachMissingSkill = {
+  skill: string;
+  display_name: string;
+  why_learn: string;
+  priority: "alta" | "media" | "baja";
+};
+
+export type JobMatchCoach = {
+  job_id: number;
+  job_title: string;
+  company: string;
+  current_match: number;
+  alert_level: "low" | "medium" | "ok";
+  alert_message: string;
+  summary: string;
+  matched_skills: string[];
+  missing_skills: JobMatchCoachMissingSkill[];
+  profile_tips: string[];
+  profile_score: number;
+  estimated_match_after: number;
+  ready_to_apply: boolean;
+  apply_advice: string;
+  source: string;
+};
+
+export type SkillQuizQuestion = {
+  id: string;
+  question: string;
+  options: string[];
+};
+
+export type SkillQuizStart = {
+  quiz_id: string;
+  skill: string;
+  passing_score: number;
+  questions: SkillQuizQuestion[];
+  source?: string;
+};
+
+export type SkillQuizReviewItem = {
+  question: string;
+  your_answer: string;
+  correct_answer: string;
+  explanation: string;
+};
+
+export type SkillQuizResult = {
+  passed: boolean;
+  score: number;
+  correct_count: number;
+  total: number;
+  passing_score: number;
+  skill: string;
+  message: string;
+  review: SkillQuizReviewItem[];
+  can_add_to_profile: boolean;
+  study_tip: string | null;
+};
+
 export type LearnSkillResult = {
   skill: string;
   overview: string;

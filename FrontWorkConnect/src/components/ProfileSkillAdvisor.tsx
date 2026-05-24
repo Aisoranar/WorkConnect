@@ -5,7 +5,6 @@ import {
   TrendingUp,
   Loader2,
   BookOpen,
-  PlusCircle,
   RefreshCw,
   MousePointerClick,
 } from "lucide-react";
@@ -17,13 +16,7 @@ import {
 import type { LearnSkillResult, SkillRecommendation } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { SkillLearnDialog } from "@/components/SkillLearnDialog";
 import { toast } from "sonner";
 
 type Props = {
@@ -94,14 +87,6 @@ export function ProfileSkillAdvisor({
     toast.success(`«${name}» añadida. Pulsa «Guardar habilidades» para confirmar.`);
   }
 
-  function handleAddFromLearn() {
-    if (learnData?.skill && onAddSkill) {
-      onAddSkill(learnData.skill);
-      setLearnOpen(false);
-      toast.success(`«${learnData.skill}» añadida. Guarda tus habilidades cuando termines.`);
-    }
-  }
-
   const wrapperClass = inline
     ? "rounded-xl border border-primary/25 bg-primary/5 p-4"
     : "card-gradient rounded-2xl border border-border p-6 shadow-card";
@@ -119,7 +104,7 @@ export function ProfileSkillAdvisor({
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
               {inline
-                ? "La IA analizó los proyectos abiertos. Dale clic para aprender lo básico o agrégalas a tu perfil."
+                ? "Estudia con IA, aprueba la evaluación y entonces podrás añadir la skill a tu perfil."
                 : "Según proyectos abiertos y tu perfil actual."}
             </p>
           </div>
@@ -201,7 +186,7 @@ export function ProfileSkillAdvisor({
                       <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground line-clamp-2">
                         {rec.why_learn}
                       </p>
-                      <div className="mt-2 flex flex-wrap gap-2">
+                      <div className="mt-2">
                         <Button
                           size="sm"
                           className="h-8 bg-gradient-primary text-xs shadow-glow"
@@ -213,19 +198,8 @@ export function ProfileSkillAdvisor({
                           ) : (
                             <MousePointerClick className="mr-1.5 h-3.5 w-3.5" />
                           )}
-                          Dale clic para aprender
+                          Estudiar y hacer evaluación
                         </Button>
-                        {onAddSkill && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 text-xs"
-                            onClick={() => handleAddSkill(label)}
-                          >
-                            <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
-                            Agregar
-                          </Button>
-                        )}
                       </div>
                     </li>
                   );
@@ -236,70 +210,21 @@ export function ProfileSkillAdvisor({
         )}
       </section>
 
-      <Dialog open={learnOpen} onOpenChange={setLearnOpen}>
-        <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary-glow" />
-              Aprende: {learnData?.skill ?? learningSkill ?? "habilidad"}
-            </DialogTitle>
-            <DialogDescription>
-              Mini guía con IA — conceptos básicos para empezar hoy
-            </DialogDescription>
-          </DialogHeader>
-
-          {learnMutation.isPending && !learnData && (
-            <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Preparando tu lección…
-            </div>
-          )}
-
-          {learnData && (
-            <div className="space-y-4 text-sm">
-              <p className="leading-relaxed text-muted-foreground">{learnData.overview}</p>
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-                <p className="text-xs font-medium text-primary-glow">Por qué para ti</p>
-                <p className="mt-1 text-muted-foreground">{learnData.why_for_you}</p>
-              </div>
-
-              <div>
-                <h4 className="font-medium">Conceptos básicos</h4>
-                <ul className="mt-2 space-y-2">
-                  {learnData.basics.map((b) => (
-                    <li key={b.concept} className="rounded-lg border border-border p-3">
-                      <span className="font-medium">{b.concept}</span>
-                      <p className="mt-1 text-xs text-muted-foreground">{b.explanation}</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-medium">Primeros pasos</h4>
-                <ol className="mt-2 list-decimal space-y-1 pl-4 text-muted-foreground">
-                  {learnData.first_steps.map((step, i) => (
-                    <li key={i}>{step}</li>
-                  ))}
-                </ol>
-              </div>
-
-              <p className="text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">Práctica: </span>
-                {learnData.practice_idea}
-              </p>
-              <p className="text-xs italic text-muted-foreground">{learnData.add_to_profile_tip}</p>
-
-              {onAddSkill && (
-                <Button className="w-full bg-gradient-primary" onClick={handleAddFromLearn}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Agregar «{learnData.skill}» y seguir editando
-                </Button>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <SkillLearnDialog
+        open={learnOpen}
+        onOpenChange={setLearnOpen}
+        skillLabel={learningSkill}
+        intro={learnData}
+        introLoading={learnMutation.isPending}
+        onAddSkillPassed={
+          onAddSkill
+            ? (skill) => {
+                onAddSkill(skill);
+                toast.success(`«${skill}» certificada. Pulsa «Guardar habilidades» para confirmar.`);
+              }
+            : undefined
+        }
+      />
     </>
   );
 }

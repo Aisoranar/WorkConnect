@@ -11,12 +11,13 @@ import {
   Send,
   Users,
   Clock,
-  CheckCircle2,
 } from "lucide-react";
 import { useState } from "react";
 import { fetchJobs, fetchMe, fetchMyJobs, fetchStats, queryKeys } from "@/lib/api";
 import { ApiState } from "@/components/ApiState";
 import { ApplyJobSheet } from "@/components/ApplyJobSheet";
+import { JobMatchCard } from "@/components/JobMatchCard";
+import { JobMatchCoachDialog } from "@/components/JobMatchCoachDialog";
 import { Button } from "@/components/ui/button";
 import type { Job, Stats } from "@/lib/types";
 
@@ -44,6 +45,7 @@ function FreelancerDashboard({
   isLoadingMe: boolean;
 }) {
   const [applyJob, setApplyJob] = useState<Job | null>(null);
+  const [coachJob, setCoachJob] = useState<Job | null>(null);
 
   const jobsQuery = useQuery({
     queryKey: [...queryKeys.jobs, { sort: "match" }] as const,
@@ -144,7 +146,12 @@ function FreelancerDashboard({
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {topMatches.map((job) => (
-                    <JobMatchCard key={job.id} job={job} onApply={() => setApplyJob(job)} />
+                    <JobMatchCard
+                      key={job.id}
+                      job={job}
+                      onApply={() => setApplyJob(job)}
+                      onImproveMatch={() => setCoachJob(job)}
+                    />
                   ))}
                 </div>
               )}
@@ -157,6 +164,12 @@ function FreelancerDashboard({
         job={applyJob}
         open={Boolean(applyJob)}
         onOpenChange={(open) => !open && setApplyJob(null)}
+      />
+
+      <JobMatchCoachDialog
+        job={coachJob}
+        open={Boolean(coachJob)}
+        onOpenChange={(open) => !open && setCoachJob(null)}
       />
     </div>
   );
@@ -348,55 +361,6 @@ function HeroCard({
         </div>
       </div>
     </div>
-  );
-}
-
-function JobMatchCard({ job, onApply }: { job: Job; onApply: () => void }) {
-  return (
-    <article className="card-list group flex flex-col p-4 sm:p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <span className="rounded-full bg-surface px-2.5 py-1 text-xs text-muted-foreground">
-          {job.category}
-        </span>
-        <div className="flex items-center gap-1 rounded-full bg-trust/15 px-2.5 py-1 text-xs font-semibold text-trust-glow">
-          <Sparkles className="h-3 w-3" />
-          {job.match}%
-        </div>
-      </div>
-      <h3 className="font-display text-lg font-semibold leading-snug">{job.title}</h3>
-      <p className="mt-1 text-sm text-muted-foreground">{job.company}</p>
-      <div className="mt-4 flex flex-wrap gap-1.5">
-        {job.skills.slice(0, 3).map((s) => (
-          <span key={s} className="rounded-md border border-border bg-surface/60 px-2 py-0.5 text-xs">
-            {s}
-          </span>
-        ))}
-      </div>
-      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-        <Clock className="h-3.5 w-3.5" />
-        {job.postedAgo}
-        {job.applicants > 0 && (
-          <>
-            <span>·</span>
-            <Users className="h-3.5 w-3.5" />
-            {job.applicants} postulantes
-          </>
-        )}
-      </div>
-      <div className="mt-auto flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between sm:pt-5">
-        <span className="font-display font-semibold">{job.budget}</span>
-        {job.alreadyApplied ? (
-          <Button size="sm" variant="secondary" className="w-full sm:w-auto" disabled>
-            <CheckCircle2 className="mr-1 h-4 w-4" />
-            {job.applicationStatus ?? "Postulado"}
-          </Button>
-        ) : (
-          <Button size="sm" className="w-full sm:w-auto" onClick={onApply}>
-            Postular
-          </Button>
-        )}
-      </div>
-    </article>
   );
 }
 

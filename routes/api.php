@@ -92,7 +92,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Asesor de perfil y skills (IA + demanda del mercado)
     Route::prefix('profile')->group(function () {
         Route::post('/skill-recommendations', [ProfileAdvisorController::class, 'skillRecommendations']);
+        Route::post('/job-match-coach', [ProfileAdvisorController::class, 'jobMatchCoach']);
         Route::post('/learn-skill', [ProfileAdvisorController::class, 'learnSkill']);
+        Route::post('/skill-quiz/start', [ProfileAdvisorController::class, 'startSkillQuiz']);
+        Route::post('/skill-quiz/submit', [ProfileAdvisorController::class, 'submitSkillQuiz']);
     });
 
     // Asistente de carrera (talento joven)

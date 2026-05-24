@@ -41,6 +41,50 @@ class MatchingService
     /**
      * @return Collection<int, array{job: WorkJob, match: int}>
      */
+    /**
+     * @return array{
+     *   match: int,
+     *   matched_skills: array<int, string>,
+     *   missing_skills: array<int, string>,
+     *   job_skills: array<int, string>
+     * }
+     */
+    public function analyzeJobGaps(User $user, WorkJob $job): array
+    {
+        $user->loadMissing('skills');
+
+        $userSkills = $user->skills->pluck('name')->map(fn ($s) => $this->normalizeSkill($s));
+        $jobTags = $this->extractJobSkillTags($job);
+
+        $matched = [];
+        $missing = [];
+
+        foreach ($jobTags as $tag) {
+            $label = $this->displaySkillName($tag);
+            $has = false;
+            foreach ($userSkills as $userSkill) {
+                if ($this->skillsMatch($userSkill, $tag)) {
+                    $has = true;
+                    break;
+                }
+            }
+            if ($has) {
+                if (! in_array($label, $matched, true)) {
+                    $matched[] = $label;
+                }
+            } elseif (! in_array($label, $missing, true)) {
+                $missing[] = $label;
+            }
+        }
+
+        return [
+            'match' => $this->scoreJobForUser($user, $job),
+            'matched_skills' => $matched,
+            'missing_skills' => $missing,
+            'job_skills' => collect($job->skills ?? [])->filter()->values()->all(),
+        ];
+    }
+
     public function recommendJobsForUser(User $user, int $limit = 10): Collection
     {
         return WorkJob::query()
@@ -113,6 +157,24 @@ class MatchingService
     private function normalizeSkill(string $skill): string
     {
         return Str::lower(trim(preg_replace('/\s+/', ' ', $skill) ?? $skill));
+    }
+
+    private function displaySkillName(string $key): string
+    {
+        return match ($key) {
+            'react' => 'React',
+            'tailwind' => 'Tailwind CSS',
+            'typescript' => 'TypeScript',
+            'figma' => 'Figma',
+            'laravel' => 'Laravel',
+            'php' => 'PHP',
+            'vue' => 'Vue.js',
+            'node' => 'Node.js',
+            'ui' => 'UI',
+            'ux' => 'UX',
+            'design' => 'Diseño',
+            default => Str::title($key),
+        };
     }
 
     private function profileBonus(User $user): int

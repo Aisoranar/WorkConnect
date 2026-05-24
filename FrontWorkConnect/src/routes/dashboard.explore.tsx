@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Sparkles,
+  AlertTriangle,
   MapPin,
   Clock,
   Users,
@@ -15,6 +16,8 @@ import { fetchFreelancers, fetchJobs, queryKeys, type ExploreJobsFilters } from 
 import { getStoredUser } from "@/lib/auth";
 import { ApiState } from "@/components/ApiState";
 import { ApplyJobSheet } from "@/components/ApplyJobSheet";
+import { JobMatchCoachDialog } from "@/components/JobMatchCoachDialog";
+import { LOW_MATCH_THRESHOLD } from "@/components/JobMatchCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Job } from "@/lib/types";
@@ -40,6 +43,7 @@ function ExploreProjects() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sort, setSort] = useState<ExploreJobsFilters["sort"]>("match");
   const [applyJob, setApplyJob] = useState<Job | null>(null);
+  const [coachJob, setCoachJob] = useState<Job | null>(null);
 
   const filters: ExploreJobsFilters = useMemo(
     () => ({ category, q: debouncedSearch, sort }),
@@ -133,7 +137,12 @@ function ExploreProjects() {
         ) : (
           <div className="grid gap-4 lg:grid-cols-2 dashboard-stagger">
             {jobs.map((job) => (
-              <JobCard key={job.id} job={job} onApply={() => setApplyJob(job)} />
+              <JobCard
+                key={job.id}
+                job={job}
+                onApply={() => setApplyJob(job)}
+                onImproveMatch={() => setCoachJob(job)}
+              />
             ))}
           </div>
         )}
@@ -144,13 +153,28 @@ function ExploreProjects() {
         open={Boolean(applyJob)}
         onOpenChange={(open) => !open && setApplyJob(null)}
       />
+
+      <JobMatchCoachDialog
+        job={coachJob}
+        open={Boolean(coachJob)}
+        onOpenChange={(open) => !open && setCoachJob(null)}
+      />
     </div>
   );
 }
 
-function JobCard({ job, onApply }: { job: Job; onApply: () => void }) {
+function JobCard({
+  job,
+  onApply,
+  onImproveMatch,
+}: {
+  job: Job;
+  onApply: () => void;
+  onImproveMatch: () => void;
+}) {
   const applied = job.alreadyApplied;
   const status = job.applicationStatus;
+  const isLowMatch = job.match < LOW_MATCH_THRESHOLD;
 
   return (
     <article className="card-list group flex flex-col p-4 sm:p-6 transition-enterprise">
@@ -166,11 +190,36 @@ function JobCard({ job, onApply }: { job: Job; onApply: () => void }) {
           <h3 className="font-display text-lg font-semibold leading-snug">{job.title}</h3>
           <span className="mt-1 inline-block text-xs text-muted-foreground">{job.category}</span>
         </div>
-        <div className="flex shrink-0 items-center gap-1 rounded-xl bg-trust/15 px-3 py-1.5 text-sm font-semibold text-trust-glow">
-          <Sparkles className="h-3.5 w-3.5" />
-          {job.match}%
-        </div>
+        {isLowMatch ? (
+          <button
+            type="button"
+            onClick={onImproveMatch}
+            className="flex shrink-0 items-center gap-1 rounded-xl border border-warning/50 bg-warning/15 px-3 py-1.5 text-sm font-semibold text-warning"
+          >
+            <AlertTriangle className="h-3.5 w-3.5" />
+            {job.match}%
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onImproveMatch}
+            className="flex shrink-0 items-center gap-1 rounded-xl bg-trust/15 px-3 py-1.5 text-sm font-semibold text-trust-glow"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            {job.match}%
+          </button>
+        )}
       </div>
+
+      {isLowMatch && (
+        <button
+          type="button"
+          onClick={onImproveMatch}
+          className="mt-3 w-full rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-left text-xs text-warning"
+        >
+          <span className="font-medium">Match bajo.</span> Pulsa para ver qué aprender con IA y poder postular.
+        </button>
+      )}
 
       <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">{job.description}</p>
 
@@ -208,9 +257,16 @@ function JobCard({ job, onApply }: { job: Job; onApply: () => void }) {
             <span className="text-pretty">Postulaste · {status}</span>
           </div>
         ) : (
-          <Button size="sm" className="w-full sm:w-auto" onClick={onApply}>
-            Postular
-          </Button>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            {isLowMatch && (
+              <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={onImproveMatch}>
+                Mejorar match
+              </Button>
+            )}
+            <Button size="sm" className="w-full sm:w-auto" onClick={onApply}>
+              Postular
+            </Button>
+          </div>
         )}
       </div>
     </article>
