@@ -9,6 +9,7 @@ import {
   Briefcase,
   MoreHorizontal,
   Sparkles,
+  ShieldCheck,
 } from "lucide-react";
 
 export type DashboardNavItem = {
@@ -61,7 +62,7 @@ const adminBottomBar: DashboardNavItem[] = [
 const adminSidebarOnly: DashboardNavItem[] = [
   { title: "Asistente carrera", shortLabel: "Carrera", url: "/dashboard/career", icon: Sparkles },
   { title: "Publicar (demo)", shortLabel: "Publicar", url: "/dashboard/publish", icon: PlusCircle },
-  { title: "Admin", shortLabel: "Admin", url: "/dashboard", icon: Briefcase },
+  { title: "Admin", shortLabel: "Admin", url: "/dashboard/admin", icon: ShieldCheck },
   { title: "Mi perfil", shortLabel: "Perfil", url: "/dashboard/profile", icon: User },
 ];
 

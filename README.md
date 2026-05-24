@@ -96,14 +96,19 @@ Trayectoria: reseñas + perfil público + QR
 | Postulaciones: **panel detalle**, filtros, coaching IA | ✅ |
 | Perfil: portafolio, GitHub→perfil IA, bio con IA | ✅ |
 | Perfil público `/talento/{username}` + QR | ✅ |
-| Mensajes, notificaciones, reseñas (API) | ✅ básico |
+| Mensajes, notificaciones, reseñas (API + UI) | ✅ |
 | Configuración, cierre de sesión con confirmación, sesión persistente | ✅ |
 | Modales de carga IA (pasos rotativos, pipeline NVIDIA) | ✅ |
-| Workspace (entregas, tareas, archivos) | 🔜 planificado |
-| Pagos / escrow | 🔜 planificado |
-| Estados entrega → pagado | 🔜 parcial |
-| Matching automático “mejor candidato” | 🔜 parcial |
-| Filtros por sector, CV exportable PDF, métricas universidades | 🔜 planificado |
+| Workspace (entregas, tareas, archivos) | ✅ |
+| Pagos / escrow (registro manual, flujo completo) | ✅ |
+| Estados entrega → pagado | ✅ |
+| Matching automático “mejor candidato” | ✅ |
+| CV exportable PDF | ✅ |
+| Certificado descargable tras quiz | ✅ |
+| Panel de administración con métricas | ✅ |
+| Métricas universidades (impacto, top skills, tasas) | ✅ |
+| Filtros por sector (categoría en explore) | ✅ |
+| Coach IA desde cualquier postulación | ✅ |
 
 ---
 
@@ -172,8 +177,8 @@ API: prefijo `POST /api/career/*` (ver [API REST](#api-rest)).
 | M6 | Matching | ✅ MVP | `match-job`, `job-match-coach`, `recommend-jobs`, % en explore |
 | M7 | Postulación y propuesta | ✅ MVP | apply + `improve-proposal` + detalle y filtros en front |
 | M8 | Selección de talento | ✅ MVP | `PATCH /applications/{id}` |
-| M9 | Ejecución y entrega | 🔜 | Estados entrega → cierre |
-| M10 | Reputación y reseñas | ⚡ parcial | API lista; UI post-entrega pendiente |
+| M9 | Ejecución y entrega | ✅ MVP | Workspace con tareas, entregables, estados (progreso → entregado → revisión → completado → pagado) |
+| M10 | Reputación y reseñas | ✅ MVP | API + UI: la empresa deja reseña tras aceptar talento (`/dashboard/my-projects/{id}`) |
 | M11 | Mensajería | ✅ MVP | `/dashboard/messages` |
 | M12 | Notificaciones | ✅ MVP | In-app |
 | M13 | Portafolio público + QR | ✅ MVP | `/talento/{username}` |
@@ -181,11 +186,16 @@ API: prefijo `POST /api/career/*` (ver [API REST](#api-rest)).
 | M19 | Asesor de habilidades | ✅ MVP | Recomendaciones, lecciones, quiz, coach por vacante |
 | M20 | Coach de entrevista | ✅ MVP | Material multimodal + evaluación con IA |
 | M15 | Presupuesto acotado | ✅ MVP | COP/USD en publicar y postular |
-| M16 | Puente sectorial | 🔜 | Filtros por rubro |
+| M16 | Puente sectorial | ✅ MVP | Filtros por categoría/rubro en explore |
 | M17 | Panel empresa mis proyectos | ✅ MVP | `/dashboard/my-projects` |
-| M18 | Administración | ✅ básico | Rol `admin` |
+| M18 | Administración | ✅ MVP | Panel `/dashboard/admin`: stats, usuarios, proyectos, métricas universidades |
+| M21 | Workspace | ✅ MVP | `/dashboard/workspace/{jobId}`: tareas, entregables, estados de entrega |
+| M22 | Pagos | ✅ MVP | Registro de pagos manuales, flujo entrega → pagado |
+| M23 | Certificados | ✅ MVP | Certificado descargable (PDF) tras aprobar quiz de skill |
+| M24 | CV exportable | ✅ MVP | Exportar CV generado con IA a PDF |
+| M25 | Matching automático | ✅ MVP | Ranking por match, badge "Mejor candidato" en postulaciones |
 
-**Backend:** `AuthController`, `JobController`, `ApplicationController`, `AIController`, `ProfileAdvisorController`, `CareerController`, `ProjectBriefService`, `MatchingService`, `ProfileAdvisorService`, `CareerAssistantService`, `CareerDocumentExtractor`, `NotificationService`.
+**Backend:** `AuthController`, `JobController`, `ApplicationController`, `AIController`, `ProfileAdvisorController`, `CareerController`, `WorkspaceController`, `StatsController`, `ReviewController`, `ProjectBriefService`, `MatchingService`, `ProfileAdvisorService`, `CareerAssistantService`, `CareerDocumentExtractor`, `NotificationService`.
 
 ---
 
@@ -494,16 +504,35 @@ Menú: **Inicio**, **Explorar proyectos**, **Mis postulaciones**, **Mensajes**, 
 - En el panel aparecen avisos cuando hay **nueva postulación** (empresa) o **postulación aceptada/rechazada** (talento).
 - Revisar el icono o sección de notificaciones según la UI del dashboard.
 
-### 7. Funciones que aún no están en la interfaz
+### 7. Workspace y entrega (`/dashboard/workspace/{jobId}`)
+
+Se crea automáticamente al aceptar una postulación. Incluye:
+
+| Función | Descripción |
+|---------|-------------|
+| **Tareas** | Checklist colaborativo: agregar, marcar, desmarcar |
+| **Entregables** | Archivos, enlaces o notas con título y autor |
+| **Estados** | En progreso → Entregado → Revisión → Completado → Pagado |
+| **Pagos** | El cliente registra pago (monto, moneda, método, referencia) |
+| **Notificaciones** | Cambios de estado notifican a la contraparte |
+
+### 8. Reseñas
+
+La empresa puede dejar reseña (1-5 estrellas + comentario) al talento aceptado desde **Mis proyectos → detalle → Dejar reseña**. Actualiza el rating del talento en tiempo real.
+
+### 9. Funciones implementadas recientemente
 
 | Función | Estado |
 |---------|--------|
-| Workspace con entregas y archivos | Planificado |
-| Pagos / escrow en plataforma | Planificado |
-| Marcar proyecto como entregado y pagado | Parcial (backend) |
-| Dejar reseña desde el front tras cerrar proyecto | Parcial |
-| Exportar CV del asistente de carrera a PDF | Planificado |
-| Certificado descargable tras quiz (más allá de puntuación en pantalla) | Planificado |
+| Workspace con entregas, tareas y archivos | ✅ Implementado |
+| Pagos / registro manual con flujo completo | ✅ Implementado |
+| Marcar proyecto como entregado y pagado | ✅ Implementado |
+| Dejar reseña desde el front tras aceptar talento | ✅ Implementado |
+| Exportar CV del asistente de carrera a PDF | ✅ Implementado |
+| Certificado descargable tras quiz de skill | ✅ Implementado |
+| Panel admin con métricas de impacto | ✅ Implementado |
+| Matching automático con badge "Mejor candidato" | ✅ Implementado |
+| Coach IA disponible en cualquier estado de postulación | ✅ Implementado |
 
 Para pruebas sin datos: `php artisan migrate:fresh --seed` y usar las [cuentas demo](#roles-seeders-y-cuentas-demo).
 
@@ -711,6 +740,8 @@ flowchart TB
 | `/dashboard/career` | freelancer, admin | Asistente de carrera (CV, entrevista, empleos) |
 | `/dashboard/settings` | Auth | Configuración de cuenta |
 | `/dashboard/messages` | Auth | Mensajes |
+| `/dashboard/admin` | admin | Panel administración: stats, usuarios, proyectos, métricas |
+| `/dashboard/workspace/{jobId}` | Auth | Workspace: tareas, entregables, pagos, estados |
 
 Parámetros útiles:
 
@@ -785,6 +816,16 @@ Prefijo: **`/api`**
 | PUT | `/users/{id}` | Actualizar perfil |
 | POST | `/users/avatar` | Subir avatar |
 | POST | `/skills` | Crear skill (si no existe) |
+| GET | `/admin/stats` | Métricas admin (usuarios, jobs, apps, skills, universidades) |
+| GET | `/workspace/job/{jobId}` | Workspace por proyecto |
+| GET | `/workspace/{id}` | Detalle workspace |
+| PATCH | `/workspace/{id}/status` | Cambiar estado entrega |
+| POST | `/workspace/{id}/tasks` | Agregar tarea |
+| PATCH | `/workspace/tasks/{id}/toggle` | Completar/descompletar tarea |
+| POST | `/workspace/{id}/deliverables` | Subir entregable (multipart) |
+| DELETE | `/workspace/deliverables/{id}` | Eliminar entregable |
+| POST | `/workspace/{id}/payments` | Registrar pago |
+| GET | `/workspace/{id}/payments` | Historial de pagos |
 
 ```bash
 php artisan route:list --path=api
@@ -804,6 +845,9 @@ php artisan route:list --path=api
 | `CareerDocumentExtractor` | Texto desde PDF, DOCX, TXT e imágenes |
 | `ProfileScoreService` | Score y tips de perfil |
 | `NotificationService` | Avisos in-app |
+| `WorkspaceController` | Tareas, entregables, estados de entrega, pagos |
+| `StatsController` | Stats por rol + panel admin + métricas universidades |
+| `ReviewController` | Reseñas empresa → talento con rating promedio |
 
 ---
 

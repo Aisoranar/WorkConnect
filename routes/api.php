@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SkillController;
 use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\WorkspaceController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', fn () => response()->json([
@@ -80,6 +81,20 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // GitHub proxy
     Route::get('/github/repos', [GithubController::class, 'repos']);
+
+    // Admin
+    Route::get('/admin/stats', [StatsController::class, 'adminStats']);
+
+    // Workspace
+    Route::get('/workspace/job/{jobId}', [WorkspaceController::class, 'findByJob']);
+    Route::get('/workspace/{workspace}', [WorkspaceController::class, 'show']);
+    Route::patch('/workspace/{workspace}/status', [WorkspaceController::class, 'updateStatus']);
+    Route::post('/workspace/{workspace}/tasks', [WorkspaceController::class, 'addTask']);
+    Route::patch('/workspace/tasks/{task}/toggle', [WorkspaceController::class, 'toggleTask']);
+    Route::post('/workspace/{workspace}/deliverables', [WorkspaceController::class, 'addDeliverable']);
+    Route::delete('/workspace/deliverables/{deliverable}', [WorkspaceController::class, 'deleteDeliverable']);
+    Route::post('/workspace/{workspace}/payments', [WorkspaceController::class, 'registerPayment']);
+    Route::get('/workspace/{workspace}/payments', [WorkspaceController::class, 'payments']);
 
     // IA (throttle: 30 requests / minuto por usuario)
     Route::middleware('throttle:30,1')->group(function () {

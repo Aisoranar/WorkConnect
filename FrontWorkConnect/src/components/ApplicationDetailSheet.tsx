@@ -8,6 +8,7 @@ import {
   Loader2,
   MapPin,
   MessageSquare,
+  Package,
   Sparkles,
   Target,
 } from "lucide-react";
@@ -170,11 +171,11 @@ export function ApplicationDetailSheet({
             </section>
           )}
 
-          {application.status === "aceptada" && (
+          {(onRequestCoaching || coaching) && (
             <section className="space-y-3">
               <h3 className="flex items-center gap-2 text-sm font-semibold">
                 <Sparkles className="h-4 w-4 text-primary-glow" />
-                Coaching para la entrega
+                {application.status === "aceptada" ? "Coaching para la entrega" : "Coaching IA para tu postulación"}
               </h3>
               {coaching ? (
                 <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-xs">
@@ -252,11 +253,23 @@ export function ApplicationDetailSheet({
               </Link>
             </Button>
           )}
-          {application.status === "aceptada" && (
+          {application.status === "aceptada" && application.jobId && (
             <Button asChild className="w-full bg-gradient-primary">
+              <Link
+                to="/dashboard/workspace/$jobId"
+                params={{ jobId: application.jobId }}
+                onClick={() => onOpenChange(false)}
+              >
+                <Package className="mr-2 h-4 w-4" />
+                Ir al workspace
+              </Link>
+            </Button>
+          )}
+          {application.status === "aceptada" && (
+            <Button asChild variant="outline" className="w-full">
               <Link to="/dashboard/messages" onClick={() => onOpenChange(false)}>
                 <MessageSquare className="mr-2 h-4 w-4" />
-                Ir a mensajes con el cliente
+                Mensajes con el cliente
               </Link>
             </Button>
           )}

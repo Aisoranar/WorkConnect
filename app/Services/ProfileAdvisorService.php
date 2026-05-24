@@ -111,27 +111,40 @@ class ProfileAdvisorService
         $tipsJson = json_encode($profile['tips'], JSON_UNESCAPED_UNICODE);
 
         $prompt = <<<PROMPT
-Mentor WorkConnect. El freelancer quiere postular pero tiene match bajo ({$match}%).
-Proyecto: «{$job->title}» · {$base['company']}
-Skills del proyecto: {$jobSkills}
-Skills que YA tiene: {$matchedJson}
-Skills que LE FALTAN: {$missingJson}
-Perfil score: {$profile['score']}/100. Tips perfil: {$tipsJson}
-Sus skills actuales: {$skillsList}
-JSON español, sin markdown:
-{
+Eres un career coach técnico de WorkConnect que asesora freelancers en Latinoamérica para mejorar su empleabilidad.
+
+SITUACIÓN: El freelancer quiere postular al proyecto «{$job->title}» de {$base['company']}, pero su compatibilidad es solo {$match}%.
+
+DATOS DEL ANÁLISIS:
+- Skills que pide el proyecto: {$jobSkills}
+- Skills que el freelancer YA tiene: {$matchedJson}
+- Skills que LE FALTAN: {$missingJson}
+- Score de su perfil: {$profile['score']}/100
+- Tips de perfil actuales: {$tipsJson}
+- Todas sus skills: {$skillsList}
+
+TU OBJETIVO: Dar un diagnóstico profesional honesto pero constructivo. No endulces la realidad ni desanimes — ofrece un plan de acción claro.
+
+CRITERIOS:
+- "alert_message": diagnóstico directo y específico. NO genérico. Ejemplo bueno: "Tu perfil no incluye React ni Tailwind, que son el 60% de este proyecto". Ejemplo malo: "Te faltan algunas skills".
+- "summary": plan de acción en 2 oraciones. Qué hacer primero y qué resultado esperar.
+- "missing_skills": ordena por impacto real en ESTE proyecto. "why_learn" debe explicar QUÉ haría con esa skill en este proyecto específico, no una descripción genérica.
+- "apply_advice": consejo realista y temporalizado sobre cuándo volver a intentar.
+
+JSON español, sin markdown ni comentarios:
+{{
   "alert_level": "low|medium",
-  "alert_message": "1 frase tipo alerta: por qué el % es bajo (ej: te faltan X skills)",
-  "summary": "2 oraciones qué debe hacer para poder postular",
+  "alert_message": "diagnóstico específico del gap entre perfil y proyecto",
+  "summary": "plan de acción concreto en 2 oraciones",
   "missing_skills": [
-    {"skill": "nombre para perfil", "display_name": "Nombre", "why_learn": "por qué para ESTE proyecto", "priority": "alta|media|baja"}
+    {{"skill": "nombre exacto para perfil", "display_name": "Nombre", "why_learn": "qué harías con esta skill EN ESTE proyecto específico", "priority": "alta|media|baja"}}
   ],
   "estimated_match_after": 0,
   "ready_to_apply": false,
-  "apply_advice": "cuándo volver a postular",
+  "apply_advice": "cuándo y cómo volver a postular (con timeline realista)",
   "source": "nvidia"
-}
-estimated_match_after: entero realista si aprende las skills clave. Máx 5 missing_skills.
+}}
+estimated_match_after: entero realista si aprende las skills clave. Máximo 5 missing_skills.
 PROMPT;
 
         $raw = $this->ai->promptJson($prompt, $this->ai->fastModel(), 900, fast: true);
@@ -166,26 +179,40 @@ PROMPT;
 
         $ctx = $this->userContext($user);
         $prompt = <<<PROMPT
-Eres mentor tech para talento joven en LATAM (WorkConnect). Explica conceptos básicos de la habilidad "{$display}".
-Aparece en {$jobsCount} proyecto(s) abierto(s) en la plataforma.
-Responde SOLO JSON válido en español, sin markdown:
-{
+Eres un senior developer/diseñador con 8+ años de experiencia que hace mentoría a freelancers juniors en Latinoamérica a través de la plataforma WorkConnect.
+
+CONTEXTO: El usuario quiere aprender "{$display}" para mejorar su perfil y postular a proyectos reales. Hay {$jobsCount} proyecto(s) abierto(s) en la plataforma que mencionan esta habilidad.
+
+TU MISIÓN: Crear una lección introductoria que le dé al freelancer los FUNDAMENTOS PRÁCTICOS que necesita para:
+1. Entender qué hace "{$display}" y dónde encaja en un proyecto real
+2. Hablar con propiedad al postular (no hacer el ridículo con el cliente)
+3. Empezar a producir entregables básicos con esta habilidad
+4. Aprobar la evaluación de certificación básica de WorkConnect
+
+PRINCIPIOS PEDAGÓGICOS:
+- Explica como le explicarías a un colega nuevo en tu equipo, no como Wikipedia
+- Cada concepto debe conectar con un ENTREGABLE o DECISIÓN que haría en un proyecto freelance
+- Los ejemplos deben ser de proyectos reales (landing page para PYME, dashboard, app móvil, catálogo) — no ejemplos académicos genéricos
+- Incluye el "por qué importa" en cada concepto, no solo el "qué es"
+
+Responde SOLO JSON válido en español, sin markdown ni comentarios:
+{{
   "skill": "{$display}",
-  "overview": "2-3 oraciones qué es y para qué sirve en freelancing",
-  "why_for_you": "2 oraciones personalizadas según su perfil",
+  "overview": "3 oraciones: qué es, para qué lo usan equipos/freelancers profesionalmente, y qué tipo de entregables produces con esta skill",
+  "why_for_you": "2 oraciones personalizadas según el perfil del usuario — conecta con lo que ya sabe y lo que podría lograr",
   "basics": [
-    {
-      "concept": "nombre del concepto",
-      "explanation": "2 oraciones claras, sin jerga innecesaria",
-      "example": "1 ejemplo concreto del mundo real (proyecto, pantalla, flujo)"
-    }
+    {{
+      "concept": "nombre técnico del concepto",
+      "explanation": "2-3 oraciones que expliquen el concepto Y por qué importa en un proyecto real. Usa analogías si ayudan.",
+      "example": "Escenario concreto: 'En un proyecto para una PYME de comida, usarías [concepto] para [resultado]. Por ejemplo: [detalle técnico específico]'"
+    }}
   ],
-  "first_steps": ["3 pasos concretos para empezar hoy"],
-  "practice_idea": "1 mini proyecto de práctica en 1 oración",
-  "add_to_profile_tip": "1 frase: que debe aprobar la evaluación básica antes de añadirla al perfil",
+  "first_steps": ["3-4 pasos concretos y accionables para hoy. Incluye herramientas, tiempos estimados y un entregable mínimo por paso"],
+  "practice_idea": "Un mini proyecto de 2-4 horas que simule un entregable real para un cliente ficticio. Sé específico: qué construir, con qué datos, qué resultado visual/funcional esperar.",
+  "add_to_profile_tip": "Frase que motive a tomar la evaluación: qué demuestra aprobarla y cómo impacta su perfil profesional",
   "source": "nvidia"
-}
-Máximo 5 items en basics. Cada basic DEBE tener "example". Tono cercano, práctico, como un senior explicando a un junior.
+}}
+Máximo 5 items en basics. Cada basic DEBE tener un "example" situado en un proyecto freelance real. Evita jerga innecesaria pero usa terminología profesional correcta.
 {$ctx}
 PROMPT;
 
@@ -215,29 +242,38 @@ PROMPT;
         $lessonCtx = $this->lessonContextForQuiz($user->id, $skill);
 
         $prompt = <<<PROMPT
-Crea evaluación básica SOBRE "{$display}" (no genérica) para talento joven freelancer LATAM.
-Todas las preguntas deben ser específicas de {$display} en trabajo real (diseño, dev o el área que corresponda).
+Eres un evaluador técnico senior especializado en "{$display}" con experiencia contratando freelancers en Latinoamérica.
 
-REGLAS OBLIGATORIAS:
-- Exactamente 5 preguntas, correct_index entre 0 y 3.
-- 4 opciones por pregunta; todas deben sonar PLAUSIBLES (mismo dominio). PROHIBIDO distractores absurdos (ej: "enviar emails", "escribir SQL" si no aplica).
-- "explanation": 2-3 oraciones explicando por qué la respuesta correcta es la mejor.
-- "example": 1-2 oraciones con caso concreto (pantalla, flujo, entregable).
-- "concept": etiqueta corta del tema (ej: "Componentes", "Design system").
-- "option_feedback": array de 4 strings. En el índice de la respuesta CORRECTA deja "". En cada índice INCORRECTO escribe 1 frase amable de por qué esa opción no aplica (sin humillar).
+OBJETIVO: Crear una evaluación profesional de 5 preguntas que determine si un candidato tiene el conocimiento PRÁCTICO mínimo para trabajar con "{$display}" en un proyecto freelance real (no académico).
 
-JSON español, sin markdown:
+PRINCIPIOS DE DISEÑO DE LA EVALUACIÓN:
+1. Cada pregunta debe plantear un ESCENARIO LABORAL CONCRETO: un cliente pide algo, surge un problema técnico, hay que tomar una decisión de arquitectura/diseño, o hay que entregar un resultado específico.
+2. Las 4 opciones deben ser TÉCNICAMENTE PLAUSIBLES dentro del dominio de "{$display}". Un junior podría confundirse entre ellas. PROHIBIDO incluir opciones absurdas, de otros dominios, o que se descarten por sentido común.
+3. La respuesta correcta debe reflejar la MEJOR PRÁCTICA PROFESIONAL, no solo "la que funciona".
+4. Cubrir 5 conceptos DISTINTOS y representativos de "{$display}" en el día a día de un freelancer.
+5. Dificultad: nivel junior-intermedio. No preguntar definiciones de Wikipedia ni trivia — preguntar criterio profesional.
+
+FORMATO DE CADA PREGUNTA:
+- "concept": nombre corto del subtema evaluado (ej: "Gestión de estado", "Responsive design", "Naming conventions")
+- "question": escenario + pregunta. Mínimo 2 oraciones. Ejemplo: "Un cliente te pide [situación]. Al revisar el proyecto notas [detalle]. ¿Cuál es el enfoque correcto?"
+- "options": 4 opciones del MISMO nivel de sofisticación. Todas deben sonar como algo que un profesional podría decir. Redacta en tono técnico pero claro.
+- "correct_index": índice (0-3) de la mejor respuesta.
+- "explanation": 2-3 oraciones técnicas explicando POR QUÉ esa es la mejor práctica y qué problema resuelve.
+- "example": caso concreto de un proyecto real donde aplicarías esta decisión (menciona entregables, herramientas o flujos específicos de "{$display}").
+- "option_feedback": array de 4 strings. Índice correcto = "". Cada incorrecto = 1 oración técnica explicando la limitación o riesgo de esa opción (sin condescendencia, como feedback de code review).
+
+RESPONDE SOLO JSON válido en español, sin markdown ni comentarios:
 {
   "questions": [
     {
       "id": "q1",
-      "concept": "tema",
-      "question": "pregunta situada en contexto real",
-      "options": ["opción A", "opción B", "opción C", "opción D"],
+      "concept": "subtema",
+      "question": "escenario laboral + pregunta",
+      "options": ["opción técnica A", "opción técnica B", "opción técnica C", "opción técnica D"],
       "correct_index": 0,
-      "explanation": "por qué la correcta",
-      "example": "ejemplo concreto",
-      "option_feedback": ["", "por qué B falla", "por qué C falla", "por qué D falla"]
+      "explanation": "justificación profesional",
+      "example": "caso real de proyecto",
+      "option_feedback": ["", "limitación de B", "limitación de C", "limitación de D"]
     }
   ]
 }
@@ -679,53 +715,98 @@ PROMPT;
         return [
             $this->makeQuizQuestion(
                 'q1',
-                'Uso en freelance',
-                "En un proyecto real, ¿para qué encaja mejor dominar {$display}?",
-                ['Cubrir entregables del stack que el cliente pidió', 'Sustituir siempre la comunicación con el cliente', 'Evitar documentar tu trabajo', 'No aporta al match en WorkConnect'],
+                'Contexto profesional',
+                "Un cliente te contacta para un proyecto que requiere {$display}. En la primera reunión te pregunta qué experiencia tienes. ¿Cuál es la respuesta más profesional si estás comenzando?",
+                [
+                    "Mostrar un mini proyecto o ejercicio práctico que demuestre comprensión de los fundamentos de {$display}",
+                    'Decir que tienes 5 años de experiencia aunque no sea cierto para ganar el proyecto',
+                    "Admitir que nunca has usado {$display} y pedir que te enseñen durante el proyecto",
+                    'Enviar solo un PDF con certificados de cursos online sin código ni entregables',
+                ],
                 0,
-                "Las skills del perfil se comparan con las del proyecto; {$display} debe reflejar trabajo que sí harías.",
-                "Ejemplo: si el brief pide {$display}, tu portfolio o mini demo debe mostrar un entregable concreto.",
-                [1 => 'La comunicación sigue siendo clave aunque domines la herramienta.', 2 => 'Documentar entregables genera confianza.', 3 => 'Sí aporta al match cuando el proyecto la menciona.'],
+                "Un entregable práctico — aunque sea pequeño — demuestra competencia real mejor que teoría o credenciales infladas. Los clientes valoran evidencia concreta de que puedes producir resultados con {$display}.",
+                "Ejemplo: mostrar un repositorio con un componente funcional, una maqueta interactiva o un script que resuelva un problema similar al del proyecto del cliente.",
+                [
+                    1 => 'Mentir sobre experiencia destruye tu reputación cuando el cliente descubre la realidad durante el proyecto.',
+                    2 => 'El cliente busca autonomía básica; esperar que te enseñen es un red flag para un freelancer.',
+                    3 => 'Los certificados sin código no demuestran que puedas producir entregables reales.',
+                ],
             ),
             $this->makeQuizQuestion(
                 'q2',
-                'Primeros pasos',
-                "¿Cuál es un primer paso sensato para aprender {$display}?",
-                ['Guía oficial + ejercicio corto aplicado a un caso real', 'Postular a 20 proyectos sin practicar', 'Memorizar definiciones sin practicar', 'Esperar que el cliente enseñe todo'],
+                'Metodología de aprendizaje',
+                "Necesitas aprender {$display} en 2 semanas para un proyecto. ¿Cuál es el enfoque más efectivo para un freelancer con tiempo limitado?",
+                [
+                    'Documentación oficial + tutorial práctico + replicar un entregable similar al del proyecto',
+                    'Leer toda la documentación de principio a fin antes de escribir una sola línea',
+                    'Ver 40 horas de tutoriales en YouTube sin abrir el editor',
+                    'Copiar código de Stack Overflow sin entender qué hace cada parte',
+                ],
                 0,
-                'Aprender haciendo un entregable pequeño fija conceptos mejor que solo teoría.',
-                "Ejemplo: replica una pantalla o script mínimo del brief usando solo {$display}.",
-                [1 => 'Postular sin base baja tu reputación y el match real.', 2 => 'Sin práctica no certificas con criterio.', 3 => 'El cliente espera autonomía básica.'],
+                "El aprendizaje más eficiente combina referencia oficial (para no aprender malas prácticas), práctica guiada (para fijar conceptos) y un entregable alineado al proyecto real (para validar que puedes producir).",
+                "Ejemplo: para una landing page, harías: 1) tutorial de 2h, 2) replica la estructura del brief, 3) iteras hasta que funcione como el cliente espera.",
+                [
+                    1 => 'Leer toda la documentación sin practicar es ineficiente; se olvida lo que no se aplica.',
+                    2 => 'Los videos pasivos dan falsa sensación de aprendizaje; necesitas escribir código tú mismo.',
+                    3 => 'Copiar sin entender genera deuda técnica y te deja sin capacidad de resolver bugs.',
+                ],
             ),
             $this->makeQuizQuestion(
                 'q3',
-                'Certificación',
-                '¿Por qué WorkConnect pide aprobar la evaluación antes de añadir la skill?',
-                ['Verificar conocimiento mínimo y mejorar match con proyectos', 'Cobrar una tasa extra', 'Ocultar tu perfil público', 'Eliminar otras skills del perfil'],
+                'Calidad de entregables',
+                "Estás trabajando en un proyecto con {$display} y tu código funciona pero está desorganizado. El cliente dice que otro developer lo va a mantener después. ¿Qué priorizas?",
+                [
+                    'Refactorizar con nombres claros, estructura consistente y documentación mínima del flujo principal',
+                    'Entregar tal cual porque ya funciona y el plazo está encima',
+                    'Reescribir todo desde cero con un framework diferente que conoces mejor',
+                    'Agregar comentarios en cada línea explicando qué hace para compensar la falta de estructura',
+                ],
                 0,
-                'La certificación básica protege la calidad del marketplace y tu porcentaje de compatibilidad.',
-                'Ejemplo: con 70% demuestras que entiendes fundamentos antes de aparecer como experto en {$display}.',
-                [1 => 'No hay tasa por certificar en esta evaluación.', 2 => 'Tu perfil sigue visible.', 3 => 'No quita otras skills.'],
+                'Código mantenible es parte del entregable profesional. Un freelancer responsable entrega código que otro desarrollador pueda entender y extender sin necesitar una sesión explicativa.',
+                "Ejemplo: renombrar variables como 'd' a 'deliveryDate', separar lógica en funciones con nombres descriptivos, y agregar un README con las decisiones de arquitectura.",
+                [
+                    1 => 'Entregar código desordenado genera mala reseña y el siguiente dev culpará al freelancer anterior.',
+                    2 => 'Reescribir con otro framework rompe el stack acordado y agrega riesgo innecesario.',
+                    3 => 'Comentar cada línea no reemplaza buena estructura; genera ruido y los comentarios se desactualizan.',
+                ],
             ),
             $this->makeQuizQuestion(
                 'q4',
-                'Si fallas',
-                'Si fallas varias preguntas, ¿qué conviene hacer?',
-                ['Repasar la lección con ejemplos y reintentar', 'Añadir la skill igual al perfil', 'Abandonar el proyecto sin leer', 'Copiar respuestas de otro usuario'],
+                'Resolución de problemas',
+                "Durante un proyecto con {$display}, encuentras un bug que no puedes resolver tras 2 horas de investigación. ¿Cuál es la acción más profesional?",
+                [
+                    'Documentar el problema con detalle, buscar en la comunidad oficial, y si persiste comunicar al cliente el bloqueo con opciones',
+                    'Ignorar el bug esperando que el cliente no lo note en producción',
+                    'Abandonar el proyecto sin avisar porque no es tu área de expertise',
+                    'Reescribir la funcionalidad completa con otra tecnología sin consultar al cliente',
+                ],
                 0,
-                'El repaso con feedback concreto cierra brechas antes de volver a certificar.',
-                'Ejemplo: lee el «Por qué» de cada error y practica el mini ejercio de la lección.',
-                [1 => 'Sin aprobar no deberías certificar: baja la confianza del cliente.', 2 => 'Abandonar sin estudiar no mejora tu match.', 3 => 'Copiar no demuestra competencia real.'],
+                'La transparencia profesional con el cliente genera más confianza que ocultar problemas. Un buen freelancer comunica bloqueos proactivamente y propone alternativas o ajustes de plazo.',
+                'Ejemplo: "Encontré un problema con [X]. Investigué en [fuentes]. Tengo 2 opciones: [A] con este tradeoff o [B] que toma 1 día más. ¿Cuál prefieres?"',
+                [
+                    1 => 'Ocultar bugs es la forma más rápida de perder un cliente y obtener una reseña negativa.',
+                    2 => 'Abandonar destruye tu reputación en la plataforma y afecta a futuros freelancers.',
+                    3 => 'Cambiar la tecnología sin consultar viola el acuerdo original y puede causar problemas de compatibilidad.',
+                ],
             ),
             $this->makeQuizQuestion(
                 'q5',
-                'Qué demuestra aprobar',
-                '¿Qué demuestra aprobar esta evaluación con al menos 70%?',
-                ['Comprensión básica verificable de la skill', '10 años de experiencia senior', 'Que eres el cliente del proyecto', 'Que tienes cuenta premium de GitHub'],
+                'Portfolio y credibilidad',
+                "Aprobaste la evaluación de {$display} en WorkConnect. ¿Cuál es la mejor forma de aprovechar esta certificación para conseguir más proyectos?",
+                [
+                    'Complementarla con un mini proyecto en tu portfolio que demuestre la skill aplicada a un caso real',
+                    'Solo añadir la skill al perfil y esperar que los clientes te contacten automáticamente',
+                    'Postular a todos los proyectos que mencionen la skill sin leer los requisitos completos',
+                    'Publicar en redes que eres experto senior certificado en la skill',
+                ],
                 0,
-                'Es un piso de conocimiento para postular con coherencia, no un título senior.',
-                'Ejemplo: entiendes conceptos clave y puedes empezar un entregable guiado en {$display}.',
-                [1 => 'La seniority se demuestra con portfolio y proyectos.', 2 => 'El cliente es otra persona.', 3 => 'GitHub Pro no es requisito de la evaluación.'],
+                'La certificación valida conocimiento básico; el portfolio demuestra capacidad de ejecución. La combinación de ambos maximiza tu credibilidad ante el cliente y tu porcentaje de match.',
+                "Ejemplo: creas una demo de 4 horas (landing page, componente, script) usando {$display}, la subes a tu portfolio con screenshot y enlace al repo.",
+                [
+                    1 => 'El perfil pasivo genera pocas oportunidades; los clientes buscan evidencia activa.',
+                    2 => 'Postular masivamente sin leer briefs genera rechazos y baja tu tasa de aceptación.',
+                    3 => 'Inflarse como senior con una certificación básica es deshonesto y se descubre rápido.',
+                ],
             ),
         ];
     }
@@ -864,27 +945,38 @@ PROMPT;
         $ctx = $this->userContext($user);
 
         $prompt = <<<PROMPT
-Mentor WorkConnect LATAM. Analiza demanda de skills en proyectos abiertos y recomienda qué aprender.
-Perfil score: {$profile['score']}/100.
-Demanda top: {$demandJson}
-Habilidades que le faltan (con % demanda): {$gapsJson}
-JSON español, sin markdown:
-{
-  "market_summary": "2 oraciones sobre qué buscan los clientes ahora",
+Eres un analista de mercado laboral tech especializado en freelancing en Latinoamérica. Trabajas para WorkConnect analizando qué habilidades necesitan los freelancers para ser más competitivos.
+
+DATOS ACTUALES DEL MARKETPLACE:
+- Score del perfil del usuario: {$profile['score']}/100
+- Skills más demandadas en proyectos abiertos: {$demandJson}
+- Habilidades que el usuario NO tiene pero el mercado pide: {$gapsJson}
+
+TU OBJETIVO: Analizar la brecha entre el perfil del usuario y la demanda real del marketplace, y recomendar qué aprender para maximizar oportunidades.
+
+CRITERIOS PROFESIONALES:
+- "market_summary": análisis ejecutivo del mercado actual. Qué tipo de proyectos dominan, qué stack piden más, y una tendencia observable. NO genérico — usa los datos reales.
+- "recommendations": máximo 5, ordenadas por RETORNO DE INVERSIÓN (impacto en match × demanda × facilidad de aprender). Para cada una:
+  - "why_learn": oración que conecte la skill con proyectos REALES del marketplace. Ejemplo bueno: "El 40% de los proyectos abiertos piden React para dashboards y landing pages — aprenderla te abre esas 6 oportunidades". Ejemplo malo: "React es popular".
+  - "impact_on_match": cuantifica el impacto. Ejemplo: "Tu match promedio subiría ~15-20% en proyectos de desarrollo web".
+
+JSON español, sin markdown ni comentarios:
+{{
+  "market_summary": "análisis de mercado en 2-3 oraciones con datos específicos",
   "recommendations": [
-    {
-      "skill": "nombre exacto para perfil",
-      "display_name": "Nombre bonito",
+    {{
+      "skill": "nombre exacto para el perfil",
+      "display_name": "Nombre para mostrar",
       "demand_percent": 0,
       "open_jobs": 0,
-      "why_learn": "1 oración: «Te recomendamos aprender X porque…»",
-      "impact_on_match": "cómo sube su % de match al añadirla al perfil",
+      "why_learn": "justificación basada en datos del marketplace",
+      "impact_on_match": "impacto estimado en compatibilidad",
       "priority": "alta|media|baja"
-    }
+    }}
   ],
   "source": "nvidia"
-}
-Máximo 5 recommendations, ordenadas por impacto. Copia open_jobs y demand_percent de los datos si existen.
+}}
+Copia open_jobs y demand_percent de los datos proporcionados. Sé específico, no genérico.
 {$ctx}
 PROMPT;
 
@@ -979,27 +1071,33 @@ PROMPT;
 
         return [
             'skill' => $display,
-            'overview' => "{$display} es una habilidad muy solicitada en proyectos freelance tech. Dominarla te permite postular con más confianza.",
-            'why_for_you' => "Hay {$jobsCount} proyecto(s) en WorkConnect que la mencionan. Aprenderla cierra brechas con el mercado actual.",
+            'overview' => "{$display} es una habilidad con demanda activa en proyectos freelance de la plataforma. Los clientes la solicitan para construir entregables específicos dentro de sus proyectos digitales. Dominar los fundamentos te permite postular con evidencia concreta y mejorar tu porcentaje de compatibilidad.",
+            'why_for_you' => "Hay {$jobsCount} proyecto(s) abierto(s) en WorkConnect que mencionan {$display}. Certificar esta skill con la evaluación básica te posiciona para postular a esas oportunidades con un match más alto.",
             'basics' => [
                 [
-                    'concept' => 'Fundamentos',
-                    'explanation' => 'Empieza por la documentación oficial y un tutorial de 2–3 horas.',
-                    'example' => "Replica un entregable pequeño del tipo de proyectos que buscas con {$display}.",
+                    'concept' => 'Qué problema resuelve',
+                    'explanation' => "{$display} existe para resolver un tipo específico de necesidad en proyectos digitales. Antes de estudiar la herramienta, entiende QUÉ necesidad cubre y POR QUÉ un cliente la pediría en su brief.",
+                    'example' => "Un cliente publica un proyecto que incluye {$display} en los requisitos. Al postular, necesitas explicar cómo usarías esta skill para resolver su necesidad concreta — no solo que la «conoces».",
                 ],
                 [
-                    'concept' => 'Práctica',
-                    'explanation' => 'Construye un componente o pantalla pequeña usando solo esa tecnología.',
-                    'example' => 'Sube captura o enlace al repo en tu portfolio para demostrarlo al cliente.',
+                    'concept' => 'Flujo de trabajo profesional',
+                    'explanation' => "En un proyecto real, {$display} se usa dentro de un flujo: recibes un brief, planificas el entregable, lo construyes, lo iteras con feedback del cliente y lo entregas con documentación mínima.",
+                    'example' => 'Un freelancer profesional no solo «sabe usar la herramienta» — sabe integrarla en un proceso de entrega: estima tiempos, comunica progreso, y entrega algo que otro profesional pueda mantener.',
+                ],
+                [
+                    'concept' => 'Entregable mínimo viable',
+                    'explanation' => "Para demostrar competencia básica en {$display}, necesitas poder producir un entregable concreto: una pantalla, un componente, un script funcional, o una pieza de diseño que resuelva un problema real.",
+                    'example' => "Construye algo pequeño pero completo: no una línea de código, sino un mini proyecto que un cliente pueda ver y decir «esto es lo que necesito, pero más grande».",
                 ],
             ],
             'first_steps' => [
-                'Lee la guía «getting started» oficial (30 min).',
-                'Sigue un tutorial corto en video o documentación.',
-                'Añade la skill a tu perfil cuando completes un mini ejercicio.',
+                "Busca la documentación oficial de {$display} y lee la sección «Getting Started» o «Quick Start» (30-45 minutos).",
+                "Sigue un tutorial práctico que termine en un entregable visible (no solo teoría). Busca uno de 1-2 horas máximo.",
+                "Replica un entregable similar al que pedirían los proyectos abiertos en WorkConnect que mencionan {$display}.",
+                'Sube tu resultado a tu portfolio de WorkConnect: screenshot + descripción de qué resuelve + tecnologías usadas.',
             ],
-            'practice_idea' => "Clona una sección simple de un dashboard usando {$display}.",
-            'add_to_profile_tip' => 'Cuando la domines al nivel básico, agrégala en Skills de tu perfil para recalcular tu matching.',
+            'practice_idea' => "Construye una versión simplificada de un proyecto real: una landing page para una PYME ficticia, un dashboard con datos de ejemplo, o un componente interactivo que demuestre los fundamentos de {$display}. Tiempo estimado: 2-4 horas.",
+            'add_to_profile_tip' => "Aprueba la evaluación básica (70% mínimo) para certificar {$display} en tu perfil. Esto demuestra a los clientes que tienes los fundamentos y mejora tu match automáticamente en proyectos que la requieran.",
             'source' => 'local',
         ];
     }

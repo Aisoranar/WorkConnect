@@ -25,6 +25,8 @@ import { Route as DashboardMessagesRouteImport } from './routes/dashboard.messag
 import { Route as DashboardExploreRouteImport } from './routes/dashboard.explore'
 import { Route as DashboardCareerRouteImport } from './routes/dashboard.career'
 import { Route as DashboardApplicationsRouteImport } from './routes/dashboard.applications'
+import { Route as DashboardAdminRouteImport } from './routes/dashboard.admin'
+import { Route as DashboardWorkspaceJobIdRouteImport } from './routes/dashboard.workspace.$jobId'
 import { Route as DashboardMyProjectsJobIdRouteImport } from './routes/dashboard.my-projects.$jobId'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -107,6 +109,16 @@ const DashboardApplicationsRoute = DashboardApplicationsRouteImport.update({
   path: '/applications',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardAdminRoute = DashboardAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardWorkspaceJobIdRoute = DashboardWorkspaceJobIdRouteImport.update({
+  id: '/workspace/$jobId',
+  path: '/workspace/$jobId',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardMyProjectsJobIdRoute =
   DashboardMyProjectsJobIdRouteImport.update({
     id: '/$jobId',
@@ -121,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/dashboard/admin': typeof DashboardAdminRoute
   '/dashboard/applications': typeof DashboardApplicationsRoute
   '/dashboard/career': typeof DashboardCareerRoute
   '/dashboard/explore': typeof DashboardExploreRoute
@@ -132,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/talento/$username': typeof TalentoUsernameRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/my-projects/$jobId': typeof DashboardMyProjectsJobIdRoute
+  '/dashboard/workspace/$jobId': typeof DashboardWorkspaceJobIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -139,6 +153,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/dashboard/admin': typeof DashboardAdminRoute
   '/dashboard/applications': typeof DashboardApplicationsRoute
   '/dashboard/career': typeof DashboardCareerRoute
   '/dashboard/explore': typeof DashboardExploreRoute
@@ -150,6 +165,7 @@ export interface FileRoutesByTo {
   '/talento/$username': typeof TalentoUsernameRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/my-projects/$jobId': typeof DashboardMyProjectsJobIdRoute
+  '/dashboard/workspace/$jobId': typeof DashboardWorkspaceJobIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -159,6 +175,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/dashboard/admin': typeof DashboardAdminRoute
   '/dashboard/applications': typeof DashboardApplicationsRoute
   '/dashboard/career': typeof DashboardCareerRoute
   '/dashboard/explore': typeof DashboardExploreRoute
@@ -170,6 +187,7 @@ export interface FileRoutesById {
   '/talento/$username': typeof TalentoUsernameRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/my-projects/$jobId': typeof DashboardMyProjectsJobIdRoute
+  '/dashboard/workspace/$jobId': typeof DashboardWorkspaceJobIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -180,6 +198,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/dashboard/admin'
     | '/dashboard/applications'
     | '/dashboard/career'
     | '/dashboard/explore'
@@ -191,6 +210,7 @@ export interface FileRouteTypes {
     | '/talento/$username'
     | '/dashboard/'
     | '/dashboard/my-projects/$jobId'
+    | '/dashboard/workspace/$jobId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -198,6 +218,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/dashboard/admin'
     | '/dashboard/applications'
     | '/dashboard/career'
     | '/dashboard/explore'
@@ -209,6 +230,7 @@ export interface FileRouteTypes {
     | '/talento/$username'
     | '/dashboard'
     | '/dashboard/my-projects/$jobId'
+    | '/dashboard/workspace/$jobId'
   id:
     | '__root__'
     | '/'
@@ -217,6 +239,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/dashboard/admin'
     | '/dashboard/applications'
     | '/dashboard/career'
     | '/dashboard/explore'
@@ -228,6 +251,7 @@ export interface FileRouteTypes {
     | '/talento/$username'
     | '/dashboard/'
     | '/dashboard/my-projects/$jobId'
+    | '/dashboard/workspace/$jobId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -354,6 +378,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardApplicationsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/admin': {
+      id: '/dashboard/admin'
+      path: '/admin'
+      fullPath: '/dashboard/admin'
+      preLoaderRoute: typeof DashboardAdminRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/workspace/$jobId': {
+      id: '/dashboard/workspace/$jobId'
+      path: '/workspace/$jobId'
+      fullPath: '/dashboard/workspace/$jobId'
+      preLoaderRoute: typeof DashboardWorkspaceJobIdRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/my-projects/$jobId': {
       id: '/dashboard/my-projects/$jobId'
       path: '/$jobId'
@@ -376,6 +414,7 @@ const DashboardMyProjectsRouteWithChildren =
   DashboardMyProjectsRoute._addFileChildren(DashboardMyProjectsRouteChildren)
 
 interface DashboardRouteChildren {
+  DashboardAdminRoute: typeof DashboardAdminRoute
   DashboardApplicationsRoute: typeof DashboardApplicationsRoute
   DashboardCareerRoute: typeof DashboardCareerRoute
   DashboardExploreRoute: typeof DashboardExploreRoute
@@ -385,9 +424,11 @@ interface DashboardRouteChildren {
   DashboardPublishRoute: typeof DashboardPublishRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardWorkspaceJobIdRoute: typeof DashboardWorkspaceJobIdRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardAdminRoute: DashboardAdminRoute,
   DashboardApplicationsRoute: DashboardApplicationsRoute,
   DashboardCareerRoute: DashboardCareerRoute,
   DashboardExploreRoute: DashboardExploreRoute,
@@ -397,6 +438,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardPublishRoute: DashboardPublishRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardWorkspaceJobIdRoute: DashboardWorkspaceJobIdRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(

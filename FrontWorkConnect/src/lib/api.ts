@@ -223,10 +223,13 @@ export function fetchJob(jobId: string): Promise<Job> {
   return apiGet<ApiItemResponse<Job>>(`/jobs/${jobId}?legacy=1`).then((r) => r.data);
 }
 
-export function fetchJobApplications(jobId: string): Promise<JobApplicationDetail[]> {
-  return apiGet<ApiListResponse<JobApplicationDetail>>(`/my-jobs/${jobId}/applications`).then(
-    (r) => r.data,
-  );
+export type JobApplicationsResponse = {
+  data: JobApplicationDetail[];
+  best_match_id?: number;
+};
+
+export function fetchJobApplications(jobId: string): Promise<JobApplicationsResponse> {
+  return apiGet<JobApplicationsResponse>(`/my-jobs/${jobId}/applications`);
 }
 
 export function updateApplicationStatus(
@@ -730,6 +733,201 @@ export function submitSkillQuiz(
     quiz_id: quizId,
     answers,
   }).then((r) => r.data);
+}
+
+// ─── Reseñas ────────────────────────────────────────────────────────────────
+
+export type ReviewPayload = {
+  job_id: number;
+  reviewed_id: number;
+  rating: number;
+  comment?: string;
+};
+
+export type ReviewItem = {
+  id: number;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  reviewer: { id: number; name: string };
+};
+
+export function submitReview(payload: ReviewPayload): Promise<ReviewItem> {
+  return apiPost<{ data: ReviewItem }>("/reviews", payload).then((r) => r.data);
+}
+
+export function fetchUserReviews(userId: number): Promise<ReviewItem[]> {
+  return apiGet<ApiListResponse<ReviewItem>>(`/users/${userId}/reviews`).then((r) => r.data);
+}
+
+// ─── Admin ──────────────────────────────────────────────────────────────────
+
+export type AdminUser = {
+  id: number;
+  name: string;
+  email: string;
+  username: string | null;
+  role: string;
+  city: string | null;
+  rating: number;
+  verified: boolean;
+  created_at: string;
+  skills?: { id: number; name: string }[];
+  applications_count?: number;
+};
+
+export function fetchAllUsers(): Promise<AdminUser[]> {
+  return apiGet<{ data: AdminUser[] }>("/users").then((r) => r.data);
+}
+
+export function fetchAllJobs(): Promise<Job[]> {
+  return apiGet<{ data: Job[] }>("/jobs").then((r) => r.data);
+}
+
+export type AdminStats = {
+  users: { total: number; freelancers: number; clients: number; admins: number };
+  jobs: { total: number; open: number; closed: number };
+  applications: { total: number; accepted: number; pending: number; rejected: number };
+  metrics?: {
+    avg_rating: number;
+    total_reviews: number;
+    skills_registered: number;
+    top_skills: { name: string; users_count: number }[];
+    acceptance_rate: number;
+    completion_rate: number;
+  };
+  recent_users: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    city: string | null;
+    rating: number;
+    created_at: string;
+  }[];
+  recent_jobs: {
+    id: number;
+    title: string;
+    budget: string;
+    status: string;
+    category: string | null;
+    company: string | null;
+    created_at: string;
+    owner?: { id: number; name: string };
+  }[];
+};
+
+export function fetchAdminStats(): Promise<AdminStats> {
+  return apiGet<{ data: AdminStats }>("/admin/stats").then((r) => r.data);
+}
+
+// ─── Workspace ──────────────────────────────────────────────────────────────
+
+export type WorkspaceTask = {
+  id: number;
+  title: string;
+  completed: boolean;
+  sort_order: number;
+};
+
+export type WorkspaceDeliverable = {
+  id: number;
+  title: string;
+  description: string | null;
+  type: "file" | "link" | "note";
+  url: string | null;
+  file_path: string | null;
+  file_name: string | null;
+  created_at: string;
+  user?: { id: number; name: string };
+};
+
+export type WorkspaceData = {
+  id: number;
+  job_id: number;
+  freelancer_id: number;
+  client_id: number;
+  status: "in_progress" | "delivered" | "revision" | "completed" | "paid";
+  notes: string | null;
+  delivered_at: string | null;
+  completed_at: string | null;
+  job?: { id: number; title: string; budget: string; company: string | null };
+  freelancer?: { id: number; name: string; username: string | null; avatar: string | null };
+  client?: { id: number; name: string; avatar: string | null };
+  deliverables: WorkspaceDeliverable[];
+  tasks: WorkspaceTask[];
+};
+
+export function fetchWorkspaceByJob(jobId: number): Promise<WorkspaceData | null> {
+  return apiGet<{ data: WorkspaceData | null }>(`/workspace/job/${jobId}`).then((r) => r.data);
+}
+
+export function updateWorkspaceStatus(
+  workspaceId: number,
+  status: WorkspaceData["status"],
+): Promise<WorkspaceData> {
+  return apiPatch<{ data: WorkspaceData }>(`/workspace/${workspaceId}/status`, { status }).then(
+    (r) => r.data,
+  );
+}
+
+export function addWorkspaceTask(workspaceId: number, title: string): Promise<WorkspaceTask> {
+  return apiPost<{ data: WorkspaceTask }>(`/workspace/${workspaceId}/tasks`, { title }).then(
+    (r) => r.data,
+  );
+}
+
+export function toggleWorkspaceTask(taskId: number): Promise<WorkspaceTask> {
+  return apiPatch<{ data: WorkspaceTask }>(`/workspace/tasks/${taskId}/toggle`, {}).then(
+    (r) => r.data,
+  );
+}
+
+export async function addWorkspaceDeliverable(
+  workspaceId: number,
+  payload: { title: string; description?: string; type: string; url?: string; file?: File },
+): Promise<WorkspaceDeliverable> {
+  const form = new FormData();
+  form.append("title", payload.title);
+  form.append("type", payload.type);
+  if (payload.description) form.append("description", payload.description);
+  if (payload.url) form.append("url", payload.url);
+  if (payload.file) form.append("file", payload.file);
+  return apiPostForm<{ data: WorkspaceDeliverable }>(`/workspace/${workspaceId}/deliverables`, form).then(
+    (r) => r.data,
+  );
+}
+
+export function deleteWorkspaceDeliverable(deliverableId: number): Promise<void> {
+  return apiDelete(`/workspace/deliverables/${deliverableId}`);
+}
+
+// ─── Pagos ──────────────────────────────────────────────────────────────────
+
+export type PaymentRecord = {
+  id: number;
+  amount: string;
+  currency: string;
+  method: string;
+  status: string;
+  reference: string | null;
+  notes: string | null;
+  created_at: string;
+  payer?: { id: number; name: string };
+  payee?: { id: number; name: string };
+};
+
+export function registerPayment(
+  workspaceId: number,
+  payload: { amount: string; currency: string; method: string; reference?: string; notes?: string },
+): Promise<PaymentRecord> {
+  return apiPost<{ data: PaymentRecord }>(`/workspace/${workspaceId}/payments`, payload).then(
+    (r) => r.data,
+  );
+}
+
+export function fetchPayments(workspaceId: number): Promise<PaymentRecord[]> {
+  return apiGet<{ data: PaymentRecord[] }>(`/workspace/${workspaceId}/payments`).then((r) => r.data);
 }
 
 // ─── Contraseña ──────────────────────────────────────────────────────────────

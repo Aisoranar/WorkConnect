@@ -40,6 +40,7 @@ export type JobApplicationDetail = {
   price: string;
   delivery_time: string;
   status: string;
+  match_score?: number;
   created_at?: string;
   user: {
     id: number;

@@ -187,7 +187,7 @@ function Applications() {
                           Ver detalle
                           <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
                         </span>
-                        {a.status === "aceptada" && a.jobId && coachingByJob[a.jobId] && (
+                        {a.jobId && coachingByJob[a.jobId] && (
                           <CoachingTips coaching={coachingByJob[a.jobId]} />
                         )}
                       </button>
@@ -262,7 +262,7 @@ function Applications() {
         onOpenChange={setDetailOpen}
         coaching={selected?.jobId ? coachingByJob[selected.jobId] : null}
         onRequestCoaching={
-          selected?.status === "aceptada" && selected.jobId ? requestCoachingForSelected : undefined
+          selected?.jobId ? requestCoachingForSelected : undefined
         }
         coachingLoading={tipsMut.isPending}
       />

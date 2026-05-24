@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   AlertTriangle,
   Copy,
+  Download,
   FileText,
   Lightbulb,
   Linkedin,
@@ -328,8 +329,42 @@ export function CareerCvStudio({
                 ? cvResult.cv_text
                 : (sections[activeSection] ?? cvResult.cv_text)}
             </pre>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  const text =
+                    activeSection === "full"
+                      ? cvResult.cv_text
+                      : (sections[activeSection] ?? cvResult.cv_text);
+                  const printWindow = window.open("", "_blank");
+                  if (!printWindow) {
+                    toast.error("Permite ventanas emergentes para descargar el PDF");
+                    return;
+                  }
+                  printWindow.document.write(`<!DOCTYPE html>
+<html><head><title>CV - ${candidateName ?? "WorkConnect"}</title>
+<style>
+  body { font-family: 'Segoe UI', system-ui, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 24px; color: #1a1a1a; line-height: 1.6; font-size: 13px; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  h2 { font-size: 15px; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-top: 20px; }
+  pre { white-space: pre-wrap; font-family: inherit; }
+  @media print { body { margin: 0; } }
+</style></head><body>
+<pre>${text.replace(/</g, "&lt;")}</pre>
+</body></html>`);
+                  printWindow.document.close();
+                  printWindow.focus();
+                  printWindow.print();
+                }}
+              >
+                <Download className="mr-1.5 h-3.5 w-3.5" />
+                Exportar PDF
+              </Button>
+            </div>
             <p className="mt-2 text-[11px] text-muted-foreground">
-              Fuente IA: {cvResult.source} · Descarga el PDF abajo o alinea LinkedIn con un clic.
+              Fuente IA: {cvResult.source}
             </p>
           </div>
 

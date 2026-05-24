@@ -7,8 +7,10 @@ use App\Http\Requests\ApplyJobRequest;
 use App\Http\Requests\UpdateApplicationStatusRequest;
 use App\Http\Resources\ApplicationResource;
 use App\Models\JobApplication;
+use App\Models\Workspace;
 use App\Models\WorkJob;
 use App\Services\CareerAssistantService;
+use App\Services\MatchingService;
 use App\Services\NotificationService;
 use App\Support\LegacyApiFormatter;
 use Illuminate\Http\JsonResponse;
@@ -20,6 +22,7 @@ class ApplicationController extends Controller
         private readonly LegacyApiFormatter $legacy,
         private readonly NotificationService $notifications,
         private readonly CareerAssistantService $career,
+        private readonly MatchingService $matching,
     ) {}
 
     /** Compatibilidad con el front actual (GET /api/applications). */
@@ -93,8 +96,18 @@ class ApplicationController extends Controller
             ->latest()
             ->get();
 
+        $withMatch = $applications->map(function (JobApplication $app) use ($job) {
+            $match = $this->matching->scoreJobForUser($app->user, $job);
+            $app->setAttribute('match_score', $match);
+
+            return $app;
+        })->sortByDesc('match_score')->values();
+
+        $bestMatchId = $withMatch->first()?->id;
+
         return response()->json([
-            'data' => ApplicationResource::collection($applications),
+            'data' => ApplicationResource::collection($withMatch),
+            'best_match_id' => $bestMatchId,
         ]);
     }
 
@@ -116,6 +129,15 @@ class ApplicationController extends Controller
                 $application->user,
                 '¡Postulación aceptada!',
                 "Tu propuesta para «{$job->title}» fue aceptada. Coordina la entrega por mensajes.",
+            );
+
+            Workspace::query()->firstOrCreate(
+                ['job_id' => $job->id],
+                [
+                    'freelancer_id' => $application->user_id,
+                    'client_id' => $job->user_id,
+                    'status' => 'in_progress',
+                ],
             );
 
             $application->user->load('skills');

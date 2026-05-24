@@ -335,19 +335,30 @@ CTX;
         $score = (int) $base['score'];
 
         return <<<PROMPT
-Mentor laboral tech LATAM. Analiza perfil WorkConnect. JSON compacto, español, sin markdown:
-{
+Eres un headhunter tech senior en Latinoamérica con 10+ años de experiencia evaluando perfiles de desarrolladores, diseñadores y profesionales digitales. Trabajas para WorkConnect analizando la empleabilidad de freelancers jóvenes.
+
+MISIÓN: Evalúa este perfil como lo haría un reclutador real. Sé honesto, específico y accionable. No uses frases genéricas como "mejorar tu perfil" — di EXACTAMENTE qué cambiar.
+
+CRITERIOS DE EVALUACIÓN:
+- Fortalezas: qué lo hace competitivo frente a otros freelancers del marketplace
+- Debilidades: qué le impide conseguir más proyectos o mejores clientes
+- Potencial oculto: habilidades o experiencias que NO está capitalizando en su perfil
+- ATS: si un reclutador buscara su rol en LinkedIn/portales, ¿lo encontraría?
+- Acciones: qué puede hacer ESTA SEMANA para mejorar (no "algún día")
+
+Responde SOLO JSON válido en español, sin markdown:
+{{
   "score": {$score},
-  "summary": "2 oraciones ejecutivas",
-  "ai_summary": "2 oraciones para perfil público (valor + por qué contratarlo)",
-  "strengths": ["máx 4"],
-  "weaknesses": ["máx 3"],
-  "hidden_potential": ["máx 3"],
-  "ats_tips": ["máx 3 cortos"],
-  "linkedin_tips": ["máx 3 cortos"],
-  "priority_actions": ["3 acciones esta semana"],
+  "summary": "2 oraciones de diagnóstico ejecutivo: dónde está y qué le falta para el siguiente nivel",
+  "ai_summary": "2 oraciones para perfil público que resalten su propuesta de valor única y por qué un cliente debería contratarlo (en tercera persona)",
+  "strengths": ["máx 4 — cada una específica con evidencia del perfil, no genérica"],
+  "weaknesses": ["máx 3 — gaps concretos que le cuestan oportunidades reales"],
+  "hidden_potential": ["máx 3 — habilidades transferibles o experiencias que no está mostrando"],
+  "ats_tips": ["máx 3 — keywords específicas que debería agregar para aparecer en búsquedas"],
+  "linkedin_tips": ["máx 3 — cambios concretos en headline, about o experiencia"],
+  "priority_actions": ["3 acciones ejecutables ESTA SEMANA con resultado medible"],
   "source": "nvidia"
-}
+}}
 {$ctx}
 PROMPT;
     }
@@ -588,19 +599,33 @@ PROMPT;
         $prep = json_encode($materials, JSON_UNESCAPED_UNICODE);
 
         return <<<PROMPT
-Genera la primera pregunta de una simulación de entrevista en español (técnica o mixta según el rol).
-Modo: {$mode}. Responde SOLO JSON:
-{
-  "question": "pregunta clara y realista",
-  "topic": "área evaluada",
+Eres un entrevistador técnico senior en una empresa tech de Latinoamérica. Conduces entrevistas reales para roles de desarrollo, diseño y tecnología.
+
+MISIÓN: Genera la PRIMERA PREGUNTA de una simulación de entrevista realista en español. La pregunta debe ser del tipo que haría un entrevistador real, no una pregunta de examen académico.
+
+CONTEXTO DE LA ENTREVISTA:
+- Modo: {$mode}
+- Material previo analizado: {$prep}
+
+CRITERIOS PARA LA PREGUNTA:
+1. Debe ser SITUACIONAL o TÉCNICA APLICADA — no de definición ("¿qué es X?")
+2. Debe evaluar capacidad de RESOLVER PROBLEMAS, no de memorizar
+3. Debe ser apropiada para nivel junior-mid en LATAM
+4. Los tips deben orientar sin revelar la respuesta (como haría un buen entrevistador)
+
+Ejemplo de BUENA pregunta: "En tu último proyecto mencionas que usaste React. Si un componente se re-renderiza demasiadas veces y la app se pone lenta, ¿cómo diagnosticarías y resolverías el problema?"
+Ejemplo de MALA pregunta: "¿Qué es React y para qué sirve?"
+
+Responde SOLO JSON válido en español, sin markdown:
+{{
+  "question": "pregunta situacional o técnica aplicada — mínimo 2 oraciones con contexto",
+  "topic": "área técnica específica evaluada",
   "difficulty": "junior|mid",
   "interview_type": "técnica|comportamental|mixta",
-  "tips": ["2 pistas para responder sin revelar la respuesta"],
-  "prep_tips": ["reutiliza o complementa los del análisis"],
+  "tips": ["2 orientaciones para enfocar la respuesta (como haría un entrevistador amable), sin revelar la respuesta correcta"],
+  "prep_tips": ["consejos de preparación basados en el material analizado"],
   "source": "nvidia"
-}
-Análisis previo del material:
-{$prep}
+}}
 {$this->userContext($user)}
 Contexto completo:
 {$context}
@@ -674,21 +699,36 @@ PROMPT;
     private function interviewAnswerPrompt(User $user, string $question, string $answer, string $context): string
     {
         return <<<PROMPT
-Evalúa la respuesta de entrevista. Responde SOLO JSON en español:
-{
+Eres un entrevistador técnico senior evaluando una respuesta de entrevista. Evalúa como lo haría un entrevistador real en una empresa tech de Latinoamérica.
+
+CRITERIOS DE EVALUACIÓN (score 0-100):
+- 80-100: Respuesta que demuestra experiencia real, criterio técnico y capacidad de comunicación
+- 60-79: Respuesta correcta pero le falta profundidad, ejemplos concretos o estructura
+- 40-59: Respuesta parcial — entiende el concepto pero no demuestra saber aplicarlo
+- 0-39: Respuesta incorrecta, muy vaga, o no responde lo preguntado
+
+CÓMO DAR FEEDBACK:
+- "feedback": como le hablaría un entrevistador después de la entrevista — directo, profesional, constructivo. NO condescendiente.
+- "strengths": qué hizo BIEN en la respuesta (estructura, ejemplos, razonamiento)
+- "improvements": qué le faltó ESPECÍFICAMENTE (no "mejorar la respuesta" sino "incluir un ejemplo concreto de un proyecto donde aplicaste X")
+- "model_answer_hint": orienta con método STAR pero NO des la respuesta completa — ayuda a que la descubra
+- "follow_up_question": una pregunta más profunda sobre el mismo tema (como haría un entrevistador que quiere explorar más)
+
+Responde SOLO JSON válido en español, sin markdown:
+{{
   "score": 0,
-  "feedback": "2-3 oraciones constructivas y cercanas",
-  "strengths": ["qué hizo bien"],
-  "improvements": ["qué mejorar concretamente"],
-  "model_answer_hint": "orientación STAR sin dar respuesta memorizada",
-  "follow_up_question": "siguiente pregunta relacionada",
-  "answer_tips": ["1 tip para la siguiente respuesta"],
+  "feedback": "evaluación directa y profesional en 2-3 oraciones",
+  "strengths": ["aspectos positivos específicos de la respuesta"],
+  "improvements": ["qué mejorar con detalle — no genérico"],
+  "model_answer_hint": "orientación STAR: cómo estructurar mejor la respuesta sin darla hecha",
+  "follow_up_question": "pregunta de seguimiento que profundiza en el tema",
+  "answer_tips": ["1-2 tips concretos para la siguiente respuesta"],
   "source": "nvidia"
-}
-Pregunta: {$question}
-Respuesta candidato: {$answer}
-Contexto: {$context}
-Perfil: {$this->userContext($user)}
+}}
+Pregunta formulada: {$question}
+Respuesta del candidato: {$answer}
+Contexto de la entrevista: {$context}
+Perfil del candidato: {$this->userContext($user)}
 PROMPT;
     }
 
@@ -697,18 +737,31 @@ PROMPT;
         $skills = $user->skills->pluck('name')->implode(', ');
 
         return <<<PROMPT
-El freelancer fue aceptado en un micro-proyecto WorkConnect. Da coaching práctico.
-Responde SOLO JSON:
-{
+Eres un project manager senior que ha guiado a 100+ freelancers en entregas a PYMEs en Latinoamérica. El freelancer acaba de ser aceptado en un micro-proyecto y necesita coaching para entregar con éxito.
+
+CONTEXTO DEL PROYECTO:
+- Título: {$job->title}
+- Descripción: {$job->description}
+- Match con el freelancer: {$match}%
+- Skills del freelancer: {$skills}
+
+MISIÓN: Da coaching PRÁCTICO y ESPECÍFICO para este proyecto concreto. No des consejos genéricos de freelancing — todo debe ser aplicable a ESTE proyecto con ESTE cliente.
+
+CRITERIOS:
+- "strengths_to_leverage": cómo usar sus skills específicas en los entregables de ESTE proyecto
+- "delivery_tips": errores comunes que freelancers cometen con PYMEs y cómo evitarlos en ESTE caso
+- "communication_tips": cómo hablar con un empresario que probablemente NO es técnico
+- "risk_warnings": riesgos REALES de este tipo de proyecto (scope creep, expectativas, plazos)
+
+Responde SOLO JSON válido en español, sin markdown:
+{{
   "match_percent": {$match},
-  "strengths_to_leverage": ["ej: React y Laravel — úsalos así..."],
-  "delivery_tips": ["consejos de entrega al cliente PYME"],
-  "communication_tips": ["cómo hablar con el empresario"],
-  "risk_warnings": ["riesgos a evitar"],
+  "strengths_to_leverage": ["cómo aplicar cada skill a entregables concretos del proyecto"],
+  "delivery_tips": ["máx 4 consejos de entrega específicos para este tipo de proyecto"],
+  "communication_tips": ["máx 3 tips de comunicación con el empresario"],
+  "risk_warnings": ["máx 3 riesgos concretos y cómo prevenirlos"],
   "source": "nvidia"
-}
-Proyecto: {$job->title} — {$job->description}
-Skills freelancer: {$skills}
+}}
 PROMPT;
     }
 

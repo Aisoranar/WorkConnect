@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import {
+  Award,
   BookOpen,
   CheckCircle2,
   ClipboardCheck,
@@ -273,6 +274,49 @@ export function SkillLearnDialog({
                     Añadir «{result.skill}» a mi perfil
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    const certWindow = window.open("", "_blank");
+                    if (!certWindow) {
+                      toast.error("Permite ventanas emergentes para descargar el certificado");
+                      return;
+                    }
+                    const date = new Intl.DateTimeFormat("es", { dateStyle: "long" }).format(new Date());
+                    certWindow.document.write(`<!DOCTYPE html>
+<html><head><title>Certificado - ${result.skill}</title>
+<style>
+  @page { size: landscape; margin: 0; }
+  body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #0f172a, #1e293b); font-family: 'Segoe UI', system-ui, sans-serif; color: #e2e8f0; }
+  .cert { width: 900px; padding: 60px; border: 3px solid rgba(99,102,241,0.5); border-radius: 24px; text-align: center; background: rgba(15,23,42,0.9); }
+  .logo { font-size: 14px; letter-spacing: 4px; text-transform: uppercase; color: #818cf8; }
+  h1 { font-size: 40px; margin: 20px 0 8px; background: linear-gradient(90deg, #818cf8, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { font-size: 16px; color: #94a3b8; }
+  .skill { font-size: 28px; margin: 30px 0; color: #e2e8f0; }
+  .score { font-size: 18px; color: #818cf8; margin-bottom: 30px; }
+  .date { font-size: 13px; color: #64748b; margin-top: 40px; }
+  .id { font-size: 10px; color: #475569; margin-top: 8px; }
+  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style></head><body>
+<div class="cert">
+  <div class="logo">WorkConnect</div>
+  <h1>Certificado de competencia</h1>
+  <p class="subtitle">Otorgado por aprobar la evaluacion de habilidad</p>
+  <div class="skill">${result.skill}</div>
+  <div class="score">Puntuacion: ${result.score}% (${result.correct_count}/${result.total} correctas)</div>
+  <p class="date">${date}</p>
+  <p class="id">ID: WC-CERT-${Date.now().toString(36).toUpperCase()}</p>
+</div>
+</body></html>`);
+                    certWindow.document.close();
+                    certWindow.focus();
+                    certWindow.print();
+                  }}
+                >
+                  <Award className="mr-2 h-4 w-4" />
+                  Descargar certificado
+                </Button>
                 {onGoProfile && (
                   <Button variant="outline" className="w-full" onClick={() => onGoProfile(result.skill)}>
                     Ir a guardar en perfil

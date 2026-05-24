@@ -17,6 +17,7 @@ class ApplicationResource extends JsonResource
             'price' => $this->price,
             'delivery_time' => $this->delivery_time,
             'status' => $this->status,
+            'match_score' => $this->when($this->getAttribute('match_score') !== null, $this->getAttribute('match_score')),
             'job' => new JobResource($this->whenLoaded('job')),
             'user' => new UserResource($this->whenLoaded('user')),
             'created_at' => $this->created_at,
