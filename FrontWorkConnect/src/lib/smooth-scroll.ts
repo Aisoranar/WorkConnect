@@ -38,7 +38,7 @@ export function scrollToSection(sectionId: string, offset = HEADER_OFFSET): void
 }
 
 export function handleLandingNavClick(
-  e: MouseEvent,
+  e: { preventDefault: () => void },
   href: string,
   options?: { onBeforeScroll?: () => void; delayMs?: number },
 ) {
