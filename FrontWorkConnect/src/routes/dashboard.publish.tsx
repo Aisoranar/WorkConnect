@@ -198,11 +198,7 @@ function PublishProjectPage() {
           disabled={structureMutation.isPending || rawNeed.trim().length < 20 || parsedAmount < 1}
           onClick={() => structureMutation.mutate()}
         >
-          {structureMutation.isPending ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Wand2 className="mr-2 h-4 w-4" />
-          )}
+          <Wand2 className="mr-2 h-4 w-4" />
           {structureMutation.isPending ? "Generando requerimiento…" : "Convertir en requerimiento con IA"}
         </Button>
 
