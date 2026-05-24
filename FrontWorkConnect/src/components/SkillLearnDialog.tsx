@@ -287,28 +287,190 @@ export function SkillLearnDialog({
                     }
                     const date = new Intl.DateTimeFormat("es", { dateStyle: "long" }).format(new Date());
                     certWindow.document.write(`<!DOCTYPE html>
-<html><head><title>Certificado - ${result.skill}</title>
+<html lang="es"><head><meta charset="utf-8" /><title>Certificado - ${result.skill}</title>
 <style>
-  @page { size: landscape; margin: 0; }
-  body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #0f172a, #1e293b); font-family: 'Segoe UI', system-ui, sans-serif; color: #e2e8f0; }
-  .cert { width: 900px; padding: 60px; border: 3px solid rgba(99,102,241,0.5); border-radius: 24px; text-align: center; background: rgba(15,23,42,0.9); }
-  .logo { font-size: 14px; letter-spacing: 4px; text-transform: uppercase; color: #818cf8; }
-  h1 { font-size: 40px; margin: 20px 0 8px; background: linear-gradient(90deg, #818cf8, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .subtitle { font-size: 16px; color: #94a3b8; }
-  .skill { font-size: 28px; margin: 30px 0; color: #e2e8f0; }
-  .score { font-size: 18px; color: #818cf8; margin-bottom: 30px; }
-  .date { font-size: 13px; color: #64748b; margin-top: 40px; }
-  .id { font-size: 10px; color: #475569; margin-top: 8px; }
-  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  @page { size: A4 landscape; margin: 0; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #ffffff;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .frame {
+    position: relative;
+    width: 1060px;
+    max-width: 100%;
+    padding: 64px 88px 56px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 0 0 10px #ffffff, 0 0 0 12px #6366f1;
+  }
+  .frame::before {
+    content: '';
+    position: absolute;
+    inset: 16px;
+    border: 1px solid #c7d2fe;
+    pointer-events: none;
+  }
+  .corner {
+    position: absolute;
+    width: 56px;
+    height: 56px;
+    border: 2px solid #4f46e5;
+    pointer-events: none;
+  }
+  .corner.tl { top: 26px; left: 26px; border-right: none; border-bottom: none; }
+  .corner.tr { top: 26px; right: 26px; border-left: none; border-bottom: none; }
+  .corner.bl { bottom: 26px; left: 26px; border-right: none; border-top: none; }
+  .corner.br { bottom: 26px; right: 26px; border-left: none; border-top: none; }
+  .brand {
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 6px;
+    font-weight: 700;
+    color: #4f46e5;
+    text-transform: uppercase;
+  }
+  .brand::before, .brand::after {
+    content: '';
+    display: inline-block;
+    width: 44px;
+    height: 1px;
+    background: #4f46e5;
+    vertical-align: middle;
+    margin: 0 14px;
+  }
+  .title {
+    margin: 24px 0 8px;
+    text-align: center;
+    font-family: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+    font-size: 54px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #4f46e5;
+    background: linear-gradient(90deg, #4f46e5, #8b5cf6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .subtitle {
+    text-align: center;
+    color: #64748b;
+    font-size: 15px;
+    margin: 0 0 8px;
+  }
+  .recipient-line {
+    text-align: center;
+    font-size: 12px;
+    color: #94a3b8;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin: 32px 0 0;
+  }
+  .skill {
+    text-align: center;
+    font-family: 'Playfair Display', 'Georgia', serif;
+    font-size: 44px;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 12px 0 8px;
+    line-height: 1.1;
+  }
+  .divider {
+    width: 260px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #6366f1, transparent);
+    margin: 18px auto 26px;
+  }
+  .score {
+    text-align: center;
+    color: #475569;
+    font-size: 16px;
+    margin: 0 0 36px;
+  }
+  .score strong {
+    color: #4f46e5;
+    font-weight: 700;
+    font-size: 18px;
+  }
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 36px;
+    gap: 24px;
+  }
+  .meta {
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.6;
+  }
+  .meta .label {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 10px;
+    color: #94a3b8;
+    margin-bottom: 2px;
+  }
+  .meta.right { text-align: right; }
+  .seal {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%, #fef9c3, #fbbf24 55%, #b45309);
+    box-shadow: 0 4px 12px rgba(180, 83, 9, 0.25), inset 0 0 0 4px #fffbeb;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Georgia', serif;
+    color: #78350f;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-align: center;
+    line-height: 1.2;
+  }
+  .seal .star { font-size: 22px; line-height: 1; margin-bottom: 2px; }
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 0; }
+  }
 </style></head><body>
-<div class="cert">
-  <div class="logo">WorkConnect</div>
-  <h1>Certificado de competencia</h1>
-  <p class="subtitle">Otorgado por aprobar la evaluacion de habilidad</p>
+<div class="frame">
+  <span class="corner tl"></span>
+  <span class="corner tr"></span>
+  <span class="corner bl"></span>
+  <span class="corner br"></span>
+
+  <div class="brand">WorkConnect</div>
+  <h1 class="title">Certificado de Competencia</h1>
+  <p class="subtitle">Otorgado por aprobar satisfactoriamente la evaluación de habilidad</p>
+
+  <p class="recipient-line">se reconoce el dominio en</p>
   <div class="skill">${result.skill}</div>
-  <div class="score">Puntuacion: ${result.score}% (${result.correct_count}/${result.total} correctas)</div>
-  <p class="date">${date}</p>
-  <p class="id">ID: WC-CERT-${Date.now().toString(36).toUpperCase()}</p>
+  <div class="divider"></div>
+  <p class="score">Puntuación: <strong>${result.score}%</strong> · ${result.correct_count}/${result.total} respuestas correctas</p>
+
+  <div class="footer">
+    <div class="meta">
+      <div class="label">Fecha de emisión</div>
+      <div>${date}</div>
+    </div>
+    <div class="seal">
+      <span class="star">★</span>
+      <span>WORKCONNECT</span>
+    </div>
+    <div class="meta right">
+      <div class="label">Identificador</div>
+      <div>WC-CERT-${Date.now().toString(36).toUpperCase()}</div>
+    </div>
+  </div>
 </div>
 </body></html>`);
                     certWindow.document.close();
